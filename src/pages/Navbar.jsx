@@ -1,15 +1,60 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Menu, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Link, useLocation } from "react-router-dom";
 import Button from "../components/Button/button";
 import logo from "../assets/logo.png";
 
 export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState("");
+  const location = useLocation();
+
+  const navLinks = [
+    { label: "Designs", target: "/designs", route: true },
+    { label: "Projects", target: "projects" },
+    { label: "Services", target: "services" },
+    { label: "About", target: "/about", route: true },
+    { label: "Contact", target: "contact" },
+    { label: "Supplier Marketplace", target: "/supplier-products", route: true },
+
+
+  ];
+
+  // Track which section is currently in view and "bookmark" it as active
+  useEffect(() => {
+    const sectionIds = navLinks
+      .filter((link) => !link.route)
+      .map((link) => link.target);
+    const sections = sectionIds
+      .map((id) => document.getElementById(id))
+      .filter(Boolean);
+
+    if (sections.length === 0) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setActiveSection(entry.target.id);
+          }
+        });
+      },
+      {
+        rootMargin: "-40% 0px -50% 0px", // triggers when section is roughly centered
+        threshold: 0,
+      }
+    );
+
+    sections.forEach((section) => observer.observe(section));
+
+    return () => sections.forEach((section) => observer.unobserve(section));
+  }, []);
 
   const handleNavClick = (e, targetId) => {
     e.preventDefault();
     setMobileMenuOpen(false);
+    setActiveSection(targetId);
 
     const element = document.getElementById(targetId);
 
@@ -24,14 +69,6 @@ export default function Navbar() {
       });
     }
   };
-
-  const navLinks = [
-    { label: "Designers", target: "designers" },
-    { label: "Projects", target: "projects" },
-    { label: "Services", target: "services" },
-    { label: "About", target: "about" },
-    { label: "Contact", target: "contact" },
-  ];
 
   return (
     <header className="absolute top-0 md:top-5 left-0 w-full z-50">
@@ -79,39 +116,64 @@ export default function Navbar() {
 
             {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center gap-4 lg:gap-5 xl:gap-6 mx-6">
-              {navLinks.map((link) => (
-                
-                <a  key={link.label}
-                  href={`#${link.target}`}
-                  onClick={(e) => handleNavClick(e, link.target)}
-                  className="text-sm text-gray-300 hover:text-white transition duration-300"
-                >
-                  {link.label}
-                </a>
-              ))}
+              {navLinks.map((link) => {
+                const isActive = link.route
+                  ? location.pathname === link.target
+                  : activeSection === link.target;
+
+                if (link.route) {
+                  return (
+                    <Link
+                      key={link.label}
+                      to={link.target}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className={`relative text-sm transition duration-300 pb-1 ${isActive ? "text-white" : "text-gray-300 hover:text-white"
+                        }`}
+                    >
+                      {link.label}
+                      {isActive && (
+                        <motion.span
+                          layoutId="active-nav-underline"
+                          className="absolute left-0 -bottom-0.5 h-[2px] w-full bg-[var(--gold)] rounded-full"
+                          transition={{ type: "spring", stiffness: 350, damping: 30 }}
+                        />
+                      )}
+                    </Link>
+                  );
+                }
+
+                return (
+                  <a
+                    key={link.label}
+                    href={`#${link.target}`}
+                    onClick={(e) => handleNavClick(e, link.target)}
+                    className={`relative text-sm transition duration-300 pb-1 ${isActive ? "text-white" : "text-gray-300 hover:text-white"
+                      }`}
+                  >
+                    {link.label}
+                    {isActive && (
+                      <motion.span
+                        layoutId="active-nav-underline"
+                        className="absolute left-0 -bottom-0.5 h-[2px] w-full bg-[var(--gold)] rounded-full"
+                        transition={{ type: "spring", stiffness: 350, damping: 30 }}
+                      />
+                    )}
+                  </a>
+                );
+              })}
             </nav>
 
             {/* Desktop Buttons */}
             <div className="hidden md:flex items-center gap-2">
-              <a href="/login">
+              <a href="/Signin">
                 <Button
                   variant="gold"
                   size="sm"
                   className="rounded-sm px-4"
                 >
-                  Login
+                  Sign In
                 </Button>
               </a>
-
-              {/* <a href="/signup">
-                <Button
-                  variant="gold"
-                  size="sm"
-                  className="rounded-sm px-4"
-                >
-                  Contact
-                </Button>
-              </a> */}
             </div>
 
             {/* Mobile Menu Button */}
@@ -135,25 +197,52 @@ export default function Navbar() {
               >
                 <div className="flex flex-col px-5 py-5">
 
-                  {navLinks.map((link) => (
-                   <a 
-                      key={link.label}
-                      href={`#${link.target}`}
-                      onClick={(e) => handleNavClick(e, link.target)}
-                      className="py-4 border-b border-white/10 text-white hover:text-[var(--gold)] transition"
-                    >
-                      {link.label}
-                    </a>
-                  ))}
+                  {navLinks.map((link) => {
+                    const isActive = link.route
+                      ? location.pathname === link.target
+                      : activeSection === link.target;
+
+                    if (link.route) {
+                      return (
+                        <Link
+                          key={link.label}
+                          to={link.target}
+                          onClick={() => setMobileMenuOpen(false)}
+                          className={`py-4 border-b border-white/10 transition flex items-center justify-between ${isActive ? "text-[var(--gold)]" : "text-white hover:text-[var(--gold)]"
+                            }`}
+                        >
+                          {link.label}
+                          {isActive && (
+                            <span className="w-1.5 h-1.5 rounded-full bg-[var(--gold)]" />
+                          )}
+                        </Link>
+                      );
+                    }
+
+                    return (
+                      <a
+                        key={link.label}
+                        href={`#${link.target}`}
+                        onClick={(e) => handleNavClick(e, link.target)}
+                        className={`py-4 border-b border-white/10 transition flex items-center justify-between ${isActive ? "text-[var(--gold)]" : "text-white hover:text-[var(--gold)]"
+                          }`}
+                      >
+                        {link.label}
+                        {isActive && (
+                          <span className="w-1.5 h-1.5 rounded-full bg-[var(--gold)]" />
+                        )}
+                      </a>
+                    );
+                  })}
 
                   <div className="flex flex-col gap-3 mt-6">
-                    <a href="/login">
+                    <a href="/Signin">
                       <Button
                         variant="outline"
                         fullWidth
                         className="rounded-full"
                       >
-                        Login
+                        Sign In
                       </Button>
                     </a>
 

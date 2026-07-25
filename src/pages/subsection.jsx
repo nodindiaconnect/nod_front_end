@@ -2,7 +2,7 @@ import "../theme.css"
 
 export default function NewHeritage() {
     return (
-        <section className="relative py-24 px-4 md:px-8  bg-[#f2ece6] overflow-hidden">
+        <section className="relative py-24 px-4 md:px-8 bg-[var(--background)] overflow-hidden">
             <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20 items-center">
 
                 {/* IMAGE COLLAGE LEFT */}
@@ -31,22 +31,25 @@ export default function NewHeritage() {
                 </div>
 
                 {/* TEXT RIGHT */}
+                {/* This block sits on the plain card/section background (not a photo),
+                    so it uses the tokens that flip with light/dark mode
+                    (--heading, --text) rather than the fixed --on-photo* tokens. */}
                 <div className="lg:col-span-6 flex flex-col items-start">
 
-                    <h2 className="text-4xl md:text-5xl font-serif text-ivory leading-tight mb-2">
+                    <h2 className="text-4xl md:text-5xl font-serif text-[var(--heading)] leading-tight mb-2">
                         New Heritage
                     </h2>
 
-                    <p className="text-2xl md:text-3xl font-serif italic text-ivory leading-snug mb-6">
+                    <p className="text-2xl md:text-3xl font-serif italic text-[var(--heading)] leading-snug mb-6">
                         A design house rooted in tradition.
                     </p>
 
-                    <p className="text-sm md:text-base text-warm-silk font-light leading-relaxed mb-10 opacity-90 max-w-lg">
+                    <p className="text-sm md:text-base text-[var(--text)] font-light leading-relaxed mb-10 opacity-90 max-w-lg">
                         For interior designer Shea McGee, design has always been about how a space makes you feel—not just how it looks. Since 2014, that philosophy has shaped Studio McGee and continues to guide every project today. Our New Heritage aesthetic is rooted in classic design principles and traditional craftsmanship, adapted through a modern lens—creating homes that feel collected, comfortable, and effortlessly timeless.
                     </p>
 
                     <a href="/about">
-                        <button className="cursor-pointer rounded-none border border-warm-gold/70 hover:border-warm-gold px-8 py-3.5 text-[11px] tracking-[0.2em] font-semibold text-ivory hover:bg-warm-gold/10 transition-all duration-300">
+                        <button className="cursor-pointer rounded-none border border-[var(--gold)]/70 hover:border-[var(--gold)] px-8 py-3.5 text-[11px] tracking-[0.2em] font-semibold text-[var(--heading)] hover:bg-[var(--gold)]/10 transition-all duration-300">
                             ABOUT
                         </button>
                     </a>

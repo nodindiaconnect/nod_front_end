@@ -3,6 +3,20 @@ import { ArrowRight } from "lucide-react"
 import "../theme.css"
 import logo from "../assets/logo.png"
 
+const root = getComputedStyle(document.documentElement)
+const GOLD = root.getPropertyValue("--gold").trim()
+const LINE = root.getPropertyValue("--border").trim()
+const PRIMARY = root.getPropertyValue("--primary").trim()
+// The footer's background is --primary — a dark brown in BOTH light and dark
+// mode (that's the point: it's meant to always read as a dark band). The
+// old code styled its text with var(--on-photo)/var(--on-photo-muted),
+// tokens that don't exist in theme.css, so the browser fell back to default
+// (near-black) text on that dark brown background — invisible in light mode.
+// Since this bar is intentionally dark regardless of theme, its text is a
+// fixed warm cream rather than a theme-following token.
+const FOOTER_TEXT = "#F7F3EA"
+const FOOTER_MUTED = "rgba(247,243,234,0.68)"
+
 export default function Footer() {
     const marketplaceLinks = [
         { label: "Browse Designers", href: "#designers" },
@@ -12,9 +26,9 @@ export default function Footer() {
     ]
 
     const professionalsLinks = [
-        { label: "Join as Designer", href: "/login?mode=signup" },
-        { label: "Join as Contracter", href: "/login?mode=signup" },
-        { label: "Join as Architect", href: "/login?mode=signup" },
+        { label: "Join as Designer", href: "/Signin" },
+        { label: "Join as Contracter", href: "/Signin" },
+        { label: "Join as Architect", href: "/Signin" },
     ]
 
     const companyLinks = [
@@ -49,7 +63,7 @@ export default function Footer() {
     return (
         <footer
             className="border-t pt-24 pb-12 px-6 md:px-8"
-            style={{ backgroundColor: "var(--primary)", borderColor: "var(--border)" }}
+            style={{ backgroundColor: PRIMARY, borderColor: LINE }}
         >
             <div className="mx-auto max-w-7xl">
 
@@ -61,20 +75,20 @@ export default function Footer() {
                         <div className="flex items-center gap-3 mb-6">
                             <div
                                 className="relative h-12 w-12 rounded-full overflow-hidden border"
-                                style={{ borderColor: "var(--gold)" }}
+                                style={{ borderColor: GOLD }}
                             >
                                 <img src={logo} alt="NOD Logo" className="h-full w-full object-cover" />
                             </div>
                             <div className="flex flex-col leading-none">
                                 <span
                                     className="text-xl font-bold tracking-tight font-[var(--font-body)]"
-                                    style={{ color: "var(--surface)" }}
+                                    style={{ color: FOOTER_TEXT }}
                                 >
-                                    N<span style={{ color: "var(--gold)" }}>OD</span>
+                                    N<span style={{ color: GOLD }}>OD</span>
                                 </span>
                                 <span
                                     className="text-[9px] tracking-[0.25em] font-semibold uppercase mt-0.5"
-                                    style={{ color: "var(--surface)", opacity: 0.6 }}
+                                    style={{ color: FOOTER_MUTED }}
                                 >
                                     Night Owl Designers
                                 </span>
@@ -82,8 +96,8 @@ export default function Footer() {
                         </div>
 
                         <p
-                            className="text-sm leading-relaxed max-w-xs mb-8 opacity-90"
-                            style={{ color: "var(--surface)" }}
+                            className="text-sm leading-relaxed max-w-xs mb-8"
+                            style={{ color: FOOTER_MUTED }}
                         >
                             India's premium marketplace matching visionary clients with elite architects, designers, and structural contractors.
                         </p>
@@ -95,14 +109,14 @@ export default function Footer() {
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="h-10 w-10 flex items-center justify-center rounded-full border transition-all duration-300"
-                                style={{ borderColor: "var(--border)", backgroundColor: "rgba(255,255,255,0.05)", color: "var(--surface)" }}
+                                style={{ borderColor: LINE, backgroundColor: "rgba(255,255,255,0.05)", color: FOOTER_TEXT }}
                                 onMouseEnter={(e) => {
-                                    e.currentTarget.style.color = "var(--gold)"
-                                    e.currentTarget.style.borderColor = "var(--gold)"
+                                    e.currentTarget.style.color = GOLD
+                                    e.currentTarget.style.borderColor = GOLD
                                 }}
                                 onMouseLeave={(e) => {
-                                    e.currentTarget.style.color = "var(--surface)"
-                                    e.currentTarget.style.borderColor = "var(--border)"
+                                    e.currentTarget.style.color = FOOTER_TEXT
+                                    e.currentTarget.style.borderColor = LINE
                                 }}
                                 aria-label="Instagram"
                             >
@@ -115,14 +129,14 @@ export default function Footer() {
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="h-10 w-10 flex items-center justify-center rounded-full border transition-all duration-300"
-                                style={{ borderColor: "var(--border)", backgroundColor: "rgba(255,255,255,0.05)", color: "var(--surface)" }}
+                                style={{ borderColor: LINE, backgroundColor: "rgba(255,255,255,0.05)", color: FOOTER_TEXT }}
                                 onMouseEnter={(e) => {
-                                    e.currentTarget.style.color = "var(--gold)"
-                                    e.currentTarget.style.borderColor = "var(--gold)"
+                                    e.currentTarget.style.color = GOLD
+                                    e.currentTarget.style.borderColor = GOLD
                                 }}
                                 onMouseLeave={(e) => {
-                                    e.currentTarget.style.color = "var(--surface)"
-                                    e.currentTarget.style.borderColor = "var(--border)"
+                                    e.currentTarget.style.color = FOOTER_TEXT
+                                    e.currentTarget.style.borderColor = LINE
                                 }}
                                 aria-label="LinkedIn"
                             >
@@ -135,14 +149,14 @@ export default function Footer() {
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="h-10 w-10 flex items-center justify-center rounded-full border transition-all duration-300"
-                                style={{ borderColor: "var(--border)", backgroundColor: "rgba(255,255,255,0.05)", color: "var(--surface)" }}
+                                style={{ borderColor: LINE, backgroundColor: "rgba(255,255,255,0.05)", color: FOOTER_TEXT }}
                                 onMouseEnter={(e) => {
-                                    e.currentTarget.style.color = "var(--gold)"
-                                    e.currentTarget.style.borderColor = "var(--gold)"
+                                    e.currentTarget.style.color = GOLD
+                                    e.currentTarget.style.borderColor = GOLD
                                 }}
                                 onMouseLeave={(e) => {
-                                    e.currentTarget.style.color = "var(--surface)"
-                                    e.currentTarget.style.borderColor = "var(--border)"
+                                    e.currentTarget.style.color = FOOTER_TEXT
+                                    e.currentTarget.style.borderColor = LINE
                                 }}
                                 aria-label="Twitter"
                             >
@@ -160,7 +174,7 @@ export default function Footer() {
                         <div>
                             <h4
                                 className="text-[10px] font-bold uppercase tracking-widest mb-4 font-[var(--font-body)]"
-                                style={{ color: "var(--surface)" }}
+                                style={{ color: FOOTER_TEXT }}
                             >
                                 Marketplace
                             </h4>
@@ -171,9 +185,9 @@ export default function Footer() {
                                             href={link.href}
                                             onClick={(e) => handleNavClick(e, link.href)}
                                             className="text-xs transition-colors duration-300"
-                                            style={{ color: "var(--surface)", opacity: 0.8 }}
-                                            onMouseEnter={(e) => (e.currentTarget.style.color = "var(--gold)")}
-                                            onMouseLeave={(e) => (e.currentTarget.style.color = "var(--surface)")}
+                                            style={{ color: FOOTER_MUTED }}
+                                            onMouseEnter={(e) => (e.currentTarget.style.color = GOLD)}
+                                            onMouseLeave={(e) => (e.currentTarget.style.color = FOOTER_MUTED)}
                                         >
                                             {link.label}
                                         </a>
@@ -186,7 +200,7 @@ export default function Footer() {
                         <div>
                             <h4
                                 className="text-[10px] font-bold uppercase tracking-widest mb-4 font-[var(--font-body)]"
-                                style={{ color: "var(--surface)" }}
+                                style={{ color: FOOTER_TEXT }}
                             >
                                 Professionals
                             </h4>
@@ -197,9 +211,9 @@ export default function Footer() {
                                             href={link.href}
                                             onClick={(e) => handleNavClick(e, link.href)}
                                             className="text-xs transition-colors duration-300"
-                                            style={{ color: "var(--surface)", opacity: 0.8 }}
-                                            onMouseEnter={(e) => (e.currentTarget.style.color = "var(--gold)")}
-                                            onMouseLeave={(e) => (e.currentTarget.style.color = "var(--surface)")}
+                                            style={{ color: FOOTER_MUTED }}
+                                            onMouseEnter={(e) => (e.currentTarget.style.color = GOLD)}
+                                            onMouseLeave={(e) => (e.currentTarget.style.color = FOOTER_MUTED)}
                                         >
                                             {link.label}
                                         </a>
@@ -212,7 +226,7 @@ export default function Footer() {
                         <div>
                             <h4
                                 className="text-[10px] font-bold uppercase tracking-widest mb-4 font-[var(--font-body)]"
-                                style={{ color: "var(--surface)" }}
+                                style={{ color: FOOTER_TEXT }}
                             >
                                 Company
                             </h4>
@@ -223,9 +237,9 @@ export default function Footer() {
                                         <a href={link.href}
                                             onClick={(e) => handleNavClick(e, link.href)}
                                             className="text-xs transition-colors duration-300"
-                                            style={{ color: "var(--surface)", opacity: 0.8 }}
-                                            onMouseEnter={(e) => (e.currentTarget.style.color = "var(--gold)")}
-                                            onMouseLeave={(e) => (e.currentTarget.style.color = "var(--surface)")}
+                                            style={{ color: FOOTER_MUTED }}
+                                            onMouseEnter={(e) => (e.currentTarget.style.color = GOLD)}
+                                            onMouseLeave={(e) => (e.currentTarget.style.color = FOOTER_MUTED)}
                                         >
                                             {link.label}
                                         </a>
@@ -238,7 +252,7 @@ export default function Footer() {
                         <div>
                             <h4
                                 className="text-[10px] font-bold uppercase tracking-widest mb-4 font-[var(--font-body)]"
-                                style={{ color: "var(--surface)" }}
+                                style={{ color: FOOTER_TEXT }}
                             >
                                 Legal
                             </h4>
@@ -248,9 +262,9 @@ export default function Footer() {
                                         <a
                                             href={link.href}
                                             className="text-xs transition-colors duration-300"
-                                            style={{ color: "var(--surface)", opacity: 0.8 }}
-                                            onMouseEnter={(e) => (e.currentTarget.style.color = "var(--gold)")}
-                                            onMouseLeave={(e) => (e.currentTarget.style.color = "var(--surface)")}
+                                            style={{ color: FOOTER_MUTED }}
+                                            onMouseEnter={(e) => (e.currentTarget.style.color = GOLD)}
+                                            onMouseLeave={(e) => (e.currentTarget.style.color = FOOTER_MUTED)}
                                         >
                                             {link.label}
                                         </a>
@@ -266,31 +280,31 @@ export default function Footer() {
                 {/* BOTTOM CONTACT & COPYRIGHT */}
                 <div
                     className="border-t pt-12 flex flex-col md:flex-row items-center justify-between gap-8"
-                    style={{ borderColor: "var(--border)" }}
+                    style={{ borderColor: LINE }}
                 >
 
                     {/* Contact Information */}
                     <div className="w-full md:w-auto flex flex-col items-start gap-3">
-                        <p className="text-xs mt-1 font-light tracking-wide" style={{ color: "var(--surface)", opacity: 0.5 }}>
+                        <p className="text-xs mt-1 font-light tracking-wide" style={{ color: FOOTER_MUTED }}>
                             <strong>Contact us :</strong> +91 8966969035, +91 9926378062
                         </p>
-                        <p className="text-xs mt-1 font-light tracking-wide" style={{ color: "var(--surface)", opacity: 0.5 }}>
+                        <p className="text-xs mt-1 font-light tracking-wide" style={{ color: FOOTER_MUTED }}>
                             <strong>Business Hours :</strong> Monday to Saturday: 10 AM to 6 PM IST
                         </p>
-                        <p className="text-xs mt-1 font-light tracking-wide" style={{ color: "var(--surface)", opacity: 0.5 }}>
+                        <p className="text-xs mt-1 font-light tracking-wide" style={{ color: FOOTER_MUTED }}>
                             <strong>Email :</strong> nightowldesignershelp@gmail.com
                         </p>
-                        <p className="text-xs mt-1 font-light tracking-wide" style={{ color: "var(--surface)", opacity: 0.5 }}>
+                        <p className="text-xs mt-1 font-light tracking-wide" style={{ color: FOOTER_MUTED }}>
                             <strong>Postal Address :</strong> 1st Floor, Beside Uday Amrik Homes Main <br /> Gate Itarsi Road Sadar Betul 460001 Madhya Pradesh India
                         </p>
                     </div>
 
                     {/* Copyright */}
                     <div className="text-center md:text-right">
-                        <p className="text-xs font-light" style={{ color: "var(--surface)", opacity: 0.6 }}>
+                        <p className="text-xs font-light" style={{ color: FOOTER_MUTED }}>
                             © {new Date().getFullYear()} NOD-Night Owl Designers. All rights reserved.
                         </p>
-                        <p className="text-[10px] mt-1 font-light tracking-wide" style={{ color: "var(--surface)", opacity: 0.4 }}>
+                        <p className="text-[10px] mt-1 font-light tracking-wide" style={{ color: FOOTER_MUTED, opacity: 0.7 }}>
                             Designed in India • Connecting spatial excellence globally.
                         </p>
                     </div>

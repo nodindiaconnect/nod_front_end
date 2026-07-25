@@ -1,6 +1,3 @@
-
-
-
 import { useState, useEffect, useRef } from "react"
 import logo from "../assets/logo.png"
 import { Country } from "country-state-city"
@@ -28,6 +25,10 @@ const GOLD_DARK = root.getPropertyValue("--gold-hover").trim();
 const LINE = root.getPropertyValue("--border").trim();
 const BG = root.getPropertyValue("--background").trim();
 
+const PRIMARY = root.getPropertyValue("--primary").trim();
+const PRIMARY_HOVER = root.getPropertyValue("--primary-hover").trim();
+const SURFACE = root.getPropertyValue("--surface").trim();
+
 const ERROR_BG = "#fdecea"; // You can create a CSS variable if needed
 const ERROR_TEXT = root.getPropertyValue("--danger").trim();
 const OK_TEXT = root.getPropertyValue("--success").trim();
@@ -38,6 +39,16 @@ const ROLE_CODES = {
   Designer: 2,
   Architect: 3,
   Contractor: 4,
+  MaterialSupplier: 5,
+
+}
+
+const ROLE_LABELS = {
+  Client: "Client",
+  Designer: "Designer",
+  Architect: "Architect",
+  Contractor: "Contractor",
+  MaterialSupplier: "Material Supplier",
 }
 
 const ROLE_FIELDS = {
@@ -58,7 +69,7 @@ const ROLE_FIELDS = {
     subtitle: "Highlight your expertise and win more projects.",
     fields: [
       { id: "bio", label: "Short Bio", type: "textarea", placeholder: "Describe your architectural approach..." },
-      { id: "license", label: "(COA) License Number", type: "text", placeholder: "e.g. AR-123456" },
+      // { id: "license", label: "(COA) License Number", type: "text", placeholder: "e.g. AR-123456" },
       { id: "specialization", label: "Project Type", type: "select", options: ["Residential", "Commercial", "Mixed-Use", "Industrial", "Urban Planning"] },
       { id: "software", label: "Primary Software", type: "select", options: ["AutoCAD", "Revit", "ArchiCAD", "SketchUp", "Rhino"] },
       { id: "experience", label: "Years of Experience", type: "number", placeholder: "e.g. 10" },
@@ -70,10 +81,22 @@ const ROLE_FIELDS = {
     fields: [
       { id: "bio", label: "Company / Personal Bio", type: "textarea", placeholder: "Describe your contracting services..." },
       { id: "trade", label: "Primary Trade", type: "select", options: ["General Contractor", "Electrical", "Plumbing", "Carpentry", "Masonry", "Painting", "HVAC"] },
-      { id: "gstin", label: "GSTIN Number", type: "text", placeholder: "e.g. 22AAAAA0000A1Z5" },
+      // { id: "gstin", label: "GSTIN Number", type: "text", placeholder: "e.g. 22AAAAA0000A1Z5" },
       { id: "experience", label: "Years of Experience", type: "number", placeholder: "e.g. 8" },
     ],
   },
+
+  MaterialSupplier: {
+    heading: "Set Up Your Supplier Profile",
+    subtitle: "List your materials and reach more builders and designers.",
+    fields: [
+      { id: "businessName", label: "Business Name", type: "text", placeholder: "e.g. Sharma Building Materials" },
+      { id: "ownerName", label: "Owner Name", type: "text", placeholder: "e.g. Ramesh Sharma" },
+      { id: "businessType", label: "Business Type", type: "select", options: ["Manufacturer", "Wholesaler", "Retailer", "Distributor", "Importer"] },
+    ],
+  },
+
+
 }
 
 // Every role walks through Account -> Location -> (Profile, if it has fields) -> Review.
@@ -111,7 +134,7 @@ function TextInput({ label, disabled, className = "", ...props }) {
         {...props}
         disabled={disabled}
         className={`w-full px-4 py-3.5 text-sm outline-none transition-colors ${disabled ? "opacity-40 cursor-not-allowed" : ""} ${className}`}
-        style={{ border: `1px solid ${LINE}`, color: INK, background: "#fff" }}
+        style={{ border: `1px solid ${LINE}`, color: INK, background: "transparent" }}
       />
     </div>
   )
@@ -125,7 +148,7 @@ function SelectInput({ label, disabled, children, ...props }) {
         {...props}
         disabled={disabled}
         className={`w-full px-4 py-3.5 text-sm outline-none appearance-none ${disabled ? "opacity-40 cursor-not-allowed" : ""}`}
-        style={{ border: `1px solid ${LINE}`, color: INK, background: "#fff" }}
+        style={{ border: `1px solid ${LINE}`, color: INK, background: "transparent" }}
       >
         {children}
       </select>
@@ -141,7 +164,7 @@ function TextAreaInput({ label, disabled, ...props }) {
         {...props}
         disabled={disabled}
         className={`w-full px-4 py-3.5 text-sm outline-none resize-none ${disabled ? "opacity-40 cursor-not-allowed" : ""}`}
-        style={{ border: `1px solid ${LINE}`, color: INK, background: "#fff" }}
+        style={{ border: `1px solid ${LINE}`, color: INK, background: "transparent" }}
       />
     </div>
   )
@@ -151,8 +174,10 @@ function PrimaryButton({ children, className = "", ...props }) {
   return (
     <button
       {...props}
-      className={`w-full py-4 text-white text-sm tracking-wide disabled:opacity-50 ${className}`}
-      style={{ background: INK }}
+      className={`w-full py-4 text-white text-sm tracking-wide disabled:opacity-50 transition-colors duration-300 ${className}`}
+      style={{ background: PRIMARY }}
+      onMouseEnter={(e) => !props.disabled && (e.currentTarget.style.background = PRIMARY_HOVER)}
+      onMouseLeave={(e) => !props.disabled && (e.currentTarget.style.background = PRIMARY)}
     >
       {children}
     </button>
@@ -187,9 +212,9 @@ function StepProgress({ stepKeys, currentKey }) {
               <div
                 className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] shrink-0"
                 style={{
-                  border: `1px solid ${done || active ? GOLD : "#d8d5cf"}`,
-                  background: done ? GOLD : "#fff",
-                  color: done ? "#fff" : active ? GOLD : "#b9b6b0",
+                  border: `1px solid ${done || active ? GOLD : LINE}`,
+                  background: done ? GOLD : "transparent",
+                  color: done ? "#fff" : active ? GOLD : INK_SOFT,
                   fontWeight: 600,
                 }}
               >
@@ -222,7 +247,7 @@ function WelcomeBackCard() {
     "See your project timeline",
   ]
   return (
-    <div className="bg-white w-72 p-8 shrink-0" style={{ boxShadow: "0 2px 18px rgba(0,0,0,0.08)" }}>
+    <div className="w-72 p-8 shrink-0" style={{ background: SURFACE, boxShadow: "0 2px 18px rgba(0,0,0,0.08)" }}>
       <div
         className="w-36 h-36 rounded-full mx-auto mb-6 overflow-hidden flex items-center justify-center"
         style={{ background: "linear-gradient(160deg,#efe6da,#e2d6c4)", boxShadow: "inset 0 0 0 1px rgba(0,0,0,0.04)" }}
@@ -233,7 +258,7 @@ function WelcomeBackCard() {
           <circle cx="95" cy="35" r="16" fill="#b8cfc4" />
           <rect x="30" y="80" width="90" height="55" fill="#f6f2ea" />
           <circle cx="120" cy="70" r="24" fill="#e0c9a6" />
-          <rect x="107" y="94" width="26" height="40" fill={INK} />
+          <rect x="107" y="94" width="26" height="40" fill={PRIMARY} />
         </svg>
       </div>
 
@@ -346,7 +371,7 @@ export default function LoginPage() {
     ? allCountries.filter((c) => c.name.toLowerCase().includes(countryQuery.trim().toLowerCase()))
     : allCountries
 
-    console.log(allCountries[0],"controies")
+  console.log(allCountries[0], "controies")
   useEffect(() => {
     const handleClick = (e) => {
       if (countryBoxRef.current && !countryBoxRef.current.contains(e.target)) {
@@ -631,21 +656,21 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen w-full" style={{ background: BG }}
-
+    <div
+      className="min-h-screen w-full"
       style={{
+        background: BG,
         backgroundImage: `url(${LoginBackground})`,
         backgroundSize: "cover",
         backgroundPosition: "center",
         backgroundRepeat: "no-repeat",
         backgroundAttachment: "scroll",
       }}
-
     >
       {/* ── HEADER ── */}
       <header
-        className="bg-white border-b py-4 sm:py-6 px-4 flex items-center justify-center gap-2 sm:gap-3"
-        style={{ borderColor: LINE }}
+        className="border-b py-4 sm:py-6 px-4 flex items-center justify-center gap-2 sm:gap-3"
+        style={{ borderColor: LINE, background: SURFACE }}
       >
         <img src={logo} alt="Night Owl Designers" className="w-7 h-7 sm:w-9 sm:h-9 rounded-full object-cover shrink-0" />
         <h1
@@ -667,8 +692,8 @@ export default function LoginPage() {
         )}
 
         <div
-          className={`bg-white w-full max-w-full p-5 sm:p-8 md:p-14 relative ${isSignUp ? "sm:w-[540px] md:w-[640px]" : "sm:w-[440px] md:w-[490px]"}`}
-          style={{ boxShadow: "0 2px 18px rgba(0,0,0,0.08)", zIndex: 1 }}
+          className={`w-full max-w-full p-5 sm:p-8 md:p-14 relative ${isSignUp ? "sm:w-[540px] md:w-[640px]" : "sm:w-[440px] md:w-[490px]"}`}
+          style={{ background: SURFACE, boxShadow: "0 2px 18px rgba(0,0,0,0.08)", zIndex: 1 }}
         >
           <h2 className="text-2xl sm:text-3xl mb-2" style={{ fontFamily: "Georgia, serif", color: INK }}>
             {stepHeading()}
@@ -711,7 +736,7 @@ export default function LoginPage() {
                   value={loginPassword}
                   onChange={(e) => setLoginPassword(e.target.value)}
                   className="w-full px-4 py-3.5 pr-12 text-sm outline-none"
-                  style={{ border: `1px solid ${LINE}`, color: INK }}
+                  style={{ border: `1px solid ${LINE}`, color: INK, background: "transparent" }}
                 />
                 <button
                   type="button"
@@ -783,7 +808,7 @@ export default function LoginPage() {
               <div className="mb-5">
                 <FieldLabel>SELECT ROLE</FieldLabel>
                 <div className="flex flex-wrap gap-2">
-                  {["Client", "Designer", "Architect", "Contractor"].map((item) => (
+                  {/* {["Client", "Designer", "Architect", "Contractor", "Material Supplier"].map((item) => (
                     <button
                       key={item}
                       type="button"
@@ -796,6 +821,21 @@ export default function LoginPage() {
                       }
                     >
                       {item}
+                    </button>
+                  ))} */}
+                  {Object.keys(ROLE_LABELS).map((item) => (
+                    <button
+                      key={item}
+                      type="button"
+                      onClick={() => setRole(item)}
+                      className="rounded-full px-4 py-2 text-xs transition-all"
+                      style={
+                        role === item
+                          ? { background: GOLD, color: "#fff" }
+                          : { background: "rgba(201,138,62,0.08)", color: INK_SOFT }
+                      }
+                    >
+                      {ROLE_LABELS[item]}
                     </button>
                   ))}
                 </div>
@@ -842,12 +882,12 @@ export default function LoginPage() {
                       }}
                       onChange={(e) => setPhoneCodeQuery(e.target.value)}
                       className="w-full px-3 py-3.5 text-sm outline-none disabled:opacity-40"
-                      style={{ border: `1px solid ${LINE}`, color: INK }}
+                      style={{ border: `1px solid ${LINE}`, color: INK, background: "transparent" }}
                     />
                     {phoneCodeOpen && (
                       <div
-                        className="absolute z-20 mt-1 w-56 max-h-56 overflow-y-auto bg-white border shadow-lg"
-                        style={{ borderColor: LINE }}
+                        className="absolute z-20 mt-1 w-56 max-h-56 overflow-y-auto border shadow-lg"
+                        style={{ borderColor: LINE, background: SURFACE }}
                       >
                         {filteredPhoneCodes.length === 0 && (
                           <div className="px-4 py-3 text-xs" style={{ color: INK_SOFT }}>No matches</div>
@@ -879,7 +919,7 @@ export default function LoginPage() {
                     disabled={fieldsLocked}
                     onChange={(e) => setPhone(e.target.value)}
                     className="flex-1 min-w-0 px-4 py-3.5 text-sm outline-none disabled:opacity-40"
-                    style={{ border: `1px solid ${LINE}`, color: INK }}
+                    style={{ border: `1px solid ${LINE}`, color: INK, background: "transparent" }}
                     autoComplete="tel"
                   />
                 </div>
@@ -894,7 +934,7 @@ export default function LoginPage() {
                   disabled={fieldsLocked}
                   onChange={(e) => setSignupPassword(e.target.value)}
                   className="w-full px-4 py-3.5 pr-12 text-sm outline-none disabled:opacity-40"
-                  style={{ border: `1px solid ${LINE}`, color: INK }}
+                  style={{ border: `1px solid ${LINE}`, color: INK, background: "transparent" }}
                   autoComplete="new-password"
                 />
                 <button
@@ -918,7 +958,7 @@ export default function LoginPage() {
                     disabled={fieldsLocked || emailVerified}
                     onChange={(e) => setSignupEmail(e.target.value)}
                     className="flex-1 min-w-0 px-4 py-3.5 text-sm outline-none disabled:opacity-40"
-                    style={{ border: `1px solid ${LINE}`, color: INK }}
+                    style={{ border: `1px solid ${LINE}`, color: INK, background: "transparent" }}
                     autoComplete="email"
                   />
                   <button
@@ -996,10 +1036,10 @@ export default function LoginPage() {
                   }}
                   onChange={(e) => setCountryQuery(e.target.value)}
                   className="w-full px-4 py-3.5 text-sm outline-none"
-                  style={{ border: `1px solid ${LINE}`, color: INK }}
+                  style={{ border: `1px solid ${LINE}`, color: INK, background: "transparent" }}
                 />
                 {countryOpen && (
-                  <div className="absolute z-20 mt-1 w-full max-h-56 overflow-y-auto bg-white border shadow-lg" style={{ borderColor: LINE }}>
+                  <div className="absolute z-20 mt-1 w-full max-h-56 overflow-y-auto border shadow-lg" style={{ borderColor: LINE, background: SURFACE }}>
                     {filteredCountries.length === 0 && (
                       <div className="px-4 py-3 text-xs" style={{ color: INK_SOFT }}>No matches</div>
                     )}
@@ -1062,8 +1102,9 @@ export default function LoginPage() {
                   <div>{fullName || "—"} · @{username || "—"}</div>
                   <div className="break-all">{signupEmail || "—"}</div>
                   <div>{phoneCode} {phone || "—"}</div>
-                  <div>Role: {role}</div>
-                </div>
+                  <div>Role: {ROLE_LABELS[role] || role}</div>                
+                  
+                  </div>
               </div>
               <div className="h-px my-5" style={{ background: LINE }} />
               <div className="mb-5">
@@ -1134,7 +1175,7 @@ export default function LoginPage() {
       {/* ── FORGOT PASSWORD MODAL ── */}
       {showForgotModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(31,35,64,0.55)" }}>
-          <div className="relative w-full max-w-md max-h-[90vh] overflow-y-auto bg-white p-5 sm:p-8" style={{ boxShadow: "0 8px 40px rgba(0,0,0,0.2)" }}>
+          <div className="relative w-full max-w-md max-h-[90vh] overflow-y-auto p-5 sm:p-8" style={{ background: SURFACE, boxShadow: "0 8px 40px rgba(0,0,0,0.2)" }}>
             <button
               onClick={() => {
                 setShowForgotModal(false)
@@ -1201,8 +1242,8 @@ export default function LoginPage() {
       {showTermsModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4" style={{ background: "rgba(31,35,64,0.55)" }}>
           <div
-            className="relative flex w-full sm:w-[85%] lg:w-[70%] max-w-3xl flex-col bg-white p-5 sm:p-6 md:p-8"
-            style={{ boxShadow: "0 8px 40px rgba(0,0,0,0.2)", maxHeight: "90vh" }}
+            className="relative flex w-full sm:w-[85%] lg:w-[70%] max-w-3xl flex-col p-5 sm:p-6 md:p-8"
+            style={{ background: SURFACE, boxShadow: "0 8px 40px rgba(0,0,0,0.2)", maxHeight: "90vh" }}
           >
             <button onClick={() => setShowTermsModal(false)} className="absolute right-5 top-5" style={{ color: INK_SOFT }}>✕</button>
 
@@ -1244,4 +1285,3 @@ export default function LoginPage() {
     </div>
   )
 }
-

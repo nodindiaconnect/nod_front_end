@@ -1,46 +1,49 @@
 :root {
-  /* Brand Colors */
   --primary: #4A3428;
   --primary-hover: #3A2418;
 
   --gold: #D4AF37;
   --gold-hover: #C89B24;
 
-  /* Backgrounds */
-  --background: #F8F5F2;
+  --background: #FFFFFF;
   --surface: #FFFFFF;
   --background-secondary: #F2ECE6;
 
-  /* Text */
+
   --heading: #2C2C2C;
   --text: #555555;
   --muted: #8B8178;
 
-  /* Borders */
+
   --border: #E8E2DC;
 
-  /* Status */
+
   --success: #3E7C59;
   --warning: #D89B1E;
   --danger: #B23A48;
 
-  /* Shadows */
+
   --shadow-sm: 0 2px 10px rgba(0,0,0,.06);
   --shadow-md: 0 8px 25px rgba(0,0,0,.10);
   --shadow-lg: 0 15px 40px rgba(0,0,0,.15);
 
-  /* Radius */
   --radius-sm: 6px;
   --radius-md: 12px;
   --radius-lg: 18px;
   --radius-xl: 30px;
 
-  /* Fonts */
   --font-heading: "Playfair Display", serif;
   --font-body: "Poppins", sans-serif;
 
   --transition: all .3s ease;
 }
+
+.cta-secondary {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+
 
 @media (prefers-color-scheme: dark) {
   :root {

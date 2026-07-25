@@ -140,7 +140,7 @@ const baseQueryWithReAuth = async (args, api, extraOptions) => {
   // If a 401 error occurs, logout or handle it (custom behavior)
   if (result?.error?.data?.status_code === 401) {
     console.log("[apiSlice] 401 unauthorized, logging out and clearing cookies");
-    window.location.href = "/login";
+    window.location.href = "/Signin";
     // localStorage.clear();
     Object.keys(Cookies.get()).forEach(function (cookieName) {
       console.log("[apiSlice] removing cookie:", cookieName);

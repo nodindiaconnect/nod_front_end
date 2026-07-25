@@ -20,59 +20,59 @@ export default function FeaturedProjects() {
     setSaves(prev => ({ ...prev, [index]: !prev[index] }))
   }
 
- const projects = [
-  {
-    image: "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=1200",
-    title: "Modern Luxury Living Room",
-    designer: "Aria Sterling",
-    budget: "₹18.5M",
-    location: "New York, USA",
-    duration: "9 Months",
-    className: "md:col-span-1 md:row-span-2 h-[550px] md:h-[700px]",
-  },
-  {
-    image: "https://images.unsplash.com/photo-1484154218962-a197022b5858?w=1200",
-    title: "Scandinavian Kitchen",
-    designer: "Sophia Wilson",
-    budget: "₹5.2M",
-    location: "London, UK",
-    duration: "4 Months",
-    className: "md:col-span-2 md:row-span-1 h-[260px] md:h-[330px]",
-  },
-  {
-    image: "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=1200",
-    title: "Executive Office Interior",
-    designer: "Oliver Bennett",
-    budget: "₹8.8M",
-    location: "Dubai, UAE",
-    duration: "6 Months",
-    className: "md:col-span-1 md:row-span-1 h-[260px] md:h-[330px]",
-  },
-  {
-    image: "https://images.unsplash.com/photo-1494526585095-c41746248156?w=1200",
-    title: "Minimal Bedroom Suite",
-    designer: "Emma Carter",
-    budget: "₹12.0M",
-    location: "Toronto, Canada",
-    duration: "7 Months",
-    className: "md:col-span-1 md:row-span-1 h-[260px] md:h-[330px]",
-  },
-  {
-    image: "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=1200",
-    title: "Luxury Villa Interior",
-    designer: "Daniel Morgan",
-    budget: "₹24.0M",
-    location: "Los Angeles, USA",
-    duration: "11 Months",
-    className: "md:col-span-2 md:row-span-1 h-[260px] md:h-[330px]",
-  },
-];
+  const projects = [
+    {
+      image: "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=1200",
+      title: "Modern Luxury Living Room",
+      designer: "Aria Sterling",
+      budget: "₹18.5M",
+      location: "New York, USA",
+      duration: "9 Months",
+      className: "md:col-span-1 md:row-span-2 h-[550px] md:h-[700px]",
+    },
+    {
+      image: "https://images.unsplash.com/photo-1484154218962-a197022b5858?w=1200",
+      title: "Scandinavian Kitchen",
+      designer: "Sophia Wilson",
+      budget: "₹5.2M",
+      location: "London, UK",
+      duration: "4 Months",
+      className: "md:col-span-2 md:row-span-1 h-[260px] md:h-[330px]",
+    },
+    {
+      image: "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=1200",
+      title: "Executive Office Interior",
+      designer: "Oliver Bennett",
+      budget: "₹8.8M",
+      location: "Dubai, UAE",
+      duration: "6 Months",
+      className: "md:col-span-1 md:row-span-1 h-[260px] md:h-[330px]",
+    },
+    {
+      image: "https://images.unsplash.com/photo-1494526585095-c41746248156?w=1200",
+      title: "Minimal Bedroom Suite",
+      designer: "Emma Carter",
+      budget: "₹12.0M",
+      location: "Toronto, Canada",
+      duration: "7 Months",
+      className: "md:col-span-1 md:row-span-1 h-[260px] md:h-[330px]",
+    },
+    {
+      image: "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=1200",
+      title: "Luxury Villa Interior",
+      designer: "Daniel Morgan",
+      budget: "₹24.0M",
+      location: "Los Angeles, USA",
+      duration: "11 Months",
+      className: "md:col-span-2 md:row-span-1 h-[260px] md:h-[330px]",
+    },
+  ];
 
   return (
-    <section id="projects" className="relative py-36 bg-[var(--background-secondary)] overflow-hidden px-4 md:px-8">
+    <section id="projects" className="relative py-36 bg-[var(--background)] overflow-hidden px-4 md:px-8">
 
       {/* BACKGROUND GLOW */}
-      <div className="absolute top-[30%] left-[-10%] w-[600px] h-[600px] rounded-full bg-gradient-to-tr from-[var(--gold)]/6 via-[var(--primary)]/2 to-transparent blur-[120px] pointer-events-none" />
+      {/* <div className="absolute top-[30%] left-[-10%] w-[600px] h-[600px] rounded-full bg-gradient-to-tr from-[var(--gold)]/6 via-[var(--primary)]/2 to-transparent blur-[120px] pointer-events-none" /> */}
 
       <div className="max-w-7xl mx-auto">
 
@@ -114,7 +114,10 @@ export default function FeaturedProjects() {
                 />
 
                 {/* GRADIENT OVERLAY (Always present, darkens on hover) */}
-                <div className="absolute inset-0 bg-gradient-to-t from-[var(--primary)]/90 via-black/30 to-black/10 transition-opacity duration-500 group-hover:via-black/50 group-hover:from-[var(--primary)]/95 z-10" />
+                {/* This overlay is always dark by design — everything drawn on top of it
+                    must use the mode-stable --on-photo* tokens, not --surface, which
+                    flips to a dark color in dark mode and would disappear here. */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-black/10 transition-opacity duration-500 group-hover:via-black/50 group-hover:from-black/95 z-10" />
 
                 {/* GOLD CORNER ACCENT (top-left frame line, sharp aesthetic) */}
                 <div className="absolute top-0 left-0 w-8 h-[2px] bg-[var(--gold)] z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
@@ -128,7 +131,7 @@ export default function FeaturedProjects() {
                     onClick={(e) => toggleLike(e, index)}
                     className={`h-10 w-10 flex items-center justify-center border transition-all duration-300 backdrop-blur-md cursor-pointer ${isLiked
                       ? "bg-[var(--danger)]/20 border-[var(--danger)]/50 text-[var(--danger)]"
-                      : "bg-[var(--primary)]/45 border-white/10 text-[var(--surface)] hover:bg-[var(--primary)]/80 hover:text-[var(--gold)]"
+                      : "bg-black/45 border-white/10 text-[var(--on-photo)] hover:bg-black/70 hover:text-[var(--gold)]"
                       }`}
                     aria-label="Like project"
                   >
@@ -140,7 +143,7 @@ export default function FeaturedProjects() {
                     onClick={(e) => toggleSave(e, index)}
                     className={`h-10 w-10 flex items-center justify-center border transition-all duration-300 backdrop-blur-md cursor-pointer ${isSaved
                       ? "bg-[var(--gold)]/20 border-[var(--gold)]/50 text-[var(--gold)]"
-                      : "bg-[var(--primary)]/45 border-white/10 text-[var(--surface)] hover:bg-[var(--primary)]/80 hover:text-[var(--gold)]"
+                      : "bg-black/45 border-white/10 text-[var(--on-photo)] hover:bg-black/70 hover:text-[var(--gold)]"
                       }`}
                     aria-label="Save project"
                   >
@@ -153,13 +156,13 @@ export default function FeaturedProjects() {
                 <div className="relative z-20 p-6 md:p-8 flex flex-col items-start translate-y-8 group-hover:translate-y-0 transition-transform duration-500 ease-out">
 
                   {/* Title & Designer */}
-                  <h3 className="text-2xl font-bold text-[var(--surface)] leading-snug mb-1 group-hover:text-[var(--gold)] transition-colors duration-300 font-[var(--font-heading)]">
+                  <h3 className="text-2xl font-bold text-[var(--on-photo)] leading-snug mb-1 group-hover:text-[var(--gold)] transition-colors duration-300 font-[var(--font-heading)]">
                     {project.title}
                   </h3>
 
                   <div className="flex items-center gap-1.5 mb-4">
-                    <User size={12} className="text-[var(--surface)]/70" />
-                    <span className="text-xs text-[var(--surface)]/90 font-light">By {project.designer}</span>
+                    <User size={12} className="text-[var(--on-photo)]/70" />
+                    <span className="text-xs text-[var(--on-photo)]/90 font-light">By {project.designer}</span>
                   </div>
 
                   {/* Stats Grid - Fades in on Hover */}
@@ -170,8 +173,8 @@ export default function FeaturedProjects() {
                         <DollarSign size={10} />
                       </div>
                       <div className="flex flex-col">
-                        <span className="text-[9px] text-[var(--surface)]/60 uppercase tracking-wider">Est. Budget</span>
-                        <span className="text-xs text-[var(--surface)] font-medium">{project.budget}</span>
+                        <span className="text-[9px] text-[var(--on-photo)]/60 uppercase tracking-wider">Est. Budget</span>
+                        <span className="text-xs text-[var(--on-photo)] font-medium">{project.budget}</span>
                       </div>
                     </div>
 
@@ -180,8 +183,8 @@ export default function FeaturedProjects() {
                         <MapPin size={10} />
                       </div>
                       <div className="flex flex-col">
-                        <span className="text-[9px] text-[var(--surface)]/60 uppercase tracking-wider">Location</span>
-                        <span className="text-xs text-[var(--surface)] font-medium">{project.location}</span>
+                        <span className="text-[9px] text-[var(--on-photo)]/60 uppercase tracking-wider">Location</span>
+                        <span className="text-xs text-[var(--on-photo)] font-medium">{project.location}</span>
                       </div>
                     </div>
 
@@ -190,15 +193,15 @@ export default function FeaturedProjects() {
                         <Calendar size={10} />
                       </div>
                       <div className="flex flex-col flex-1">
-                        <span className="text-[9px] text-[var(--surface)]/60 uppercase tracking-wider">Completion Time</span>
-                        <span className="text-xs text-[var(--surface)] font-medium">{project.duration}</span>
+                        <span className="text-[9px] text-[var(--on-photo)]/60 uppercase tracking-wider">Completion Time</span>
+                        <span className="text-xs text-[var(--on-photo)] font-medium">{project.duration}</span>
                       </div>
                     </div>
 
                   </div>
 
                   {/* View Project Button */}
-                  <button className="mt-6 flex items-center gap-1.5 text-xs text-[var(--surface)]/95 font-bold border-b border-white/20 pb-0.5 hover:text-[var(--gold)] hover:border-[var(--gold)] transition-colors duration-300">
+                  <button className="mt-6 flex items-center gap-1.5 text-xs text-[var(--on-photo)]/95 font-bold border-b border-white/20 pb-0.5 hover:text-[var(--gold)] hover:border-[var(--gold)] transition-colors duration-300">
                     <Eye size={12} />
                     <span>View Project Case Study</span>
                   </button>

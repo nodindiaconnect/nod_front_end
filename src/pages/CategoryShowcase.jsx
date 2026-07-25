@@ -100,7 +100,7 @@ export default function CategoryShowcase() {
                 }}
                 onMouseEnter={() => setHovered(cat.key)}
                 onMouseLeave={() => setHovered(null)}
-                className={`relative overflow-hidden rounded-xl shadow-2xl ${cat.width} ${cat.className}`}
+                className={`relative overflow-hidden  ${cat.width} ${cat.className}`}
               >
                 <div className={`relative ${cat.height}`}>
                   <img
@@ -121,7 +121,7 @@ export default function CategoryShowcase() {
                         duration: 0.3,
                         ease: "easeOut",
                       }}
-                      className="flex items-center rounded-full bg-white px-4 py-1.5 shadow-md"
+                      className="flex items-center rounded-sm bg-white px-4 py-1.5 shadow-md"
                     >
                       <AnimatePresence initial={false}>
                         {isHovered && (

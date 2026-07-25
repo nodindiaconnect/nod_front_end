@@ -41,10 +41,10 @@ export default function WorkShowcase() {
   const loopItems = [...projects, ...projects];
 
   return (
-    <section className="relative bg-black overflow-hidden py-16 md:py-20">
+    <section className="relative bg-[#ffffff] overflow-hidden py-16 md:py-20">
       {/* Heading */}
       <div className="px-6 md:px-16 mb-10 md:mb-14">
-        <h2 className="font-[var(--font-heading)] text-white text-3xl md:text-5xl leading-tight">
+        <h2 className="font-[var(--font-heading)] text-gray-900 text-3xl md:text-5xl leading-tight">
           WORK THAT
           <br />
           SPEAKS FOR US
@@ -54,8 +54,8 @@ export default function WorkShowcase() {
       {/* Ruler tick line above the strip */}
       <div className="flex px-6 md:px-16 mb-2">
         {Array.from({ length: 24 }).map((_, i) => (
-          <div key={i} className="flex-1 border-t border-white/15 relative">
-            <span className="absolute -top-2 left-0 w-px h-2 bg-white/25" />
+          <div key={i} className="flex-1 border-t border-gray-300 relative">
+            <span className="absolute -top-2 left-0 w-px h-2 bg-gray-400" />
           </div>
         ))}
       </div>
@@ -95,7 +95,7 @@ export default function WorkShowcase() {
 
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
 
-                <span className="absolute bottom-4 left-1/2 -translate-x-1/2 text-[11px] tracking-[0.25em] text-white/70">
+                <span className="absolute bottom-4 left-1/2 -translate-x-1/2 text-[11px] tracking-[0.25em] text-white/90 font-medium">
                   {p.label}
                 </span>
               </div>
