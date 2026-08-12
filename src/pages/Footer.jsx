@@ -1,5 +1,18 @@
 import { useState } from "react"
-import { ArrowRight } from "lucide-react"
+import {
+    MapPin,
+    Phone,
+    Mail,
+    ArrowUp,
+    Users,
+    LayoutGrid,
+    Palette,
+    UserPlus,
+    Wrench,
+    Building2,
+    Info,
+    Award,
+} from "lucide-react"
 import "../theme.css"
 import logo from "../assets/logo.png"
 
@@ -7,41 +20,26 @@ const root = getComputedStyle(document.documentElement)
 const GOLD = root.getPropertyValue("--gold").trim()
 const LINE = root.getPropertyValue("--border").trim()
 const PRIMARY = root.getPropertyValue("--primary").trim()
-// The footer's background is --primary — a dark brown in BOTH light and dark
-// mode (that's the point: it's meant to always read as a dark band). The
-// old code styled its text with var(--on-photo)/var(--on-photo-muted),
-// tokens that don't exist in theme.css, so the browser fell back to default
-// (near-black) text on that dark brown background — invisible in light mode.
-// Since this bar is intentionally dark regardless of theme, its text is a
-// fixed warm cream rather than a theme-following token.
+
 const FOOTER_TEXT = "#F7F3EA"
 const FOOTER_MUTED = "rgba(247,243,234,0.68)"
 
 export default function Footer() {
     const marketplaceLinks = [
-        { label: "Browse Designers", href: "#designers" },
-        { label: "Browse Projects", href: "#projects" },
-        { label: "Government Tenders", href: "/tenders" },
-        { label: "Design Categories", href: "#services" },
+        { label: "Browse Designers", href: "/portfolios", icon: Users },
+        { label: "Browse Projects", href: "/portfolios", icon: LayoutGrid },
+        { label: "Browse Suppliers", href: "/supplier-products", icon: Palette },
     ]
 
     const professionalsLinks = [
-        { label: "Join as Designer", href: "/Signin" },
-        { label: "Join as Contracter", href: "/Signin" },
-        { label: "Join as Architect", href: "/Signin" },
+        { label: "Join as Designer", href: "/Signin", icon: UserPlus },
+        { label: "Join as Contracter", href: "/Signin", icon: Wrench },
+        { label: "Join as Architect", href: "/Signin", icon: Building2 },
     ]
 
     const companyLinks = [
-        { label: "About Us", href: "/about" },
-        { label: "Why Choose NOD", href: "/why-choose" },
-        { label: "Careers", href: "/careers" },
-    ]
-
-    const legalLinks = [
-        { label: "Privacy Policy", href: "/privacy" },
-        { label: "Terms of Service", href: "/terms" },
-        { label: "Milestone Security", href: "#" },
-        { label: "Trust & Safety", href: "/trust-safety" },
+        { label: "About Us", href: "/about", icon: Info },
+        { label: "Why Choose NOD", href: "/why-choose", icon: Award },
     ]
 
     const handleNavClick = (e, targetId) => {
@@ -60,21 +58,65 @@ export default function Footer() {
         }
     }
 
+    const scrollToTop = () => {
+        window.scrollTo({ top: 0, behavior: "smooth" })
+    }
+
+    const iconLinkStyle = {
+        color: FOOTER_MUTED,
+    }
+
+    // Reusable column of icon + label links
+    const LinkColumn = ({ title, links }) => (
+        <div>
+            <h4
+                className="text-[13px] font-bold uppercase tracking-wide mb-1 font-[var(--font-body)]"
+                style={{ color: FOOTER_TEXT }}
+            >
+                {title}
+            </h4>
+            <div
+                className="h-[3px] w-8 mb-5 rounded-full"
+                style={{ backgroundColor: GOLD }}
+            />
+            <ul className="space-y-4">
+                {links.map((link) => {
+                    const Icon = link.icon
+                    return (
+                        <li key={link.label}>
+                            <a
+                                href={link.href}
+                                onClick={(e) => handleNavClick(e, link.href)}
+                                className="flex items-center gap-2.5 text-sm transition-colors duration-300"
+                                style={iconLinkStyle}
+                                onMouseEnter={(e) => (e.currentTarget.style.color = GOLD)}
+                                onMouseLeave={(e) => (e.currentTarget.style.color = FOOTER_MUTED)}
+                            >
+                                <Icon size={16} strokeWidth={1.75} />
+                                <span>{link.label}</span>
+                            </a>
+                        </li>
+                    )
+                })}
+            </ul>
+        </div>
+    )
+
     return (
         <footer
-            className="border-t pt-24 pb-12 px-6 md:px-8"
+            className="relative border-t pt-20 pb-10 px-6 md:px-8"
             style={{ backgroundColor: PRIMARY, borderColor: LINE }}
         >
             <div className="mx-auto max-w-7xl">
 
-                {/* TOP ROW: LOGO, DIRECTORY, NEWSLETTER */}
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 mb-20">
+                {/* TOP ROW: BRAND, CONTACT INFO, COMPANY, MARKETPLACE, PROFESSIONALS */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-12 mb-16">
 
-                    {/* Logo & Pitch */}
-                    <div className="lg:col-span-4 flex flex-col items-start">
-                        <div className="flex items-center gap-3 mb-6">
+                    {/* Brand column */}
+                    <div className="lg:col-span-1 sm:col-span-2 flex flex-col items-start">
+                        <div className="flex items-center gap-3 mb-5">
                             <div
-                                className="relative h-12 w-12 rounded-full overflow-hidden border"
+                                className="relative h-11 w-11 rounded-full overflow-hidden border"
                                 style={{ borderColor: GOLD }}
                             >
                                 <img src={logo} alt="NOD Logo" className="h-full w-full object-cover" />
@@ -96,15 +138,27 @@ export default function Footer() {
                         </div>
 
                         <p
-                            className="text-sm leading-relaxed max-w-xs mb-8"
+                            className="text-sm leading-relaxed max-w-xs mb-6"
                             style={{ color: FOOTER_MUTED }}
                         >
                             India's premium marketplace matching visionary clients with elite architects, designers, and structural contractors.
                         </p>
 
+                        {/* Tag pills */}
+                        <div className="flex flex-wrap gap-2 mb-6">
+                            {["Trusted", "Curated", "Nationwide"].map((tag) => (
+                                <span
+                                    key={tag}
+                                    className="text-[10px] font-semibold uppercase tracking-wide px-3 py-1 rounded-full border"
+                                    style={{ borderColor: LINE, color: FOOTER_MUTED }}
+                                >
+                                    {tag}
+                                </span>
+                            ))}
+                        </div>
+
                         {/* Social Icons */}
                         <div className="flex gap-3">
-
                             <a href="https://www.instagram.com/nod._india/"
                                 target="_blank"
                                 rel="noopener noreferrer"
@@ -167,151 +221,140 @@ export default function Footer() {
                         </div>
                     </div>
 
-                    {/* Directory Links columns */}
-                    <div className="lg:col-span-8 grid grid-cols-2 sm:grid-cols-5 gap-8">
+                    {/* Contact Info column */}
+                    <div>
+                        <h4
+                            className="text-[13px] font-bold uppercase tracking-wide mb-1 font-[var(--font-body)]"
+                            style={{ color: FOOTER_TEXT }}
+                        >
+                            Contact Info
+                        </h4>
 
-                        {/* Column 1 */}
-                        <div>
-                            <h4
-                                className="text-[10px] font-bold uppercase tracking-widest mb-4 font-[var(--font-body)]"
-                                style={{ color: FOOTER_TEXT }}
-                            >
-                                Marketplace
-                            </h4>
-                            <ul className="space-y-3">
-                                {marketplaceLinks.map((link) => (
-                                    <li key={link.label}>
-                                        <a
-                                            href={link.href}
-                                            onClick={(e) => handleNavClick(e, link.href)}
-                                            className="text-xs transition-colors duration-300"
-                                            style={{ color: FOOTER_MUTED }}
-                                            onMouseEnter={(e) => (e.currentTarget.style.color = GOLD)}
-                                            onMouseLeave={(e) => (e.currentTarget.style.color = FOOTER_MUTED)}
-                                        >
-                                            {link.label}
-                                        </a>
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
+                        <div
+                            className="h-[3px] w-8 mb-5 rounded-full"
+                            style={{ backgroundColor: GOLD }}
+                        />
 
-                        {/* Column 2 */}
-                        <div>
-                            <h4
-                                className="text-[10px] font-bold uppercase tracking-widest mb-4 font-[var(--font-body)]"
-                                style={{ color: FOOTER_TEXT }}
-                            >
-                                Professionals
-                            </h4>
-                            <ul className="space-y-3">
-                                {professionalsLinks.map((link) => (
-                                    <li key={link.label}>
-                                        <a
-                                            href={link.href}
-                                            onClick={(e) => handleNavClick(e, link.href)}
-                                            className="text-xs transition-colors duration-300"
-                                            style={{ color: FOOTER_MUTED }}
-                                            onMouseEnter={(e) => (e.currentTarget.style.color = GOLD)}
-                                            onMouseLeave={(e) => (e.currentTarget.style.color = FOOTER_MUTED)}
-                                        >
-                                            {link.label}
-                                        </a>
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
+                        <ul className="space-y-5">
+                            <li className="flex items-start gap-3">
+                                <span
+                                    className="h-8 w-8 flex-shrink-0 flex items-center justify-center rounded-full border"
+                                    style={{ borderColor: GOLD, color: GOLD }}
+                                >
+                                    <MapPin size={15} strokeWidth={1.75} />
+                                </span>
 
-                        {/* Column 3 */}
-                        <div>
-                            <h4
-                                className="text-[10px] font-bold uppercase tracking-widest mb-4 font-[var(--font-body)]"
-                                style={{ color: FOOTER_TEXT }}
-                            >
-                                Company
-                            </h4>
-                            <ul className="space-y-3">
-                                {companyLinks.map((link) => (
-                                    <li key={link.label}>
+                                <span
+                                    className="text-xs leading-relaxed pt-1.5"
+                                    style={{ color: FOOTER_MUTED }}
+                                >
+                                    NOD Office, 1st Floor, Beside Uday Amrik Homes Main Gate,
+                                    Itarsi Road, Sadar, Betul – 460001, Madhya Pradesh, India
+                                </span>
+                            </li>
 
-                                        <a href={link.href}
-                                            onClick={(e) => handleNavClick(e, link.href)}
-                                            className="text-xs transition-colors duration-300"
-                                            style={{ color: FOOTER_MUTED }}
-                                            onMouseEnter={(e) => (e.currentTarget.style.color = GOLD)}
-                                            onMouseLeave={(e) => (e.currentTarget.style.color = FOOTER_MUTED)}
-                                        >
-                                            {link.label}
-                                        </a>
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
+                            <li className="flex items-start gap-3">
+                                <span
+                                    className="h-8 w-8 flex-shrink-0 flex items-center justify-center rounded-full border"
+                                    style={{ borderColor: GOLD, color: GOLD }}
+                                >
+                                    <Phone size={15} strokeWidth={1.75} />
+                                </span>
 
-                        {/* Column 4 */}
-                        <div>
-                            <h4
-                                className="text-[10px] font-bold uppercase tracking-widest mb-4 font-[var(--font-body)]"
-                                style={{ color: FOOTER_TEXT }}
-                            >
-                                Legal
-                            </h4>
-                            <ul className="space-y-3">
-                                {legalLinks.map((link) => (
-                                    <li key={link.label}>
-                                        <a
-                                            href={link.href}
-                                            className="text-xs transition-colors duration-300"
-                                            style={{ color: FOOTER_MUTED }}
-                                            onMouseEnter={(e) => (e.currentTarget.style.color = GOLD)}
-                                            onMouseLeave={(e) => (e.currentTarget.style.color = FOOTER_MUTED)}
-                                        >
-                                            {link.label}
-                                        </a>
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
+                                <span
+                                    className="text-xs leading-relaxed pt-1.5"
+                                    style={{ color: FOOTER_MUTED }}
+                                >
+                                    +91 8966969035
+                                </span>
+                            </li>
 
+                            <li className="flex items-start gap-3">
+                                <span
+                                    className="h-8 w-8 flex-shrink-0 flex items-center justify-center rounded-full border"
+                                    style={{ borderColor: GOLD, color: GOLD }}
+                                >
+                                    <Mail size={15} strokeWidth={1.75} />
+                                </span>
+
+                                <a
+                                    href="mailto:nodindiaconnect@gmail.com"
+                                    className="text-xs leading-relaxed pt-1.5 underline transition-colors duration-300"
+                                    style={{ color: FOOTER_MUTED }}
+                                    onMouseEnter={(e) =>
+                                        (e.currentTarget.style.color = GOLD)
+                                    }
+                                    onMouseLeave={(e) =>
+                                        (e.currentTarget.style.color = FOOTER_MUTED)
+                                    }
+                                >
+                                    nodindiaconnect@gmail.com
+                                </a>
+                            </li>
+                        </ul>
                     </div>
+
+                    {/* Company column */}
+                    <LinkColumn title="Company" links={companyLinks} />
+
+                    {/* Marketplace column */}
+                    <LinkColumn title="Marketplace" links={marketplaceLinks} />
+
+                    {/* Professionals column */}
+                    <LinkColumn title="Professionals" links={professionalsLinks} />
 
                 </div>
 
-                {/* BOTTOM CONTACT & COPYRIGHT */}
+                {/* BOTTOM BAR */}
                 <div
-                    className="border-t pt-12 flex flex-col md:flex-row items-center justify-between gap-8"
+                    className="border-t pt-8 flex flex-col md:flex-row items-center justify-between gap-4"
                     style={{ borderColor: LINE }}
                 >
+                    <p
+                        className="text-xs font-light text-center md:text-left"
+                        style={{ color: FOOTER_MUTED }}
+                    >
+                        © {new Date().getFullYear()} NOD - Night Owl Designers. All rights reserved.
+                        {"  "}|{"  "}
+                        <a
+                            href="/privacy-policy"
+                            className="underline transition-colors duration-300"
+                            style={{ color: FOOTER_MUTED }}
+                            onMouseEnter={(e) => (e.currentTarget.style.color = GOLD)}
+                            onMouseLeave={(e) => (e.currentTarget.style.color = FOOTER_MUTED)}
+                        >
+                            Privacy Policy
+                        </a>
+                        {"  "}|{"  "}
+                        <a
+                            href="/terms"
+                            className="underline transition-colors duration-300"
+                            style={{ color: FOOTER_MUTED }}
+                            onMouseEnter={(e) => (e.currentTarget.style.color = GOLD)}
+                            onMouseLeave={(e) => (e.currentTarget.style.color = FOOTER_MUTED)}
+                        >
+                            Terms of Service
+                        </a>
+                    </p>
 
-                    {/* Contact Information */}
-                    <div className="w-full md:w-auto flex flex-col items-start gap-3">
-                        <p className="text-xs mt-1 font-light tracking-wide" style={{ color: FOOTER_MUTED }}>
-                            <strong>Contact us :</strong> +91 8966969035, +91 9926378062
-                        </p>
-                        <p className="text-xs mt-1 font-light tracking-wide" style={{ color: FOOTER_MUTED }}>
-                            <strong>Business Hours :</strong> Monday to Saturday: 10 AM to 6 PM IST
-                        </p>
-                        <p className="text-xs mt-1 font-light tracking-wide" style={{ color: FOOTER_MUTED }}>
-                            <strong>Email :</strong> nightowldesignershelp@gmail.com
-                        </p>
-                        <p className="text-xs mt-1 font-light tracking-wide" style={{ color: FOOTER_MUTED }}>
-                            <strong>Postal Address :</strong> 1st Floor, Beside Uday Amrik Homes Main <br /> Gate Itarsi Road Sadar Betul 460001 Madhya Pradesh India
-                        </p>
-                    </div>
-
-                    {/* Copyright */}
-                    <div className="text-center md:text-right">
-                        <p className="text-xs font-light" style={{ color: FOOTER_MUTED }}>
-                            © {new Date().getFullYear()} NOD-Night Owl Designers. All rights reserved.
-                        </p>
-                        <p className="text-[10px] mt-1 font-light tracking-wide" style={{ color: FOOTER_MUTED, opacity: 0.7 }}>
-                            Designed in India • Connecting spatial excellence globally.
-                        </p>
-                    </div>
-
+                    <p
+                        className="text-[10px] font-light tracking-wide text-center md:text-right"
+                        style={{ color: FOOTER_MUTED, opacity: 0.7 }}
+                    >
+                        Designed in India • Connecting spatial excellence globally.
+                    </p>
                 </div>
+            </div>
 
-            </div >
-        </footer >
+            {/* Scroll to top button */}
+            <button
+                onClick={scrollToTop}
+                aria-label="Scroll to top"
+                className="absolute right-6 md:right-8 bottom-6 md:bottom-8 h-12 w-12 rounded-full flex items-center justify-center shadow-lg transition-transform duration-300 hover:scale-105"
+                style={{ backgroundColor: GOLD, color: PRIMARY }}
+            >
+                <ArrowUp size={20} strokeWidth={2} />
+            </button>
+        </footer>
     )
 }

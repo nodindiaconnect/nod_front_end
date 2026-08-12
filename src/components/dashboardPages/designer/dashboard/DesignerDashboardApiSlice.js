@@ -1,5 +1,6 @@
 
 
+
 import { apiSlice } from "../../../../ApiSliceComponent/jaiMaxApi"
 
 export const designerApiSlice = apiSlice.injectEndpoints({
@@ -15,13 +16,21 @@ export const designerApiSlice = apiSlice.injectEndpoints({
       }),
       providesTags: ["DesignerQuotations"],
     }),
+
+
     getDesignerProjects: builder.query({
-      query: (status) => ({
+      query: ({ status, page = 1, limit = 10 } = {}) => ({
         url: "/Designer/me/projects",
-        params: status ? { status } : undefined,
+        params: {
+          ...(status && { status }),
+          page,
+          limit,
+        },
       }),
       providesTags: ["DesignerProjects"],
     }),
+
+
     sendDesignerQuotation: builder.mutation({
       query: (body) => ({
         url: "/Designer/quotations",
@@ -37,7 +46,44 @@ export const designerApiSlice = apiSlice.injectEndpoints({
       }),
       invalidatesTags: ["DesignerUserDetails", "DesignerQuotations"],
     }),
+
+
+    getUserPortfolioWithPagination: builder.query({
+      query: ({ userId, page = 1, limit = 10 }) => ({
+        url: `/portfolio/${userId}/posts-paginated`,
+        params: { page, limit },
+      }),
+      providesTags: (result, error, { userId }) => [
+        { type: "UserPortfolioPaginated", id: userId },
+      ],
+    }),
+    createPost: builder.mutation({
+      query: (body) => ({
+        url: "/portfolio/post/create",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["UserPortfolioPaginated", "Portfolios", "Feed"],
+    }),
+    updatePost: builder.mutation({
+      query: ({ postId, ...body }) => ({
+        url: `/portfolio/post/${postId}`,
+        method: "PUT",
+        body,
+      }),
+      invalidatesTags: ["UserPortfolioPaginated", "Portfolios", "Feed"],
+    }),
+    deletePost: builder.mutation({
+      query: (postId) => ({
+        url: `/portfolio/post/${postId}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["UserPortfolioPaginated", "Portfolios", "Feed"],
+    }),
   }),
+
+
+
 })
 
 export const {
@@ -46,5 +92,12 @@ export const {
   useGetDesignerProjectsQuery,
   useSendDesignerQuotationMutation,
   useWithdrawDesignerQuotationMutation,
+  useGetUserPortfolioWithPaginationQuery,
+  useCreatePostMutation,
+  useGetPostByIdQuery,
+  useUpdatePostMutation,
+  useDeletePostMutation,
+
 } = designerApiSlice
+
 

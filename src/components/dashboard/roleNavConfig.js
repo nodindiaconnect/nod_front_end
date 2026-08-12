@@ -1,5 +1,3 @@
-
-
 import {
   Home,
   FolderKanban,
@@ -17,17 +15,17 @@ import {
   Star,
 } from "lucide-react"
 
-// Role codes match the backend enum: 1=Client, 2=Designer, 3=Architect, 4=Contractor
+// Role names now come directly from the backend as strings
 export const ROLE_NAMES = {
-  1: "Client",
-  2: "Designer",
-  3: "Architect",
-  4: "Contractor",
-  5: "Material Supplier",
+  Client: "Client",
+  Designer: "Designer",
+  Architect: "Architect",
+  Contractor: "Contractor",
+  MaterialSupplier: "Material Supplier",
 }
 
 export const NAV_CONFIG = {
-  1: [ // Client
+  Client: [
     { label: "Dashboard", path: "/dashboard", icon: Home, end: true },
     { label: "My Projects", path: "/dashboard/projects", icon: FolderKanban },
     { label: "Quotations", path: "/dashboard/find", icon: Search },
@@ -35,33 +33,27 @@ export const NAV_CONFIG = {
     { label: "Payments", path: "/dashboard/payments", icon: CreditCard },
     { label: "Reviews", path: "/dashboard/reviews", icon: Star },
     { label: "Logout", action: "logout", icon: LogOut },
-
   ],
-  2: [ // Designer
+  Designer: [
     { label: "Dashboard", path: "/dashboard", icon: Home, end: true },
     { label: "Browse Projects", path: "/dashboard/browse-projects", icon: Image },
-    // { label: "Portfolio", path: "/dashboard/portfolio", icon: Image },
-    // { label: "Proposals", path: "/dashboard/proposals", icon: FileSignature },
+    { label: "CreatePosts", path: "/dashboard/posts", icon: FileSignature },
     { label: "Active Projects", path: "/dashboard/projects", icon: FolderKanban },
     { label: "Messages", path: "/dashboard/messages", icon: MessageSquare },
     { label: "Earnings", path: "/dashboard/earnings", icon: Wallet },
     { label: "Reviews", path: "/dashboard/reviews", icon: Star },
     { label: "Logout", action: "logout", icon: LogOut },
-
   ],
-  3: [ // Architect
+  Architect: [
     { label: "Dashboard", path: "/dashboard", icon: Home, end: true },
     { label: "Browse Projects", path: "/dashboard/browse-projects", icon: Image },
-    // { label: "Portfolio", path: "/dashboard/portfolio", icon: Image },
-    // { label: "Proposals", path: "/dashboard/proposals", icon: FileSignature },
     { label: "Active Projects", path: "/dashboard/projects", icon: FolderKanban },
     { label: "Messages", path: "/dashboard/messages", icon: MessageSquare },
     { label: "Earnings", path: "/dashboard/earnings", icon: Wallet },
     { label: "Reviews", path: "/dashboard/reviews", icon: Star },
     { label: "Logout", action: "logout", icon: LogOut },
-
   ],
-  4: [ // Contractor
+  Contractor: [
     { label: "Dashboard", path: "/dashboard", icon: Home, end: true },
     { label: "Browse Projects", path: "/dashboard/browse-projects", icon: Image },
     { label: "Active Jobs", path: "/dashboard/projects", icon: Wrench },
@@ -71,10 +63,8 @@ export const NAV_CONFIG = {
     { label: "Earnings", path: "/dashboard/earnings", icon: Wallet },
     { label: "Reviews", path: "/dashboard/reviews", icon: Star },
     { label: "Logout", action: "logout", icon: LogOut },
-
   ],
-
-  5: [ // Material Supplier
+  MaterialSupplier: [
     { label: "Dashboard", path: "/dashboard", icon: Home, end: true },
     { label: "Products", path: "/dashboard/products", icon: Image },
     { label: "Create Product", path: "/dashboard/products/create", icon: FileText },
@@ -90,5 +80,3 @@ export const getStoredUser = () => {
     return null
   }
 }
-
-

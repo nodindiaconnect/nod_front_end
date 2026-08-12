@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { Heart, Bookmark, Eye, MapPin, Calendar, DollarSign, User } from "lucide-react"
+import { Heart, Bookmark, Eye, MapPin, Calendar, IndianRupee, User } from "lucide-react"
 import { motion } from "framer-motion"
 import "../theme.css"
 
@@ -170,7 +170,7 @@ export default function FeaturedProjects() {
 
                     <div className="flex items-center gap-2">
                       <div className="h-6 w-6 flex items-center justify-center text-[var(--gold)] border border-white/10 bg-white/5">
-                        <DollarSign size={10} />
+                        <IndianRupee size={10} />
                       </div>
                       <div className="flex flex-col">
                         <span className="text-[9px] text-[var(--on-photo)]/60 uppercase tracking-wider">Est. Budget</span>
@@ -201,10 +201,10 @@ export default function FeaturedProjects() {
                   </div>
 
                   {/* View Project Button */}
-                  <button className="mt-6 flex items-center gap-1.5 text-xs text-[var(--on-photo)]/95 font-bold border-b border-white/20 pb-0.5 hover:text-[var(--gold)] hover:border-[var(--gold)] transition-colors duration-300">
+                  {/* <button className="mt-6 flex items-center gap-1.5 text-xs text-[var(--on-photo)]/95 font-bold border-b border-white/20 pb-0.5 hover:text-[var(--gold)] hover:border-[var(--gold)] transition-colors duration-300">
                     <Eye size={12} />
                     <span>View Project Case Study</span>
-                  </button>
+                  </button> */}
 
                 </div>
 

@@ -247,35 +247,7 @@ export default function HeroSection({ panelRef }) {
           treat the details like the whole project.
         </p>
 
-        {/* CTA Button — improved hover state */}
-        <div
-          style={{
-            marginTop: 32,
-            opacity: loaded ? 1 : 0,
-            transform: loaded ? "translateY(0)" : "translateY(12px)",
-            transition: "opacity 0.6s ease 0.55s, transform 0.6s ease 0.55s",
-          }}
-        >
-          <button
-            className="px-7 py-3.5 rounded-full text-xs md:text-sm font-medium tracking-[2px] uppercase transition-all duration-200 hover:shadow-lg hover:scale-105 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 active:scale-95"
-            style={{
-              background: ON_PHOTO,
-              color: ON_PHOTO_CTA_TEXT,
-              outlineColor: GOLD,
-            }}
-            onClick={() => navigate("/signin")}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = GOLD
-              e.currentTarget.style.color = ON_PHOTO
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = ON_PHOTO
-              e.currentTarget.style.color = ON_PHOTO_CTA_TEXT
-            }}
-          >
-            Start a Project
-          </button>
-        </div>
+      
       </div>
 
       {/* SLIDE INDICATORS — enhanced visibility and interactivity */}

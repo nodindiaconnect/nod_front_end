@@ -75,12 +75,10 @@ export default function About() {
     return (
         <div style={{ backgroundColor: "var(--background)" }}>
 
-            {/* ============ HERO ============ */}
-            <section
+            {/* <section
                 className="relative overflow-hidden px-6 md:px-8 pt-28 pb-24"
                 style={{ backgroundColor: "var(--primary)" }}
             >
-                {/* Blueprint grid texture */}
                 <div
                     className="pointer-events-none absolute inset-0"
                     style={{
@@ -91,7 +89,6 @@ export default function About() {
                 />
 
                 <div className="relative mx-auto max-w-5xl">
-                    {/* Corner registration marks — drafting-sheet reference */}
                     <div className="relative pt-10 pb-12 px-2 md:px-6">
                         {[
                             "top-0 left-0 border-t border-l",
@@ -136,40 +133,92 @@ export default function About() {
                             without the usual back-and-forth.
                         </p>
 
-                        {/* Spec-sheet style stat row */}
-                        <div className="flex flex-wrap gap-x-10 gap-y-4 mt-12">
-                            {[
-                                ["500+", "Verified professionals"],
-                                ["30+", "Cities served"],
-                                ["₹0", "Upfront platform fees"],
-                            ].map(([stat, label], i) => (
-                                <div key={label} className="flex items-center gap-10">
-                                    <div>
-                                        <p
-                                            className="font-[var(--font-heading)] text-3xl"
-                                            style={{ color: "var(--surface)" }}
-                                        >
-                                            {stat}
-                                        </p>
-                                        <p
-                                            className="text-[11px] uppercase tracking-widest mt-1"
-                                            style={{ color: "rgba(255,255,255,0.55)" }}
-                                        >
-                                            {label}
-                                        </p>
-                                    </div>
-                                    {i < 2 && (
-                                        <span
-                                            className="hidden sm:block h-10 w-px"
-                                            style={{ backgroundColor: "var(--gold)", opacity: 0.4 }}
-                                        />
-                                    )}
-                                </div>
-                            ))}
-                        </div>
+                    
+                    </div>
+                </div>
+            </section> */}
+
+
+            {/* ============ HERO ============ */}
+            <section
+                className="relative overflow-hidden px-6 md:px-8 pt-28 pb-24"
+                style={{
+                    backgroundColor: "var(--primary)",
+                    backgroundImage: "url('https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSsxkFK7oGyTzxf1r15RXMfK4zHQotG5c2G5aXnoRuCGA&s=10  ')",
+                    backgroundSize: "cover",
+                    backgroundPosition: "center",
+                }}
+            >
+                {/* Dark overlay */}
+                <div
+                    className="pointer-events-none absolute inset-0"
+                    style={{
+                        background:
+                            "linear-gradient(90deg, rgba(20,15,10,0.92) 0%, rgba(20,15,10,0.78) 45%, rgba(20,15,10,0.55) 100%)",
+                    }}
+                />
+
+                {/* Blueprint grid texture */}
+                <div
+                    className="pointer-events-none absolute inset-0"
+                    style={{
+                        backgroundImage:
+                            "linear-gradient(rgba(212,175,55,0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(212,175,55,0.07) 1px, transparent 1px)",
+                        backgroundSize: "42px 42px",
+                    }}
+                />
+
+                <div className="relative mx-auto max-w-5xl">
+                    {/* Corner registration marks */}
+                    <div className="relative pt-10 pb-12 px-2 md:px-6">
+                        {[
+                            "top-0 left-0 border-t border-l",
+                            "top-0 right-0 border-t border-r",
+                            "bottom-0 left-0 border-b border-l",
+                            "bottom-0 right-0 border-b border-r",
+                        ].map((pos) => (
+                            <span
+                                key={pos}
+                                className={`absolute h-4 w-4 md:h-5 md:w-5 ${pos}`}
+                                style={{ borderColor: "var(--gold)" }}
+                            />
+                        ))}
+
+                        <p
+                            className="text-[11px] font-semibold uppercase tracking-[0.3em] mb-6"
+                            style={{ color: "var(--gold)" }}
+                        >
+                            About NOD
+                        </p>
+
+                        <h1
+                            className="font-[var(--font-heading)] leading-[1.05] mb-8"
+                            style={{
+                                color: "var(--surface)",
+                                fontSize: "clamp(2.25rem, 5vw, 4rem)",
+                            }}
+                        >
+                            Good design doesn't
+                            <br />
+                            keep office hours.
+                            <span style={{ color: "var(--gold)" }}>
+                                —neither do we.
+                            </span>
+                        </h1>
+
+                        <p
+                            className="max-w-xl text-base leading-relaxed"
+                            style={{ color: "rgba(255,255,255,0.75)" }}
+                        >
+                            NOD is India's marketplace for interior designers, architects,
+                            and contractors — built so a homeowner in Betul and a studio
+                            in Mumbai can find each other, agree on scope, and build
+                            something real without the usual back-and-forth.
+                        </p>
                     </div>
                 </div>
             </section>
+
 
             {/* ============ STORY ============ */}
             <section

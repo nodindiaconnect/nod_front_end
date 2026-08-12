@@ -1,7 +1,8 @@
-
 import React, { useState } from "react"
 import { useGetContractorProjectsQuery } from "./dashboard/contractorApiSlice"
 import ProjectDetailsModal from "../../../global/Projectdetailsmodal"
+import Pagination from "../../../global/pagination"
+import Loader from "../../../global/Loader"
 import {
   ChevronLeft,
   ChevronRight,
@@ -9,7 +10,6 @@ import {
   Send,
   RefreshCw,
   AlertCircle,
-  Loader2,
   ImageOff,
   Image as ImageIcon,
   MapPin,
@@ -20,7 +20,6 @@ import {
   XCircle,
   LayoutGrid,
 } from "lucide-react"
-import Loader from "../../../global/Loader"
 
 const C = {
   primary: "var(--primary)",
@@ -55,7 +54,15 @@ const STATUS_MAP = {
   CANCELLED: { label: "Cancelled", color: C.danger, icon: XCircle },
 }
 
-const IMAGE_TYPES = ["PROPERTY_PHOTO", "REFERENCE_IMAGE"]
+// Only real, browser-renderable image types belong in the carousel.
+// PDFs (and HEIC, which browsers can't render inline) stay out of the
+// swipeable card carousel — they still appear inside the modal's
+// Attachments section as file/link cards.
+const CAROUSEL_IMAGE_TYPES = ["PROPERTY_PHOTO", "REFERENCE_IMAGE"]
+
+function isRenderableImageUrl(url = "") {
+  return /\.(jpe?g|png|gif|webp|avif)$/i.test(url)
+}
 
 function formatCurrency(n) {
   if (n === null || n === undefined) return "-"
@@ -94,7 +101,7 @@ function StatusBadge({ status, size = "normal" }) {
   )
 }
 
-/* ---------- Image carousel used inside each card ---------- */
+/* ---------- Image carousel: only real images, PDFs/HEIC filtered out before this receives props ---------- */
 function CardImageCarousel({ images, title }) {
   const [index, setIndex] = useState(0)
   const hasMultiple = images.length > 1
@@ -151,20 +158,10 @@ function CardImageCarousel({ images, title }) {
 
       {hasMultiple && (
         <>
-          <button
-            type="button"
-            onClick={goPrev}
-            aria-label="Previous photo"
-            className="carousel-arrow carousel-arrow--left"
-          >
+          <button type="button" onClick={goPrev} aria-label="Previous photo" className="carousel-arrow carousel-arrow--left">
             <ChevronLeft size={17} strokeWidth={2.5} aria-hidden="true" />
           </button>
-          <button
-            type="button"
-            onClick={goNext}
-            aria-label="Next photo"
-            className="carousel-arrow carousel-arrow--right"
-          >
+          <button type="button" onClick={goNext} aria-label="Next photo" className="carousel-arrow carousel-arrow--right">
             <ChevronRight size={17} strokeWidth={2.5} aria-hidden="true" />
           </button>
 
@@ -179,7 +176,6 @@ function CardImageCarousel({ images, title }) {
               alignItems: "center",
               gap: 4,
               background: "rgba(20,16,12,0.55)",
-              backdropFilter: "blur(2px)",
               color: "#fff",
               fontSize: 11,
               fontFamily: C.fontBody,
@@ -234,9 +230,10 @@ function CardImageCarousel({ images, title }) {
   )
 }
 
-/* ---------- Card: carousel on top, caption + buttons always visible below ---------- */
 function ProjectCard({ project, onViewDetails, onBid }) {
-  const images = project.attachments.filter((a) => IMAGE_TYPES.includes(a.type))
+  const images = project.attachments.filter(
+    (a) => CAROUSEL_IMAGE_TYPES.includes(a.type) && isRenderableImageUrl(a.url)
+  )
   const budgetLabel = `Estimated budget ${formatCurrency(project.budgetMin)} to ${formatCurrency(project.budgetMax)}`
 
   const handleViewDetails = () => onViewDetails(project)
@@ -255,7 +252,7 @@ function ProjectCard({ project, onViewDetails, onBid }) {
         overflow: "hidden",
         border: `1px solid ${C.border}`,
         background: C.surface,
-        transition: "transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease",
+        transition: "transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease",
         display: "flex",
         flexDirection: "column",
       }}
@@ -277,58 +274,6 @@ function ProjectCard({ project, onViewDetails, onBid }) {
         }}
       >
         <CardImageCarousel images={images} title={project.title} />
-
-        <div
-          className="card-overlay"
-          aria-hidden="true"
-          style={{
-            position: "absolute",
-            inset: 0,
-            background: "linear-gradient(180deg, rgba(20,16,12,0) 40%, rgba(20,16,12,0.85) 100%)",
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "flex-end",
-            padding: "14px",
-            opacity: 0,
-            transition: "opacity 0.3s ease",
-            textAlign: "left",
-            pointerEvents: "none",
-          }}
-        >
-          <span
-            style={{
-              color: "rgba(255,255,255,0.65)",
-              fontFamily: C.fontBody,
-              fontSize: 10,
-              textTransform: "uppercase",
-              letterSpacing: "0.04em",
-            }}
-          >
-            Est. budget
-          </span>
-          <span
-            style={{
-              color: "#fff",
-              fontFamily: C.fontBody,
-              fontSize: 14,
-              fontWeight: 700,
-              overflowWrap: "anywhere",
-            }}
-          >
-            {formatCurrency(project.budgetMin)} - {formatCurrency(project.budgetMax)}
-          </span>
-          <span
-            style={{
-              color: "rgba(255,255,255,0.8)",
-              fontFamily: C.fontBody,
-              fontSize: 11,
-              marginTop: 4,
-              overflowWrap: "anywhere",
-            }}
-          >
-            {project.servicesRequired.join(", ")}
-          </span>
-        </div>
       </div>
 
       <div style={{ padding: "14px 16px 16px", display: "flex", flexDirection: "column", flex: 1 }}>
@@ -338,7 +283,7 @@ function ProjectCard({ project, onViewDetails, onBid }) {
             justifyContent: "space-between",
             alignItems: "flex-start",
             gap: 8,
-            marginBottom: 4,
+            marginBottom: 6,
             flexWrap: "wrap",
           }}
         >
@@ -346,7 +291,8 @@ function ProjectCard({ project, onViewDetails, onBid }) {
             style={{
               fontFamily: C.fontHeading,
               color: C.heading,
-              fontSize: 16,
+              fontSize: 15,
+              fontWeight: 700,
               margin: 0,
               lineHeight: 1.3,
               overflowWrap: "anywhere",
@@ -365,29 +311,41 @@ function ProjectCard({ project, onViewDetails, onBid }) {
             fontFamily: C.fontBody,
             color: C.muted,
             fontSize: 12,
-            margin: "0 0 12px",
-            overflowWrap: "anywhere",
+            fontWeight: 400,
+            margin: "0 0 6px",
           }}
         >
           <MapPin size={12} strokeWidth={2.25} aria-hidden="true" style={{ flexShrink: 0 }} />
           {project.city}, {project.state}
         </p>
 
-        <div style={{ display: "flex", gap: 8, marginTop: "auto", flexWrap: "wrap" }}>
+        <p
+          style={{
+            fontFamily: C.fontBody,
+            color: C.heading,
+            fontSize: 13,
+            fontWeight: 600,
+            margin: "0 0 12px",
+          }}
+        >
+          {formatCurrency(project.budgetMin)} – {formatCurrency(project.budgetMax)}
+        </p>
+
+        <div style={{ display: "flex", gap: 8, marginTop: "auto" }}>
           <button
             onClick={() => onViewDetails(project)}
             className="card-btn card-btn--ghost"
             style={{
-              flex: "1 1 120px",
+              flex: 1,
               display: "inline-flex",
               alignItems: "center",
               justifyContent: "center",
               gap: 6,
-              padding: "10px",
+              padding: "9px",
               borderRadius: C.radiusSm,
-              border: `1px solid ${C.primary}`,
+              border: `1px solid ${C.border}`,
               background: "transparent",
-              color: C.primary,
+              color: C.text,
               fontFamily: C.fontBody,
               fontWeight: 600,
               fontSize: 12,
@@ -396,22 +354,22 @@ function ProjectCard({ project, onViewDetails, onBid }) {
             }}
           >
             <Eye size={14} strokeWidth={2.25} aria-hidden="true" />
-            View details
+            Details
           </button>
           <button
             onClick={() => onBid(project)}
             aria-label={`Send bid for ${project.title}`}
             className="card-btn"
             style={{
-              flex: "1 1 120px",
+              flex: 1,
               display: "inline-flex",
               alignItems: "center",
               justifyContent: "center",
               gap: 6,
-              padding: "10px",
+              padding: "9px",
               borderRadius: C.radiusSm,
               border: "none",
-              background: C.gold,
+              background: C.primary,
               color: "#fff",
               fontFamily: C.fontBody,
               fontWeight: 600,
@@ -419,8 +377,8 @@ function ProjectCard({ project, onViewDetails, onBid }) {
               cursor: "pointer",
               transition: C.transition,
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = C.goldHover)}
-            onMouseLeave={(e) => (e.currentTarget.style.background = C.gold)}
+            onMouseEnter={(e) => (e.currentTarget.style.background = C.primaryHover)}
+            onMouseLeave={(e) => (e.currentTarget.style.background = C.primary)}
           >
             <Send size={13} strokeWidth={2.25} aria-hidden="true" />
             Send bid
@@ -432,20 +390,35 @@ function ProjectCard({ project, onViewDetails, onBid }) {
 }
 
 export default function ProposalsPage() {
-  const { data, isLoading, isError, refetch } = useGetContractorProjectsQuery()
   const [selectedProject, setSelectedProject] = useState(null)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [limit] = useState(12)
+  const [statusFilter, setStatusFilter] = useState("")
+
+  const { data, isLoading, isFetching, isError, refetch } = useGetContractorProjectsQuery({
+    status: statusFilter || undefined,
+    page: currentPage,
+    limit,
+  })
 
   const projects = data?.data || []
+  const pagination = data?.pagination
 
   const handleBid = (project) => {
     console.log("Send bid for project:", project.id)
   }
 
-  if (isLoading) {
-    return (
-      <Loader />
-    )
+  const handlePageChange = (newPage) => {
+    setCurrentPage(newPage)
+    window.scrollTo({ top: 0, behavior: "smooth" })
   }
+
+  const handleStatusFilter = (status) => {
+    setStatusFilter(status)
+    setCurrentPage(1)
+  }
+
+  if (isLoading) return <Loader />
 
   if (isError) {
     return (
@@ -467,7 +440,6 @@ export default function ProposalsPage() {
         <div style={{ fontFamily: C.fontBody, color: C.danger, fontSize: 15 }}>Failed to load projects.</div>
         <button
           onClick={refetch}
-          className="card-btn"
           style={{
             display: "inline-flex",
             alignItems: "center",
@@ -480,10 +452,7 @@ export default function ProposalsPage() {
             fontFamily: C.fontBody,
             fontWeight: 600,
             cursor: "pointer",
-            transition: C.transition,
           }}
-          onMouseEnter={(e) => (e.currentTarget.style.background = C.primaryHover)}
-          onMouseLeave={(e) => (e.currentTarget.style.background = C.primary)}
         >
           <RefreshCw size={14} strokeWidth={2.25} aria-hidden="true" />
           Retry
@@ -495,86 +464,77 @@ export default function ProposalsPage() {
   return (
     <div style={{ background: C.background, minHeight: "100vh", padding: "32px 16px" }}>
       <style>{`
-        .project-card:hover,
-        .project-card:focus-within {
-          transform: translateY(-4px);
-          box-shadow: var(--shadow-lg);
-          border-color: var(--gold);
+        .project-card:hover, .project-card:focus-within {
+          transform: translateY(-2px);
+          box-shadow: var(--shadow-md);
+          border-color: var(--primary);
         }
-        .project-card:hover .card-overlay,
-        .project-card:focus-within .card-overlay {
-          opacity: 1;
-        }
-
-        .card-image-wrap:focus-visible {
-          outline: 2px solid var(--primary);
-          outline-offset: -2px;
-        }
-
+        .card-image-wrap:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
         .carousel-arrow {
-          position: absolute;
-          top: 50%;
-          transform: translateY(-50%);
-          width: 28px;
-          height: 28px;
-          border-radius: 50%;
-          border: none;
-          background: rgba(20, 16, 12, 0.45);
-          backdrop-filter: blur(2px);
-          color: #fff;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-          transition: var(--transition), opacity 0.2s ease;
-          z-index: 2;
-          opacity: 0;
+          position: absolute; top: 50%; transform: translateY(-50%);
+          width: 28px; height: 28px; border-radius: 50%; border: none;
+          background: rgba(20,16,12,0.45); color: #fff;
+          display: flex; align-items: center; justify-content: center;
+          cursor: pointer; transition: var(--transition), opacity 0.2s ease;
+          z-index: 2; opacity: 0;
         }
-        .project-card:hover .carousel-arrow,
-        .project-card:focus-within .carousel-arrow {
-          opacity: 1;
-        }
-        .carousel-arrow:hover { background: rgba(20, 16, 12, 0.75); }
-        .carousel-arrow:focus-visible {
-          opacity: 1;
-          outline: 2px solid #fff;
-          outline-offset: 1px;
-        }
+        .project-card:hover .carousel-arrow, .project-card:focus-within .carousel-arrow { opacity: 1; }
+        .carousel-arrow:hover { background: rgba(20,16,12,0.75); }
         .carousel-arrow--left { left: 8px; }
         .carousel-arrow--right { right: 8px; }
-
-        .card-btn--ghost:hover {
-          background: var(--primary) !important;
-          color: #fff !important;
-        }
-
-        @media (hover: none) {
-          .carousel-arrow { opacity: 1; background: rgba(20, 16, 12, 0.55); }
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-          .project-card, .carousel-arrow { transition: none !important; }
-        }
+        .card-btn--ghost:hover { border-color: var(--primary) !important; color: var(--primary) !important; }
+        @media (hover: none) { .carousel-arrow { opacity: 1; background: rgba(20,16,12,0.55); } }
+        @media (prefers-reduced-motion: reduce) { .project-card, .carousel-arrow { transition: none !important; } }
       `}</style>
 
       <div style={{ maxWidth: 1280, margin: "0 auto" }}>
-        <h1
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-            fontFamily: C.fontHeading,
-            color: C.heading,
-            fontSize: 28,
-            marginBottom: 6,
-          }}
-        >
-          <LayoutGrid size={24} strokeWidth={2} color={C.primary} aria-hidden="true" />
-          Available projects
-        </h1>
-        <p style={{ fontFamily: C.fontBody, color: C.muted, fontSize: 14, marginBottom: 28 }}>
-          Browse projects matching your services and submit your proposal.
-        </p>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12, marginBottom: 20 }}>
+          <div>
+            <h1
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                fontFamily: C.fontHeading,
+                color: C.heading,
+                fontSize: 24,
+                fontWeight: 700,
+                margin: 0,
+              }}
+            >
+              <LayoutGrid size={22} strokeWidth={2} color={C.primary} aria-hidden="true" />
+              Available projects
+            </h1>
+            <p style={{ fontFamily: C.fontBody, color: C.muted, fontSize: 13, margin: "4px 0 0" }}>
+              Browse projects matching your services and submit your proposal.
+            </p>
+          </div>
+
+          {/* <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+            {["", "WAITING_FOR_QUOTATIONS", "IN_PROGRESS", "COMPLETED", "CANCELLED"].map((s) => (
+              <button
+                key={s || "ALL"}
+                onClick={() => handleStatusFilter(s)}
+                style={{
+                  fontFamily: C.fontBody,
+                  fontSize: 11,
+                  fontWeight: 600,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.03em",
+                  padding: "7px 12px",
+                  borderRadius: C.radiusSm,
+                  border: "none",
+                  cursor: "pointer",
+                  background: statusFilter === s ? C.primary : C.backgroundSecondary,
+                  color: statusFilter === s ? "#fff" : C.muted,
+                  transition: C.transition,
+                }}
+              >
+                {s ? (STATUS_MAP[s]?.label || s) : "All"}
+              </button>
+            ))}
+          </div> */}
+        </div>
 
         {projects.length === 0 ? (
           <div
@@ -591,22 +551,30 @@ export default function ProposalsPage() {
             }}
           >
             <FolderOpen size={28} strokeWidth={1.5} color={C.muted} aria-hidden="true" />
-            <p style={{ fontFamily: C.fontBody, color: C.muted, fontSize: 15, margin: 0 }}>
+            <p style={{ fontFamily: C.fontBody, color: C.muted, fontSize: 14, margin: 0 }}>
               No projects available right now.
             </p>
           </div>
         ) : (
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))",
-              gap: 20,
-            }}
-          >
-            {projects.map((project) => (
-              <ProjectCard key={project.id} project={project} onViewDetails={setSelectedProject} onBid={handleBid} />
-            ))}
-          </div>
+          <>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))",
+                gap: 20,
+                opacity: isFetching ? 0.6 : 1,
+                transition: "opacity 0.15s ease",
+              }}
+            >
+              {projects.map((project) => (
+                <ProjectCard key={project.id} project={project} onViewDetails={setSelectedProject} onBid={handleBid} />
+              ))}
+            </div>
+
+            {pagination && (
+              <Pagination pagination={pagination} onPageChange={handlePageChange} isFetching={isFetching} />
+            )}
+          </>
         )}
       </div>
 
@@ -614,4 +582,3 @@ export default function ProposalsPage() {
     </div>
   )
 }
-

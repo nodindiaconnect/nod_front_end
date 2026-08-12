@@ -165,7 +165,7 @@ export default function ContactDetailsModal({ open, onClose, existing }) {
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <label className="text-[10px] uppercase tracking-wide" style={{ color: C.muted, fontFamily: "var(--font-body)" }}>
-                Location (Lat / Lng)
+                Location (Lat / Lng) /(OPtional)
               </label>
               <button
                 type="button"

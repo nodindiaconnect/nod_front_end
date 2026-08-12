@@ -7,31 +7,31 @@ export default function OurServices() {
   const services = [
     {
       icon: Palette,
-      title: "Interior Design",
+      title: "Interior Designs",
       desc: "Connect with verified interior designers who craft personalized layouts, mood boards and material palettes tailored to your space, style and budget.",
       cta: "Find a Designer",
       to: "/explore?role=designer",
     },
     {
       icon: Compass,
-      title: "Architecture",
+      title: "Architectures",
       desc: "Work with licensed architects for structural planning, space optimization and technical drawings — from concept sketches to construction-ready plans.",
       cta: "Find an Architect",
       to: "/explore?role=architect",
     },
     {
       icon: HardHat,
-      title: "Contracting & Execution",
+      title: "Contractors",
       desc: "Get matched with trusted contractors and builders who bring your design to life, handling procurement, on-site execution and quality control.",
       cta: "Find a Contractor",
       to: "/explore?role=contractor",
     },
     {
       icon: ClipboardCheck,
-      title: "End-to-End Project Management",
-      desc: "Prefer to hand it all over? We oversee the entire project from design to handover — coordinating designers, architects and contractors on your behalf.",
-      cta: "Get Started",
-      to: "/get-started",
+      title: "Verified Material Suppliers",
+      desc: "Browse and connect with trusted material suppliers offering quality construction and interior products. Compare options, request quotations, and source materials with confidence.",
+      cta: "Explore Suppliers",
+      to: "/Signin",
     },
   ]
 
@@ -97,14 +97,14 @@ export default function OurServices() {
                 </p>
 
                 {/* CTA */}
-                <Link
+                {/* <Link
                   to={service.to}
                   className="mt-auto inline-flex items-center gap-1 text-xs font-bold uppercase tracking-wide text-[var(--primary)] group-hover:text-[var(--gold-hover)]"
                   style={{ transition: "var(--transition)" }}
                 >
                   {service.cta}
                   <ArrowUpRight size={14} strokeWidth={2.5} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5" style={{ transition: "var(--transition)" }} />
-                </Link>
+                </Link> */}
               </motion.div>
             )
           })}

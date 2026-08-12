@@ -17,13 +17,16 @@ export const contractorApiSlice = apiSlice.injectEndpoints({
     }),
 
     getContractorProjects: builder.query({
-      query: (status) => ({
+      query: ({ status, page = 1, limit = 10 } = {}) => ({
         url: "/contractor/me/projects",
-        params: status ? { status } : undefined,
+        params: {
+          ...(status && { status }),
+          page,
+          limit,
+        },
       }),
       providesTags: ["ContractorProjects"],
     }),
-
     sendContractorQuotation: builder.mutation({
       query: (body) => ({
         url: "/contractor/quotations",

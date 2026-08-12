@@ -1,5 +1,3 @@
-
-
 import { apiSlice } from "../../../../ApiSliceComponent/jaiMaxApi";
 
 export const clientApiSlice = apiSlice.injectEndpoints({
@@ -20,6 +18,16 @@ export const clientApiSlice = apiSlice.injectEndpoints({
             providesTags: ["DashboardStats"],
         }),
 
+        // Enum values (category, servicesRequired, propertyStatus, etc.)
+        // Backend is the single source of truth — frontend renders
+        // whatever this returns instead of hardcoding option lists.
+        getProjectEnums: builder.query({
+            query: () => ({
+                url: "/Client/projectEnums",
+                method: "GET",
+            }),
+        }),
+
         // Create a new project
         createProject: builder.mutation({
             query: (formData) => ({
@@ -30,17 +38,23 @@ export const clientApiSlice = apiSlice.injectEndpoints({
             invalidatesTags: ["ProjectsList", "DashboardStats"],
         }),
 
-        // Fetch all projects with optional filters
+        // ===== UPDATED: Fetch all projects with pagination + filters =====
         listProjects: builder.query({
             query: (params = {}) => {
                 const queryParams = new URLSearchParams();
+
+                // Pagination parameters
+                if (params.page) queryParams.append("page", params.page);
+                if (params.limit) queryParams.append("limit", params.limit);
+
+                // Filter parameters
                 if (params.category) queryParams.append("category", params.category);
                 if (params.service) queryParams.append("service", params.service);
                 if (params.status) queryParams.append("status", params.status);
                 if (params.city) queryParams.append("city", params.city);
 
                 const queryString = queryParams.toString();
-                const url = `/Client/projects${queryString ? `?${queryString}` : ""}`;
+                const url = `/Client/clientprojects${queryString ? `?${queryString}` : ""}`;
 
                 return {
                     url,
@@ -82,16 +96,30 @@ export const clientApiSlice = apiSlice.injectEndpoints({
             }),
             invalidatesTags: ["ProjectsList", "DashboardStats"],
         }),
+
+        updateProjectAvailability: builder.mutation({
+            query: ({ projectId, status }) => ({
+                url: `/Client/projects/${projectId}/availability-status`,
+                method: "POST",
+                body: { status },
+            }),
+            invalidatesTags: (result, error, { projectId }) => [
+                { type: "Project", id: projectId },
+                "ProjectsList",
+            ],
+        }),
+
     }),
 });
 
 export const {
     useGetUserDetailsQuery,
     useGetDashboardStatsQuery,
+    useGetProjectEnumsQuery,
     useCreateProjectMutation,
     useListProjectsQuery,
     useGetProjectByIdQuery,
     useUpdateProjectMutation,
     useDeleteProjectMutation,
+    useUpdateProjectAvailabilityMutation
 } = clientApiSlice;
-

@@ -2,20 +2,37 @@ import { apiSlice } from "../ApiSliceComponent/jaiMaxApi";
 
 export const authApiSlice = apiSlice.injectEndpoints({
     endpoints: (builder) => ({
-        register: builder.mutation({
+        // ── REGISTER (Multi-Step Flow) ──
+        registerStart: builder.mutation({
             query: (credentials) => ({
-                url: "/Auth/register",
+                url: "/Auth/register/start",
                 method: "POST",
-                body: { ...credentials }
+                body: credentials
             }),
         }),
-        verify: builder.mutation({
+        registerVerifyOtp: builder.mutation({
             query: (data) => ({
-                url: "/Auth/isVerify",
+                url: "/Auth/register/verify-otp",
                 method: "POST",
-                body: { ...data }
+                body: data
             })
         }),
+        registerCreateAccount: builder.mutation({
+            query: (data) => ({
+                url: "/Auth/register/create-account",
+                method: "POST",
+                body: data
+            })
+        }),
+        registerFinish: builder.mutation({
+            query: (data) => ({
+                url: "/Auth/register/finish",
+                method: "POST",
+                body: data
+            })
+        }),
+
+        // ── LOGIN ──
         login: builder.mutation({
             query: (credentials) => ({
                 url: "/Auth/login",
@@ -23,20 +40,31 @@ export const authApiSlice = apiSlice.injectEndpoints({
                 body: credentials
             }),
         }),
-        forgot: builder.mutation({
+
+        // ── FORGOT PASSWORD (Multi-Step Flow) ──
+        forgotStart: builder.mutation({
             query: (credentials) => ({
-                url: "/Auth/forgotPassword",
+                url: "/Auth/forgotPassword/start",
                 method: "POST",
                 body: credentials
             })
         }),
-        verifyOtp: builder.mutation({
+        forgotVerifyOtp: builder.mutation({
+            query: (data) => ({
+                url: "/Auth/forgotPassword/verify-otp",
+                method: "POST",
+                body: data
+            })
+        }),
+        resetPassword: builder.mutation({
             query: (credentials) => ({
                 url: "/Auth/resetPassword",
                 method: "POST",
                 body: credentials
             })
         }),
+
+        // ── CHANGE PASSWORD (Logged-in user) ──
         changePwd: builder.mutation({
             query: (credentials) => ({
                 url: "/Auth/changePassword",
@@ -51,14 +79,9 @@ export const authApiSlice = apiSlice.injectEndpoints({
                 body: credentials
             })
         }),
-        verifyRecaptcha: builder.mutation({
-            query: (token) => ({
-                url: '/Auth/reCAPTCHAVerify',
-                method: 'POST',
-                body: token,
-            })
-        }),
-        OTPresent: builder.mutation({
+
+        // ── RESEND OTP (Session-token based) ──
+        resendOtp: builder.mutation({
             query: (data) => ({
                 url: '/Auth/resendOtp',
                 method: 'POST',
@@ -66,9 +89,24 @@ export const authApiSlice = apiSlice.injectEndpoints({
             })
         }),
 
-        // NEW: live username-availability check (GET /Auth/CheckUserName?username=...)
-        // Declared as a query (not a mutation) so we can use the "lazy" hook and
-        // trigger it manually from a debounce timer instead of on every render.
+        // ── VERIFY RECAPTCHA (standalone check-only endpoint) ──
+        // FIX: backend's verifyCaptcha does `const { token } = req.body`,
+        // so the body must be a { token } object, not the raw string.
+        // Sending the bare token as the body meant req.body.token was
+        // always undefined server-side.
+        // NOTE: with TurnstileWidget wired directly into registerStart /
+        // login / forgotStart, this standalone endpoint is no longer
+        // needed for the main auth flows — keeping it here only in case
+        // something else in the app still calls it directly.
+        verifyRecaptcha: builder.mutation({
+            query: (token) => ({
+                url: '/Auth/reCAPTCHAVerify',
+                method: 'POST',
+                body: { token },
+            })
+        }),
+
+        // ── CHECK USERNAME (Live availability check) ──
         checkUsername: builder.query({
             query: (username) => ({
                 url: "/Auth/CheckUserName",
@@ -76,20 +114,21 @@ export const authApiSlice = apiSlice.injectEndpoints({
                 params: { username },
             }),
         }),
-
     }),
 });
 
 export const {
-    useRegisterMutation,
-    useVerifyMutation,
+    useRegisterStartMutation,
+    useRegisterVerifyOtpMutation,
+    useRegisterCreateAccountMutation,
+    useRegisterFinishMutation,
     useLoginMutation,
-    useForgotMutation,
-    useVerifyOtpMutation,
+    useForgotStartMutation,
+    useForgotVerifyOtpMutation,
+    useResetPasswordMutation,
     useChangePwdMutation,
-    useVerifyRecaptchaMutation,
     useChangePwdReqMutation,
-    useOTPresentMutation,
-    useLazyCheckUsernameQuery, // NEW
-
+    useResendOtpMutation,
+    useVerifyRecaptchaMutation,
+    useLazyCheckUsernameQuery,
 } = authApiSlice;

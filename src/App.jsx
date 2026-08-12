@@ -1,177 +1,363 @@
+// import { lazy, Suspense, useRef } from "react"
+// import { Routes, Route, Navigate } from "react-router-dom"
 
-  import { lazy, Suspense, useRef } from "react"
-  import { Routes, Route, Navigate } from "react-router-dom"
+// import PrivateRoute from "./router/PrivateRoute"
+// import PublicRoute from "./router/PublicRoute"
+// import { isAuthenticated } from "./utils/auth"
 
-  import PrivateRoute from "./router/PrivateRoute"
-  import PublicRoute from "./router/PublicRoute"
-  import { isAuthenticated } from "./utils/auth"
+// import FeaturedProjects from "./pages/FeatureProjects"
+// import Footer from "./pages/Footer"
+// import HeroSection from "./pages/HeroSection"
+// import Navbar from "./pages/Navbar"
+// import OurServices from "./pages/Ourprocess"
+// import NewHeritage from "./pages/subsection"
+// import WhyChoose from "./pages/WhyChooseUs"
 
-  // import FeaturedServices from "./pages/Featuredservices"
-  import FeaturedProjects from "./pages/FeatureProjects"
-  import Footer from "./pages/Footer"
-  import HeroSection from "./pages/HeroSection"
-  import Marquee from "./pages/Marquee"
-  import Navbar from "./pages/Navbar"
-  import OurServices from "./pages/Ourprocess"
-  import NewHeritage from "./pages/subsection"
-  import WhyChooseUs from "./pages/Whychooseuse"
-  import LoginPage from "./Authentication/Login"
+// // CHANGED: use the AuthPage switcher (Login/SignUp toggle) instead of
+// // the standalone LoginPage, so /Signin can serve both flows.
+// import AuthPage from "./Authentication/Authpage"
 
-  import DashboardLayout from "./components/dashboard/Dashboardlayout"
-  import RoleSwitch from "./router/RoleSwitch"
-  import Loader from "./global/Loader"
-  import CategoryShowcase from "./pages/CategoryShowcase"
-  import WorkShowcase from "./pages/scrollingImages"
-  import ContactSection from "./pages/contact"
-  import About from "./pages/About"
-  import ProjectsGallery from "./pages/Designers"
-  import FeaturedProducts from "./pages/supplyProducts"
-  import ProductDetailsPage from "./pages/produtsdetailsPage"
+// import DashboardLayout from "./components/dashboard/Dashboardlayout"
+// import RoleSwitch from "./router/RoleSwitch"
+// import Loader from "./global/Loader"
+// import CategoryShowcase from "./pages/CategoryShowcase"
+// import WorkShowcase from "./pages/scrollingImages"
+// import ContactSection from "./pages/contact"
+// import About from "./pages/About"
+// import ProjectsGallery from "./pages/Designers"
+// import FeaturedProducts from "./pages/supplyProducts"
+// import ProductDetailsPage from "./pages/produtsdetailsPage"
+// import LeadPopup from "./pages/LeadPopup"
+// import AllPortfolios from "./pages/AllPortfolios"
+// import UserPortfolioProfile from "./pages/UserPortfolioProfile"
+// import PortfoliosByRolePage from "./pages/explore"
+
+// // ── Client ──
+// const ClientDashboard = lazy(() => import("./components/dashboardPages/client/Dashboard/Dashboard"))
+// const ClientProjects = lazy(() => import("./components/dashboardPages/client/ProjectsPage"))
+// const ClientFindPros = lazy(() => import("./components/dashboardPages/client/FindProsPage"))
+// const ClientPayments = lazy(() => import("./components/dashboardPages/client/PaymentsPage"))
+// const ClientSettings = lazy(() => import("./components/dashboardPages/client/SettingsPage"))
+// const ClientReviews = lazy(() => import("./components/dashboardPages/client/ReviewsPage"))
+
+// // ── Designer ──
+// const DesignerOverview = lazy(() => import("./components/dashboardPages/designer/dashboard/DesignerDashboard"))
+// const DesignerPortfolio = lazy(() => import("./components/dashboardPages/designer/PortfolioPage"))
+// const DesignerProposals = lazy(() => import("./components/dashboardPages/designer/ProposalsPage"))
+// const DesignerProjects = lazy(() => import("./components/dashboardPages/designer/ProjectsPage"))
+// const DesignerEarnings = lazy(() => import("./components/dashboardPages/designer/EarningsPage"))
+// const DesignerSettings = lazy(() => import("./components/dashboardPages/designer/SettingsPage"))
+// const DesignerReviews = lazy(() => import("./components/dashboardPages/designer/ReviewsPage"))
+// const DesignerPosts = lazy(() => import("./components/dashboardPages/designer/createPost"))
+
+// // ── Architect ──
+// const ArchitectOverview = lazy(() => import("./components/dashboardPages/architech/dashboard/dashboard"))
+// const ArchitectPortfolio = lazy(() => import("./components/dashboardPages/architech/PortfolioPage"))
+// const ArchitectProposals = lazy(() => import("./components/dashboardPages/architech/ProposalsPage"))
+// const ArchitectProjects = lazy(() => import("./components/dashboardPages/architech/ProjectsPage"))
+// const ArchitectEarnings = lazy(() => import("./components/dashboardPages/architech/EarningsPage"))
+// const ArchitectSettings = lazy(() => import("./components/dashboardPages/architech/SettingsPage"))
+// const ArchitectReviews = lazy(() => import("./components/dashboardPages/architech/ReviewsPage"))
+
+// // ── Contractor ──
+// const ContractorOverview = lazy(() => import("./components/dashboardPages/contractor/dashboard/dashbaord"))
+// const ContractorPortfolio = lazy(() => import("./components/dashboardPages/architech/PortfolioPage"))
+// const ContractorProjects = lazy(() => import("./components/dashboardPages/architech/ProjectsPage"))
+// const ContractorProposals = lazy(() => import("./components/dashboardPages/contractor/ProposalsPage"))
+// const ContractorEarnings = lazy(() => import("./components/dashboardPages/architech/EarningsPage"))
+// const ContractorSettings = lazy(() => import("./components/dashboardPages/architech/SettingsPage"))
+// const ContractorReviews = lazy(() => import("./components/dashboardPages/architech/ReviewsPage"))
+
+// // ── Material Supplier ──
+// const SupplierOverview = lazy(() => import("./components/dashboardPages/materialSupplier/dashboard/materialSupplierdashboard"))
+// const SupplierProducts = lazy(() => import("./components/dashboardPages/materialSupplier/Products"))
+// const SupplierCreateProduct = lazy(() => import("./components/dashboardPages/materialSupplier/addProduct"))
+
+// // ── Shared ──
+// const MessagesPage = lazy(() => import("./components/dashboard/shared/MessagesPage"))
+
+// const PAGE_MAP = {
+//   overview: { Client: ClientDashboard, Designer: DesignerOverview, Architect: ArchitectOverview, Contractor: ContractorOverview, MaterialSupplier: SupplierOverview },
+//   projects: { Client: ClientProjects, Designer: DesignerProjects, Architect: ArchitectProjects, Contractor: ContractorProjects },
+//   posts: { Designer: DesignerPosts },
+//   products: { MaterialSupplier: SupplierProducts },
+//   createProduct: { MaterialSupplier: SupplierCreateProduct },
+//   messages: { Client: MessagesPage, Designer: MessagesPage, Architect: MessagesPage, Contractor: MessagesPage, MaterialSupplier: MessagesPage },
+//   settings: { Client: ClientSettings, Designer: DesignerSettings, Architect: ArchitectSettings, Contractor: ContractorSettings },
+//   find: { Client: ClientFindPros },
+//   payments: { Client: ClientPayments },
+//   portfolio: { Designer: DesignerPortfolio, Architect: ArchitectPortfolio, Contractor: ContractorPortfolio },
+//   proposals: { Designer: DesignerProposals, Architect: ArchitectProposals, Contractor: ContractorProposals },
+//   browseProjects: { Designer: DesignerProposals, Architect: ArchitectProposals, Contractor: ContractorProposals },
+//   earnings: { Designer: DesignerEarnings, Architect: ArchitectEarnings, Contractor: ContractorEarnings },
+//   reviews: { Client: ClientReviews, Designer: DesignerReviews, Architect: ArchitectReviews, Contractor: ContractorReviews },
+// }
+
+
+// function Home() {
+//   const panelRef = useRef(null)
+
+//   return (
+//     <>
+//       <LeadPopup />
+
+//       {/* Fixed left sidebar */}
+//       <aside className="hidden lg:flex flex-col fixed top-1/2 left-4 -translate-y-1/2 z-50 gap-3 p-3 rounded-xl bg-[var(--primary)] border border-[var(--border)] shadow-lg">
+//         <a href="#hero" className="px-3 py-2 text-xs font-medium rounded-md text-[var(--gold)] hover:bg-[var(--gold)] hover:text-black transition-colors">
+//           Home
+//         </a>
+//         <a href="#projects" className="px-3 py-2 text-xs font-medium rounded-md text-[var(--gold)] hover:bg-[var(--gold)] hover:text-black transition-colors">
+//           Projects
+//         </a>
+//         <a href="#services" className="px-3 py-2 text-xs font-medium rounded-md text-[var(--gold)] hover:bg-[var(--gold)] hover:text-black transition-colors">
+//           Services
+//         </a>
+//         <a href="#contact" className="px-3 py-2 text-xs font-medium rounded-md text-[var(--gold)] hover:bg-[var(--gold)] hover:text-black transition-colors">
+//           Contact
+//         </a>
+//       </aside>
+
+//       <div className="relative w-full h-screen">
+//         <Navbar />
+//         <HeroSection panelRef={panelRef} />
+//       </div>
+//       <div ref={panelRef} className="relative z-10 rounded-t-[2rem]">
+//         <CategoryShowcase />
+//         <WorkShowcase />
+//         <FeaturedProjects />
+//         <NewHeritage />
+//         <OurServices />
+//         <Footer />
+//       </div>
+//     </>
+//   )
+// }
+
+
+
+// function App() {
+//   return (
+//     <Suspense fallback={<div className="p-10 text-center text-sm"><Loader /></div>}>
+//       <Routes>
+//         {/* <Route
+//           path="/"
+//           element={isAuthenticated() ? <Navigate to="/dashboard" replace /> : <Home />}
+//         /> */}
+
+//         <Route path="/" element={<Home />} />
+
+//         <Route path="/About" element={<About />} />
+//         <Route path="/designs" element={<ProjectsGallery />} />
+//         <Route path="/supplier-products" element={<FeaturedProducts />} />
+//         <Route path="/contact" element={<ContactSection />} />
+//         <Route path="/explore" element={<PortfoliosByRolePage />} />
+//         <Route path="/portfolios" element={<AllPortfolios />} />
+//         <Route path="/portfolio/:userId" element={<UserPortfolioProfile />} />
+//         <Route path="/products/:productId" element={<ProductDetailsPage />} />
+//         <Route path="/why-choose" element={<WhyChoose />} />
+//         <Route element={<PublicRoute restricted />}>
+//           <Route path="/Signin" element={<AuthPage />} />
+//           <Route path="/Signup" element={<AuthPage />} />
+//         </Route>
+
+//         <Route element={<PrivateRoute />}>
+//           <Route path="/dashboard" element={<DashboardLayout />}>
+//             <Route index element={<RoleSwitch map={PAGE_MAP.overview} />} />
+//             <Route path="projects" element={<RoleSwitch map={PAGE_MAP.projects} />} />
+//             <Route path="messages" element={<RoleSwitch map={PAGE_MAP.messages} />} />
+//             <Route path="settings" element={<RoleSwitch map={PAGE_MAP.settings} />} />
+//             <Route path="payments" element={<RoleSwitch map={PAGE_MAP.payments} />} />
+//             <Route path="find" element={<RoleSwitch map={PAGE_MAP.find} />} />
+//             <Route path="portfolio" element={<RoleSwitch map={PAGE_MAP.portfolio} />} />
+//             <Route path="browse-projects" element={<RoleSwitch map={PAGE_MAP.browseProjects} />} />
+//             <Route path="products" element={<RoleSwitch map={PAGE_MAP.products} />} />
+//             <Route path="products/create" element={<RoleSwitch map={PAGE_MAP.createProduct} />} />
+//             <Route path="posts" element={<RoleSwitch map={PAGE_MAP.posts} />} />
+//             <Route path="proposals" element={<RoleSwitch map={PAGE_MAP.proposals} />} />
+//             <Route path="earnings" element={<RoleSwitch map={PAGE_MAP.earnings} />} />
+//             <Route path="reviews" element={<RoleSwitch map={PAGE_MAP.reviews} />} />
+//           </Route>
+//         </Route>
+//       </Routes>
+//     </Suspense>
+//   )
+// }
+
+// export default App
+
+import { lazy, Suspense, useRef } from "react"
+import { Routes, Route, Navigate } from "react-router-dom"
+
+import PrivateRoute from "./router/PrivateRoute"
+import PublicRoute from "./router/PublicRoute"
+import { isAuthenticated } from "./utils/auth"
+
+import FeaturedProjects from "./pages/FeatureProjects"
+import Footer from "./pages/Footer"
+import HeroSection from "./pages/HeroSection"
+import Navbar from "./pages/Navbar"
+import OurServices from "./pages/Ourprocess"
+import NewHeritage from "./pages/subsection"
+import WhyChoose from "./pages/WhyChooseUs"
+
+// CHANGED: use the AuthPage switcher (Login/SignUp toggle) instead of
+// the standalone LoginPage, so /Signin can serve both flows.
+import AuthPage from "./Authentication/Authpage"
+
+import DashboardLayout from "./components/dashboard/Dashboardlayout"
+import RoleSwitch from "./router/RoleSwitch"
+import Loader from "./global/Loader"
+import CategoryShowcase from "./pages/CategoryShowcase"
+import WorkShowcase from "./pages/scrollingImages"
+import ContactSection from "./pages/contact"
+import About from "./pages/About"
+import ProjectsGallery from "./pages/Designers"
+import FeaturedProducts from "./pages/supplyProducts"
+import ProductDetailsPage from "./pages/produtsdetailsPage"
 import LeadPopup from "./pages/LeadPopup"
+import AllPortfolios from "./pages/AllPortfolios"
+import UserPortfolioProfile from "./pages/UserPortfolioProfile"
+import PortfoliosByRolePage from "./pages/explore"
 
-  // ── Client ──
-  const ClientDashboard = lazy(() => import("./components/dashboardPages/client/Dashboard/Dashboard"))
-  const ClientProjects = lazy(() => import("./components/dashboardPages/client/ProjectsPage"))
-  const ClientFindPros = lazy(() => import("./components/dashboardPages/client/FindProsPage"))
-  const ClientPayments = lazy(() => import("./components/dashboardPages/client/PaymentsPage"))
-  const ClientSettings = lazy(() => import("./components/dashboardPages/client/SettingsPage"))
-  const ClientReviews = lazy(() => import("./components/dashboardPages/client/ReviewsPage"))
+// ── Client ──
+const ClientDashboard = lazy(() => import("./components/dashboardPages/client/Dashboard/Dashboard"))
+const ClientProjects = lazy(() => import("./components/dashboardPages/client/ProjectsPage"))
+const ClientFindPros = lazy(() => import("./components/dashboardPages/client/FindProsPage"))
+const ClientPayments = lazy(() => import("./components/dashboardPages/client/PaymentsPage"))
+const ClientSettings = lazy(() => import("./components/dashboardPages/client/SettingsPage"))
+const ClientReviews = lazy(() => import("./components/dashboardPages/client/ReviewsPage"))
 
-  // ── Designer ──
-  const DesignerOverview = lazy(() => import("./components/dashboardPages/designer/dashboard/DesignerDashboard"))
-  const DesignerPortfolio = lazy(() => import("./components/dashboardPages/designer/PortfolioPage"))
-  const DesignerProposals = lazy(() => import("./components/dashboardPages/designer/ProposalsPage"))
-  const DesignerProjects = lazy(() => import("./components/dashboardPages/designer/ProjectsPage"))
-  const DesignerEarnings = lazy(() => import("./components/dashboardPages/designer/EarningsPage"))
-  const DesignerSettings = lazy(() => import("./components/dashboardPages/designer/SettingsPage"))
-  const DesignerReviews = lazy(() => import("./components/dashboardPages/designer/ReviewsPage"))
+// ── Designer ──
+const DesignerOverview = lazy(() => import("./components/dashboardPages/designer/dashboard/DesignerDashboard"))
+const DesignerPortfolio = lazy(() => import("./components/dashboardPages/designer/PortfolioPage"))
+const DesignerProposals = lazy(() => import("./components/dashboardPages/designer/ProposalsPage"))
+const DesignerProjects = lazy(() => import("./components/dashboardPages/designer/ProjectsPage"))
+const DesignerEarnings = lazy(() => import("./components/dashboardPages/designer/EarningsPage"))
+const DesignerSettings = lazy(() => import("./components/dashboardPages/designer/SettingsPage"))
+const DesignerReviews = lazy(() => import("./components/dashboardPages/designer/ReviewsPage"))
+const DesignerPosts = lazy(() => import("./components/dashboardPages/designer/createPost"))
 
-  // ── Architect ──
-  const ArchitectOverview = lazy(() => import("./components/dashboardPages/architech/dashboard/dashboard"))
-  const ArchitectPortfolio = lazy(() => import("./components/dashboardPages/architech/PortfolioPage"))
-  const ArchitectProposals = lazy(() => import("./components/dashboardPages/architech/ProposalsPage"))
-  const ArchitectProjects = lazy(() => import("./components/dashboardPages/architech/ProjectsPage"))
-  const ArchitectEarnings = lazy(() => import("./components/dashboardPages/architech/EarningsPage"))
-  const ArchitectSettings = lazy(() => import("./components/dashboardPages/architech/SettingsPage"))
-  const ArchitectReviews = lazy(() => import("./components/dashboardPages/architech/ReviewsPage"))
+// ── Architect ──
+const ArchitectOverview = lazy(() => import("./components/dashboardPages/architech/dashboard/dashboard"))
+const ArchitectPortfolio = lazy(() => import("./components/dashboardPages/architech/PortfolioPage"))
+const ArchitectProposals = lazy(() => import("./components/dashboardPages/architech/ProposalsPage"))
+const ArchitectProjects = lazy(() => import("./components/dashboardPages/architech/ProjectsPage"))
+const ArchitectEarnings = lazy(() => import("./components/dashboardPages/architech/EarningsPage"))
+const ArchitectSettings = lazy(() => import("./components/dashboardPages/architech/SettingsPage"))
+const ArchitectReviews = lazy(() => import("./components/dashboardPages/architech/ReviewsPage"))
 
-  // ── Contractor ──
-  const ContractorOverview = lazy(() => import("./components/dashboardPages/contractor/dashboard/dashbaord"))
-  const ContractorPortfolio = lazy(() => import("./components/dashboardPages/architech/PortfolioPage"))
-  const ContractorProjects = lazy(() => import("./components/dashboardPages/architech/ProjectsPage"))
-  const ContractorProposals = lazy(() => import("./components/dashboardPages/contractor/ProposalsPage"))
-  const ContractorEarnings = lazy(() => import("./components/dashboardPages/architech/EarningsPage"))
-  const ContractorSettings = lazy(() => import("./components/dashboardPages/architech/SettingsPage"))
-  const ContractorReviews = lazy(() => import("./components/dashboardPages/architech/ReviewsPage"))
+// ── Contractor ──
+const ContractorOverview = lazy(() => import("./components/dashboardPages/contractor/dashboard/dashbaord"))
+const ContractorPortfolio = lazy(() => import("./components/dashboardPages/architech/PortfolioPage"))
+const ContractorProjects = lazy(() => import("./components/dashboardPages/architech/ProjectsPage"))
+const ContractorProposals = lazy(() => import("./components/dashboardPages/contractor/ProposalsPage"))
+const ContractorEarnings = lazy(() => import("./components/dashboardPages/architech/EarningsPage"))
+const ContractorSettings = lazy(() => import("./components/dashboardPages/architech/SettingsPage"))
+const ContractorReviews = lazy(() => import("./components/dashboardPages/architech/ReviewsPage"))
 
+// ── Material Supplier ──
+const SupplierOverview = lazy(() => import("./components/dashboardPages/materialSupplier/dashboard/materialSupplierdashboard"))
+const SupplierProducts = lazy(() => import("./components/dashboardPages/materialSupplier/Products"))
+const SupplierCreateProduct = lazy(() => import("./components/dashboardPages/materialSupplier/addProduct"))
 
-  // ── Material Supplier ──
-  const SupplierOverview = lazy(() => import("./components/dashboardPages/materialSupplier/dashboard/materialSupplierdashboard"))
-  const SupplierProducts = lazy(() => import("./components/dashboardPages/materialSupplier/Products"))
-  const SupplierCreateProduct = lazy(() => import("./components/dashboardPages/materialSupplier/addProduct"))
+// ── Shared ──
+const MessagesPage = lazy(() => import("./components/dashboard/shared/MessagesPage"))
 
-  // ── Shared ──
-  const MessagesPage = lazy(() => import("./components/dashboard/shared/MessagesPage"))
-  // const NotFound = lazy(() => import("./pages/NotFound"))
+const PAGE_MAP = {
+  overview: { Client: ClientDashboard, Designer: DesignerOverview, Architect: ArchitectOverview, Contractor: ContractorOverview, MaterialSupplier: SupplierOverview },
+  projects: { Client: ClientProjects, Designer: DesignerProjects, Architect: ArchitectProjects, Contractor: ContractorProjects },
+  posts: { Designer: DesignerPosts },
+  products: { MaterialSupplier: SupplierProducts },
+  createProduct: { MaterialSupplier: SupplierCreateProduct },
+  messages: { Client: MessagesPage, Designer: MessagesPage, Architect: MessagesPage, Contractor: MessagesPage, MaterialSupplier: MessagesPage },
+  settings: { Client: ClientSettings, Designer: DesignerSettings, Architect: ArchitectSettings, Contractor: ContractorSettings },
+  find: { Client: ClientFindPros },
+  payments: { Client: ClientPayments },
+  portfolio: { Designer: DesignerPortfolio, Architect: ArchitectPortfolio, Contractor: ContractorPortfolio },
+  proposals: { Designer: DesignerProposals, Architect: ArchitectProposals, Contractor: ContractorProposals },
+  browseProjects: { Designer: DesignerProposals, Architect: ArchitectProposals, Contractor: ContractorProposals },
+  earnings: { Designer: DesignerEarnings, Architect: ArchitectEarnings, Contractor: ContractorEarnings },
+  reviews: { Client: ClientReviews, Designer: DesignerReviews, Architect: ArchitectReviews, Contractor: ContractorReviews },
+}
 
-  // ── Role → component maps (per route key) ──
-  // ── Role → component maps (per route key) ──
+function Home() {
+  const panelRef = useRef(null)
 
+  return (
+    <>
+      <LeadPopup />
 
-  const PAGE_MAP = {
-    overview: { 1: ClientDashboard, 2: DesignerOverview, 3: ArchitectOverview, 4: ContractorOverview, 5: SupplierOverview },
-    projects: { 1: ClientProjects, 2: DesignerProjects, 3: ArchitectProjects, 4: ContractorProjects },
-    products: { 5: SupplierProducts },
-    createProduct: { 5: SupplierCreateProduct },
-    messages: { 1: MessagesPage, 2: MessagesPage, 3: MessagesPage, 4: MessagesPage, 5: MessagesPage },
-    settings: { 1: ClientSettings, 2: DesignerSettings, 3: ArchitectSettings, 4: ContractorSettings },
-    find: { 1: ClientFindPros },
-    payments: { 1: ClientPayments },
-    portfolio: { 2: DesignerPortfolio, 3: ArchitectPortfolio, 4: ContractorPortfolio },
-    proposals: { 2: DesignerProposals, 3: ArchitectProposals, 4: ContractorProposals },
-    browseProjects: { 2: DesignerProposals, 3: ArchitectProposals, 4: ContractorProposals },
-    earnings: { 2: DesignerEarnings, 3: ArchitectEarnings, 4: ContractorEarnings },
-    reviews: { 1: ClientReviews, 2: DesignerReviews, 3: ArchitectReviews, 4: ContractorReviews },
-  }
+      {/* Fixed "Explore" tag - right side, vertically centered, stays fixed on scroll */}
+{/*       
+       <a href="/explore"
+        className="hidden lg:flex fixed top-1/2 right-0 -translate-y-1/2 z-50 items-center px-4 py-3 bg-[var(--gold)] text-black text-xs font-semibold tracking-wide rounded-l-lg shadow-lg hover:pr-6 transition-all duration-200"
+        style={{ writingMode: "vertical-rl" }}
+      >
+        Explore
+      </a> */}
 
+      <div className="relative w-full h-screen">
+        <Navbar />
+        <HeroSection panelRef={panelRef} />
+      </div>
+      <div ref={panelRef} className="relative z-10 rounded-t-[2rem]">
+        <CategoryShowcase />
+        <WorkShowcase />
+        <FeaturedProjects />
+        <NewHeritage />
+        <OurServices />
+        <Footer />
+      </div>
+    </>
+  )
+}
 
+function App() {
+  return (
+    <Suspense fallback={<div className="p-10 text-center text-sm"><Loader /></div>}>
+      <Routes>
+        {/* <Route
+          path="/"
+          element={isAuthenticated() ? <Navigate to="/dashboard" replace /> : <Home />}
+        /> */}
 
-  function Home() {
-    const panelRef = useRef(null)
+        <Route path="/" element={<Home />} />
 
-    return (
-      <>
-            <LeadPopup/>
+        <Route path="/About" element={<About />} />
+        <Route path="/designs" element={<ProjectsGallery />} />
+        <Route path="/supplier-products" element={<FeaturedProducts />} />
+        <Route path="/contact" element={<ContactSection />} />
+        <Route path="/explore" element={<PortfoliosByRolePage />} />
+        <Route path="/portfolios" element={<AllPortfolios />} />
+        <Route path="/portfolio/:userId" element={<UserPortfolioProfile />} />
+        <Route path="/products/:productId" element={<ProductDetailsPage />} />
+        <Route path="/why-choose" element={<WhyChoose />} />
+        <Route element={<PublicRoute restricted />}>
+          <Route path="/Signin" element={<AuthPage />} />
+          <Route path="/Signup" element={<AuthPage />} />
+        </Route>
 
-        <div className="relative w-full h-screen">
-          <Navbar />
-          <HeroSection panelRef={panelRef} />
-        </div>
-
-        <div
-          ref={panelRef}
-          className="relative z-10 rounded-t-[2rem] "
-        >
-          <CategoryShowcase />
-
-          <Marquee />
-          {/* <FeaturedServices /> */}
-          <WorkShowcase />
-          <FeaturedProjects />
-          <NewHeritage />
-          <WhyChooseUs />
-          <OurServices />
-          {/* <FeaturedProducts /> */}
-          <ContactSection />
-          <Footer />
-        </div>
-      </>
-    )
-  }
-
-  function App() {
-    return (
-      <Suspense fallback={<div className="p-10 text-center text-sm">
-        <Loader />
-      </div>}>
-        <Routes>
-          <Route
-            path="/"
-            element={isAuthenticated() ? <Navigate to="/dashboard" replace /> : <Home />}
-          />
-          <Route path="/About" element={<About />} />
-          <Route path="/designs" element={<ProjectsGallery />} />
-          <Route path="/supplier-products" element={<FeaturedProducts />} />
-
-
-          <Route element={<PublicRoute restricted />}>
-            <Route path="/Signin" element={<LoginPage />} />
-            <Route path="/products/:productId" element={<ProductDetailsPage />} />
-
+        <Route element={<PrivateRoute />}>
+          <Route path="/dashboard" element={<DashboardLayout />}>
+            <Route index element={<RoleSwitch map={PAGE_MAP.overview} />} />
+            <Route path="projects" element={<RoleSwitch map={PAGE_MAP.projects} />} />
+            <Route path="messages" element={<RoleSwitch map={PAGE_MAP.messages} />} />
+            <Route path="settings" element={<RoleSwitch map={PAGE_MAP.settings} />} />
+            <Route path="payments" element={<RoleSwitch map={PAGE_MAP.payments} />} />
+            <Route path="find" element={<RoleSwitch map={PAGE_MAP.find} />} />
+            <Route path="portfolio" element={<RoleSwitch map={PAGE_MAP.portfolio} />} />
+            <Route path="browse-projects" element={<RoleSwitch map={PAGE_MAP.browseProjects} />} />
+            <Route path="products" element={<RoleSwitch map={PAGE_MAP.products} />} />
+            <Route path="products/create" element={<RoleSwitch map={PAGE_MAP.createProduct} />} />
+            <Route path="posts" element={<RoleSwitch map={PAGE_MAP.posts} />} />
+            <Route path="proposals" element={<RoleSwitch map={PAGE_MAP.proposals} />} />
+            <Route path="earnings" element={<RoleSwitch map={PAGE_MAP.earnings} />} />
+            <Route path="reviews" element={<RoleSwitch map={PAGE_MAP.reviews} />} />
           </Route>
+        </Route>
+      </Routes>
+    </Suspense>
+  )
+}
 
-          <Route element={<PrivateRoute />}>
-            <Route path="/dashboard" element={<DashboardLayout />}>
-              <Route index element={<RoleSwitch map={PAGE_MAP.overview} />} />
-              <Route path="projects" element={<RoleSwitch map={PAGE_MAP.projects} />} />
-              <Route path="messages" element={<RoleSwitch map={PAGE_MAP.messages} />} />
-              <Route path="settings" element={<RoleSwitch map={PAGE_MAP.settings} />} />
-              <Route path="payments" element={<RoleSwitch map={PAGE_MAP.payments} />} />
-              <Route path="find" element={<RoleSwitch map={PAGE_MAP.find} />} />
-              <Route path="portfolio" element={<RoleSwitch map={PAGE_MAP.portfolio} />} />
-              <Route path="browse-projects" element={<RoleSwitch map={PAGE_MAP.browseProjects} />} />
-              <Route path="products" element={<RoleSwitch map={PAGE_MAP.products} />} />
-              <Route path="products/create" element={<RoleSwitch map={PAGE_MAP.createProduct} />} />
-              <Route path="proposals" element={<RoleSwitch map={PAGE_MAP.proposals} />} />
-              <Route path="earnings" element={<RoleSwitch map={PAGE_MAP.earnings} />} />
-              <Route path="reviews" element={<RoleSwitch map={PAGE_MAP.reviews} />} />
-            </Route>
-          </Route>
-
-          {/* <Route path="*" element={<NotFound />} /> */}
-        </Routes>
-      </Suspense>
-    )
-  }
-
-  export default App
+export default App

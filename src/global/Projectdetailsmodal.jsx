@@ -759,19 +759,17 @@ export default function ProjectDetailsModal({ project, onClose, onBid }) {
               style={{ flexShrink: 0, marginTop: 2 }}
             />
             <div style={{ minWidth: 0 }}>
-              <h2
-                id="modal-title"
-                style={{
-                  fontFamily: C.fontHeading,
-                  color: C.heading,
-                  fontSize: 20,
-                  margin: 0,
-                  overflowWrap: "anywhere",
-                  wordBreak: "break-word",
-                }}
+
+              <span
+                className="text-md font-bold tracking-wider mr-2"
+                style={{ color: "var(--text-muted)" }}
               >
-                {project.title}
-              </h2>
+                Title :-
+              </span>
+
+              <span className="text-sm">
+                {project.title || "Project Details"}
+              </span>
               <p
                 id="modal-step-desc"
                 style={{

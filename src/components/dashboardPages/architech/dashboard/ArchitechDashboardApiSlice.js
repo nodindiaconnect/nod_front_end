@@ -18,13 +18,17 @@ export const architectApiSlice = apiSlice.injectEndpoints({
             providesTags: ["ArchitectQuotations"],
         }),
 
-        getArchitechProjects: builder.query({
-            query: (status) => ({
-                url: "/Architech/me/projects",
-                params: status ? { status } : undefined,
-            }),
-            providesTags: ["DesignerProjects"],
-        }),
+     getArchitechProjects: builder.query({
+    query: ({ status, page = 1, limit = 10 } = {}) => ({
+        url: "/Architech/me/projects",
+        params: {
+            ...(status && { status }),
+            page,
+            limit,
+        },
+    }),
+    providesTags: ["DesignerProjects"],
+}),
         sendArchitectQuotation: builder.mutation({
             query: (body) => ({
                 url: "/Architech/quotations",

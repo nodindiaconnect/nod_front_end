@@ -1,9 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { X, Loader2, CheckCircle2 } from "lucide-react";
 import "../theme.css";
-import { useSubmitContactLeadMutation } from "./supplyproductsapislice";
+import { useSubmitPopupLeadMutation } from "./supplyproductsapislice";
 
-const PHONE_RE = /^[6-9]\d{9}$/;
 const AUTO_DISMISS_MS = 10000;
 
 export default function LeadPopup() {
@@ -11,7 +10,7 @@ export default function LeadPopup() {
   const [form, setForm] = useState({ name: "", phone: "", query: "" });
   const [errors, setErrors] = useState({});
   const [submitLead, { isLoading, isSuccess, isError, error }] =
-    useSubmitContactLeadMutation();
+    useSubmitPopupLeadMutation();
 
   const autoCloseTimer = useRef(null);
   const hasInteracted = useRef(false);
@@ -38,29 +37,19 @@ export default function LeadPopup() {
     setErrors((prev) => ({ ...prev, [key]: undefined }));
   };
 
-  const validate = () => {
-    const next = {};
-    if (!form.name.trim() || form.name.trim().length < 2) next.name = "Enter your full name";
-    if (!PHONE_RE.test(form.phone.trim())) next.phone = "Enter a valid 10-digit mobile number";
-    if (!form.query.trim() || form.query.trim().length < 3) next.query = "Tell us what you need";
-    setErrors(next);
-    return Object.keys(next).length === 0;
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!validate()) return;
+    setErrors({});
     try {
       await submitLead({
         name: form.name.trim(),
         countryCode: "+91",
         phone: form.phone.trim(),
         query: form.query.trim(),
-        source: "monsoon_makeover_popup",
       }).unwrap();
       setTimeout(close, 1600);
-    } catch {
-      // isError below surfaces this
+    } catch (err) {
+      if (err?.data?.errors) setErrors(err.data.errors);
     }
   };
 
@@ -204,7 +193,7 @@ export default function LeadPopup() {
                 )}
               </div>
 
-              {isError && (
+              {isError && !Object.keys(errors).length && (
                 <p className="text-[11px]" style={{ color: "var(--danger)" }}>
                   {error?.data?.message || "Something went wrong. Please try again."}
                 </p>
@@ -227,11 +216,6 @@ export default function LeadPopup() {
                 )}
               </button>
 
-              <p className="text-[10px] leading-snug text-center" style={{ color: "var(--muted)" }}>
-                By continuing, I agree to the Night Owl Designers{" "}
-                <a href="/terms" className="underline" style={{ color: "var(--gold)" }}>Terms of Use</a> &{" "}
-                <a href="/privacy" className="underline" style={{ color: "var(--gold)" }}>Privacy Policy</a>
-              </p>
             </form>
           )}
         </div>
