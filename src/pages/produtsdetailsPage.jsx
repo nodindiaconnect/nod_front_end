@@ -136,11 +136,11 @@ export default function ProductDetailsPage() {
 
                     {/* RIGHT — details */}
                     <div className="pdp-info">
-                        {supplier?.isVerified && (
+                        {/* {supplier?.isVerified && (
                             <span className="badge-verified">
                                 <ShieldCheck size={14} /> Verified supplier
                             </span>
-                        )}
+                        )} */}
 
                         <h1 className="pdp-title">{product.productName}</h1>
 
@@ -160,12 +160,12 @@ export default function ProductDetailsPage() {
                                     </span>
                                 )}
                             </div>
-
+{/* 
                             {hasDiscount && (
                                 <p className="text-xs text-[var(--muted)]">
                                     Special Offer Available
                                 </p>
-                            )}
+                            )} */}
                         </div>
 
                         <div className={`stock-row ${product.availability === "In Stock" ? "is-in-stock" : "is-out-stock"}`}>
