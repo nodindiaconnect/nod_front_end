@@ -146,26 +146,19 @@ export default function ProductDetailsPage() {
 
                         {product.brand && <p className="pdp-brand">{product.brand}</p>}
 
-
-                        <div className="price-tag flex flex-col gap-1">
-                            <div className="flex items-end gap-2">
-                                <span className="text-2xl font-bold text-[var(--text)]">
+                        <div className="price-tag">
+                            <div className="price-row">
+                                <span className="price-main">
                                     ₹{original.toLocaleString("en-IN")}
                                 </span>
 
                                 {hasDiscount && (
-                                    <span className="inline-flex items-center gap-1 text-sm font-medium text-green-600">
+                                    <span className="price-save">
                                         <TicketPercent size={14} />
                                         Save ₹{discount.toLocaleString("en-IN")}
                                     </span>
                                 )}
                             </div>
-{/* 
-                            {hasDiscount && (
-                                <p className="text-xs text-[var(--muted)]">
-                                    Special Offer Available
-                                </p>
-                            )} */}
                         </div>
 
                         <div className={`stock-row ${product.availability === "In Stock" ? "is-in-stock" : "is-out-stock"}`}>
@@ -176,17 +169,17 @@ export default function ProductDetailsPage() {
                         <div className="cta-row">
                             <button
                                 onClick={whatsappSupplier}
-                                className="cta-secondary flex items-center gap-2 !bg-[#00d756] !border-[#00D756] "
+                                className="cta-secondary cta-whatsapp"
                             >
-                                <FaWhatsapp size={18} className="text-[#ffffff]" />
+                                <FaWhatsapp size={18} />
                                 WhatsApp
                             </button>
 
                             <button
                                 onClick={emailSupplier}
-                                className="cta-secondary flex items-center gap-2 !bg-[#FDECEC] !border-[#EA4335] hover:!bg-[#FAD9D7]"
+                                className="cta-secondary cta-email"
                             >
-                                <MdEmail size={18} className="text-[#C5221F]" />
+                                <MdEmail size={18} />
                                 Email
                             </button>
                         </div>
@@ -257,18 +250,18 @@ export default function ProductDetailsPage() {
                                 </div>
 
                                 <div className="contact-list">
-                                    <button onClick={callSupplier} className="contact-btn">
-                                        <FaPhoneAlt size={15} color="#2563EB" />
+                                    <button onClick={callSupplier} className="contact-btn contact-btn-call">
+                                        <FaPhoneAlt size={15} />
                                         <span>{contact.callNumber}</span>
                                     </button>
 
-                                    <button onClick={whatsappSupplier} className="contact-btn">
-                                        <FaWhatsapp size={18} color="#00d756" />
+                                    <button onClick={whatsappSupplier} className="contact-btn contact-btn-whatsapp">
+                                        <FaWhatsapp size={18} />
                                         <span>{contact.whatsappNumber}</span>
                                     </button>
 
-                                    <button onClick={emailSupplier} className="contact-btn">
-                                        <MdEmail size={18} color="#EA4335" />
+                                    <button onClick={emailSupplier} className="contact-btn contact-btn-email">
+                                        <MdEmail size={18} />
                                         <span>{contact.email}</span>
                                     </button>
                                 </div>
@@ -438,10 +431,18 @@ const THEME_CSS = `
     border-radius: var(--radius-sm);
   }
 
-  .price-row { display: flex; align-items: baseline; gap: 6px; }
-  .price-main { font-family: var(--font-heading); font-size: 32px; font-weight: 700; color: var(--heading); }
+  .price-row { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .price-main { font-family: var(--font-heading); font-size: 26px; font-weight: 700; color: var(--heading); }
   .price-unit { font-size: 13px; color: var(--text); font-weight: 600; }
   .price-offer { font-size: 13px; color: var(--gold-hover); margin: 4px 0 0; font-weight: 600; }
+  .price-save {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--success);
+  }
 
   .stock-row {
     display: flex;
@@ -489,6 +490,20 @@ const THEME_CSS = `
     transition: var(--transition);
   }
   .cta-secondary:hover { background: var(--background-secondary); box-shadow: var(--shadow-sm); }
+
+  .cta-whatsapp {
+    background: var(--success);
+    border-color: var(--success);
+    color: var(--surface);
+  }
+  .cta-whatsapp:hover { background: var(--primary-hover); border-color: var(--primary-hover); }
+
+  .cta-email {
+    background: var(--background-secondary);
+    border-color: var(--danger);
+    color: var(--danger);
+  }
+  .cta-email:hover { background: var(--border); }
 
   .accordion-wrap { border-top: 1px solid var(--border); }
 
@@ -560,9 +575,14 @@ const THEME_CSS = `
     border: none;
     cursor: pointer;
     padding: 0;
+    transition: var(--transition);
   }
   .contact-btn:hover { color: var(--primary); }
   .contact-btn svg { color: var(--primary); }
+
+  .contact-btn-whatsapp svg { color: var(--success); }
+  .contact-btn-email svg { color: var(--danger); }
+  .contact-btn-call svg { color: var(--primary); }
 
   .map-frame {
     background: var(--background-secondary);
@@ -592,7 +612,7 @@ const THEME_CSS = `
     .pdp-topbar { padding: 16px 16px 0; }
     .pdp-wrap { padding: 16px 16px 40px; gap: 28px; }
     .pdp-title { font-size: 21px; }
-    .price-main { font-size: 26px; }
+    .price-main { font-size: 22px; }
     .cta-row { flex-direction: column; }
     .thumb { width: 52px; height: 52px; }
     .sold-by-heading { font-size: 18px; }
@@ -601,6 +621,6 @@ const THEME_CSS = `
   @media (max-width: 400px) {
     .pdp-title { font-size: 19px; }
     .price-tag { padding: 10px 12px; }
-    .price-main { font-size: 22px; }
+    .price-main { font-size: 20px; }
   }
 `

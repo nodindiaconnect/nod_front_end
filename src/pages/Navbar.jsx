@@ -26,7 +26,7 @@ export default function Navbar() {
   const navLinks = [
     { label: "DESIGNS", target: "projects" },
     { label: "SERVICES", target: "services" },
-    // { label: "PORTFOLIO", target: "/portfolios", route: true },
+    { label: "PORTFOLIO", target: "/portfolios", route: true },
     { label: "ABOUT", target: "/about", route: true },
     { label: "CONTACT", target: "/contact", route: true },
     { label: "SUPPLIERS", target: "/supplier-products", route: true },

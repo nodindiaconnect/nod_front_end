@@ -12,6 +12,7 @@ import {
   Wrench,
   FileSignature,
   Bell,
+  User,
   Star,
 } from "lucide-react"
 
@@ -29,6 +30,7 @@ export const NAV_CONFIG = {
     { label: "Dashboard", path: "/dashboard", icon: Home, end: true },
     { label: "My Projects", path: "/dashboard/projects", icon: FolderKanban },
     { label: "Quotations", path: "/dashboard/find", icon: Search },
+    // { label: "My Profile", path: "/dashboard/myprofile", icon: User },
     { label: "Chat", path: "/dashboard/messages", icon: MessageSquare },
     { label: "Payments", path: "/dashboard/payments", icon: CreditCard },
     { label: "Reviews", path: "/dashboard/reviews", icon: Star },
@@ -41,6 +43,7 @@ export const NAV_CONFIG = {
     { label: "Active Projects", path: "/dashboard/projects", icon: FolderKanban },
     { label: "Messages", path: "/dashboard/messages", icon: MessageSquare },
     { label: "Earnings", path: "/dashboard/earnings", icon: Wallet },
+    { label: "My Profile", path: "/dashboard/myprofile", icon: User },
     { label: "Reviews", path: "/dashboard/reviews", icon: Star },
     { label: "Logout", action: "logout", icon: LogOut },
   ],
@@ -50,6 +53,7 @@ export const NAV_CONFIG = {
     { label: "Active Projects", path: "/dashboard/projects", icon: FolderKanban },
     { label: "Messages", path: "/dashboard/messages", icon: MessageSquare },
     { label: "Earnings", path: "/dashboard/earnings", icon: Wallet },
+    { label: "My Profile", path: "/dashboard/myprofile", icon: User },
     { label: "Reviews", path: "/dashboard/reviews", icon: Star },
     { label: "Logout", action: "logout", icon: LogOut },
   ],
@@ -61,6 +65,7 @@ export const NAV_CONFIG = {
     { label: "Messages", path: "/dashboard/messages", icon: MessageSquare },
     { label: "Payments", path: "/dashboard/earnings", icon: Wallet },
     { label: "Earnings", path: "/dashboard/earnings", icon: Wallet },
+    { label: "My Profile", path: "/dashboard/myprofile", icon: User },
     { label: "Reviews", path: "/dashboard/reviews", icon: Star },
     { label: "Logout", action: "logout", icon: LogOut },
   ],
@@ -68,6 +73,7 @@ export const NAV_CONFIG = {
     { label: "Dashboard", path: "/dashboard", icon: Home, end: true },
     { label: "Products", path: "/dashboard/products", icon: Image },
     { label: "Create Product", path: "/dashboard/products/create", icon: FileText },
+    { label: "My Profile", path: "/dashboard/myprofile", icon: User },
     { label: "Logout", action: "logout", icon: LogOut },
   ],
 }

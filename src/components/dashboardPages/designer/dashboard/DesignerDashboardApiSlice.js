@@ -31,6 +31,20 @@ export const designerApiSlice = apiSlice.injectEndpoints({
     }),
 
 
+    getDesignerProfile: builder.query({
+      query: () => "/Designer/me/profile",
+      providesTags: ["DesignerProfile"],
+    }),
+
+    updateDesignerProfile: builder.mutation({
+      query: (body) => ({
+        url: "/Designer/me/profile",
+        method: "PATCH",
+        body,
+      }),
+      invalidatesTags: ["DesignerProfile", "DesignerUserDetails"],
+    }),
+
     sendDesignerQuotation: builder.mutation({
       query: (body) => ({
         url: "/Designer/quotations",
@@ -89,6 +103,8 @@ export const designerApiSlice = apiSlice.injectEndpoints({
 export const {
   useGetDesignerUserDetailsQuery,
   useGetDesignerQuotationsQuery,
+  useGetDesignerProfileQuery,
+  useUpdateDesignerProfileMutation,
   useGetDesignerProjectsQuery,
   useSendDesignerQuotationMutation,
   useWithdrawDesignerQuotationMutation,

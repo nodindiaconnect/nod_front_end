@@ -1,3 +1,5 @@
+
+
 import { useState, useEffect, useRef } from "react"
 import { useNavigate } from "react-router-dom"
 import Cookies from "js-cookie"
@@ -95,6 +97,10 @@ export default function SignUpForm({ onSwitchToLogin }) {
     const [country, setCountry] = useState("")
     const [roleFields, setRoleFields] = useState({})
     const [showTermsModal, setShowTermsModal] = useState(false)
+    // Error is shown right above the wizard's Back/Next buttons — i.e. right
+    // where the user's eyes and cursor already are when they click. No
+    // scrolling needed since it's never off-screen relative to the button
+    // that triggered it.
     const [errorMsg, setErrorMsg] = useState("")
 
     const [fullName, setFullName] = useState("")
@@ -174,6 +180,31 @@ export default function SignUpForm({ onSwitchToLogin }) {
     const [triggerCheckUsername] = useLazyCheckUsernameQuery()
 
     const roleConfig = role ? ROLE_FIELDS[role] : null
+    // Group the role's dynamic fields into rows of two for a compact
+    // two-column layout. Textareas and selects always get their own full
+    // row (a select needs its own space for the dropdown, a textarea
+    // needs its own height) — only text/number fields get paired up,
+    // taken two at a time in the order they're defined.
+    const profileRows = []
+    if (roleConfig) {
+        let pending = null
+        roleConfig.fields.forEach((field) => {
+            const pairable = field.type === "text" || field.type === "number"
+            if (!pairable) {
+                if (pending) {
+                    profileRows.push([pending])
+                    pending = null
+                }
+                profileRows.push([field])
+            } else if (pending) {
+                profileRows.push([pending, field])
+                pending = null
+            } else {
+                pending = field
+            }
+        })
+        if (pending) profileRows.push([pending])
+    }
     const fieldsLocked = !role
 
     // ── Wizard bookkeeping ──
@@ -434,13 +465,6 @@ export default function SignUpForm({ onSwitchToLogin }) {
 
             <StepProgress stepKeys={stepKeys} currentKey={currentStepKey} />
 
-            {errorMsg && (
-                <div className="mb-5 px-4 py-3 text-xs" style={{ background: ERROR_BG, color: ERROR_TEXT }}>
-                    {errorMsg}
-                </div>
-            )}
-
-    
             {/* ── STEP: ACCOUNT ── */}
             {currentStepKey === "account" && (
                 <div>
@@ -477,99 +501,189 @@ export default function SignUpForm({ onSwitchToLogin }) {
                         className={fieldsLocked ? "opacity-40 pointer-events-none" : ""}
                         style={{ border: "none", padding: 0, margin: 0 }}
                     >
-                        <TextInput label="NAME" placeholder="John Doe" value={fullName} onChange={(e) => setFullName(e.target.value)} autoComplete="name" />
-
-                        <div className="mb-1">
-                            <TextInput label="USERNAME" placeholder="johndoe123" value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="username" />
-                            {!fieldsLocked && username.trim().length >= 3 && (
-                                <p className="-mt-3 mb-4 text-[14px]" style={{ color: usernameStatus === "available" ? OK_TEXT : usernameStatus === "taken" ? ERROR_TEXT : INK_SOFT }}>
-                                    {usernameStatus === "checking" && "Checking availability..."}
-                                    {usernameStatus === "available" && `✓ ${usernameMessage || "Username is available"}`}
-                                    {usernameStatus === "taken" && `✗ ${usernameMessage || "Username is already taken"}`}
-                                    {usernameStatus === "error" && (usernameMessage || "Couldn't check availability, try again")}
-                                </p>
-                            )}
-                        </div>
-
-                        <div className="mb-4">
-                            <FieldLabel>PHONE NUMBER</FieldLabel>
-                            <div className="flex flex-col xs:flex-row sm:flex-row gap-2">
-                                <div ref={phoneCodeBoxRef} className="relative w-full sm:w-[130px] shrink-0">
-                                    <input
-                                        type="text"
-                                        placeholder="Code"
-                                        value={
-                                            phoneCodeOpen
-                                                ? phoneCodeQuery
-                                                : (() => {
-                                                    const sel = phoneCodeOptions.find((cc) => cc.code === phoneCode)
-                                                    return sel ? `${sel.flag} ${sel.code}` : ""
-                                                })()
-                                        }
-                                        onFocus={() => {
-                                            setPhoneCodeOpen(true)
-                                            setPhoneCodeQuery("")
-                                        }}
-                                        onChange={(e) => setPhoneCodeQuery(e.target.value)}
-                                        className="w-full px-3 py-3.5 text-sm outline-none"
-                                        style={{ border: `1px solid ${LINE}`, color: INK, background: "transparent" }}
-                                    />
-                                    {phoneCodeOpen && (
-                                        <div className="absolute z-20 mt-1 w-56 max-h-56 overflow-y-auto border shadow-lg" style={{ borderColor: LINE, background: SURFACE }}>
-                                            {filteredPhoneCodes.length === 0 && (
-                                                <div className="px-4 py-3 text-xs" style={{ color: INK_SOFT }}>No matches</div>
-                                            )}
-                                            {filteredPhoneCodes.map((cc) => (
-                                                <button
-                                                    key={cc.code}
-                                                    type="button"
-                                                    onClick={() => {
-                                                        setPhoneCode(cc.code)
-                                                        setPhoneCodeOpen(false)
-                                                        setPhoneCodeQuery("")
-                                                    }}
-                                                    className="w-full text-left px-4 py-2.5 text-sm flex items-center gap-2 hover:bg-black/[0.03]"
-                                                    style={{ color: INK }}
-                                                >
-                                                    <span>{cc.flag}</span>
-                                                    <span className="font-medium">{cc.code}</span>
-                                                    <span className="text-xs truncate" style={{ color: INK_SOFT }}>{cc.name}</span>
-                                                </button>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
-                                <input
-                                    type="tel"
-                                    placeholder="Phone number"
-                                    value={phone}
-                                    onChange={(e) => setPhone(e.target.value)}
-                                    className="flex-1 min-w-0 px-4 py-3.5 text-sm outline-none"
-                                    style={{ border: `1px solid ${LINE}`, color: INK, background: "transparent" }}
-                                    autoComplete="tel"
-                                />
+                        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                            <div className="flex-1 min-w-0">
+                                <TextInput label="NAME" placeholder="John Doe" value={fullName} onChange={(e) => setFullName(e.target.value)} autoComplete="name" />
+                            </div>
+                            <div className="flex-1 min-w-0 mb-1">
+                                <TextInput label="USERNAME" placeholder="johndoe123" value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="username" />
+                                {!fieldsLocked && username.trim().length >= 3 && (
+                                    <p className="-mt-3 mb-4 text-[14px]" style={{ color: usernameStatus === "available" ? OK_TEXT : usernameStatus === "taken" ? ERROR_TEXT : INK_SOFT }}>
+                                        {usernameStatus === "checking" && "Checking availability..."}
+                                        {usernameStatus === "available" && `✓ ${usernameMessage || "Username is available"}`}
+                                        {usernameStatus === "taken" && `✗ ${usernameMessage || "Username is already taken"}`}
+                                        {usernameStatus === "error" && (usernameMessage || "Couldn't check availability, try again")}
+                                    </p>
+                                )}
                             </div>
                         </div>
 
-                        <div className="mb-4 relative">
-                            <FieldLabel>PASSWORD</FieldLabel>
-                            <input
-                                type={showPassword ? "text" : "password"}
-                                placeholder="Min 8 chars, uppercase, digit, special"
-                                value={signupPassword}
-                                onChange={(e) => setSignupPassword(e.target.value)}
-                                className="w-full px-4 py-3.5 pr-12 text-sm outline-none"
-                                style={{ border: `1px solid ${LINE}`, color: INK, background: "transparent" }}
-                                autoComplete="new-password"
-                            />
-                            <button
-                                type="button"
-                                onClick={() => setShowPassword(!showPassword)}
-                                className="absolute right-4 top-[38px]"
-                                style={{ color: INK_SOFT }}
-                            >
-                                {showPassword ? "🙈" : "👁️"}
-                            </button>
+                        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-4">
+                            <div className="flex-1 min-w-0">
+                                <FieldLabel>PHONE NUMBER</FieldLabel>
+                                {/* <div className="flex flex-col xs:flex-row sm:flex-row gap-2">
+                                    <div ref={phoneCodeBoxRef} className="relative w-full sm:w-[90px] shrink-0">
+                                        <input
+                                            type="text"
+                                            placeholder="Code"
+                                            value={
+                                                phoneCodeOpen
+                                                    ? phoneCodeQuery
+                                                    : (() => {
+                                                        const sel = phoneCodeOptions.find((cc) => cc.code === phoneCode)
+                                                        return sel ? `${sel.flag} ${sel.code}` : ""
+                                                    })()
+                                            }
+                                            onFocus={() => {
+                                                setPhoneCodeOpen(true)
+                                                setPhoneCodeQuery("")
+                                            }}
+                                            onChange={(e) => setPhoneCodeQuery(e.target.value)}
+                                            className="w-full px-2 py-2.5 text-xs outline-none"
+                                            style={{ border: `1px solid ${LINE}`, color: INK, background: "transparent" }}
+                                        />
+                                        {phoneCodeOpen && (
+                                            <div className="absolute z-20 mt-1 w-56 max-h-56 overflow-y-auto border shadow-lg" style={{ borderColor: LINE, background: SURFACE }}>
+                                                {filteredPhoneCodes.length === 0 && (
+                                                    <div className="px-4 py-3 text-xs" style={{ color: INK_SOFT }}>No matches</div>
+                                                )}
+                                                {filteredPhoneCodes.map((cc) => (
+                                                    <button
+                                                        key={cc.code}
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setPhoneCode(cc.code)
+                                                            setPhoneCodeOpen(false)
+                                                            setPhoneCodeQuery("")
+                                                        }}
+                                                        className="w-full text-left px-4 py-2.5 text-sm flex items-center gap-2 hover:bg-black/[0.03]"
+                                                        style={{ color: INK }}
+                                                    >
+                                                        <span>{cc.flag}</span>
+                                                        <span className="font-medium">{cc.code}</span>
+                                                        <span className="text-xs truncate" style={{ color: INK_SOFT }}>{cc.name}</span>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                    <input
+                                        type="tel"
+                                        placeholder="Phone number"
+                                        value={phone}
+                                        onChange={(e) => setPhone(e.target.value)}
+                                        className="flex-1 min-w-0 px-3 py-2.5 text-xs outline-none"
+                                        style={{ border: `1px solid ${LINE}`, color: INK, background: "transparent" }}
+                                        autoComplete="tel"
+                                    />
+                                </div> */}
+
+                                <div className="flex flex-col xs:flex-row sm:flex-row gap-2">
+                                    <div ref={phoneCodeBoxRef} className="relative w-full sm:w-[60px] shrink-0">
+                                        <input
+                                            type="text"
+                                            placeholder="Code"
+                                            value={
+                                                phoneCodeOpen
+                                                    ? phoneCodeQuery
+                                                    : (() => {
+                                                        const sel = phoneCodeOptions.find((cc) => cc.code === phoneCode)
+                                                        return sel ? `${sel.flag} ${sel.code}` : ""
+                                                    })()
+                                            }
+                                            onFocus={() => {
+                                                setPhoneCodeOpen(true)
+                                                setPhoneCodeQuery("")
+                                            }}
+                                            onChange={(e) => setPhoneCodeQuery(e.target.value)}
+                                            className="w-full px-1.5 py-2.5 text-xs outline-none"
+                                            style={{
+                                                border: `1px solid ${LINE}`,
+                                                color: INK,
+                                                background: "transparent"
+                                            }}
+                                        />
+
+                                        {phoneCodeOpen && (
+                                            <div
+                                                className="absolute z-20 mt-1 w-56 max-h-56 overflow-y-auto border shadow-lg"
+                                                style={{
+                                                    borderColor: LINE,
+                                                    background: SURFACE
+                                                }}
+                                            >
+                                                {filteredPhoneCodes.length === 0 && (
+                                                    <div
+                                                        className="px-4 py-3 text-xs"
+                                                        style={{ color: INK_SOFT }}
+                                                    >
+                                                        No matches
+                                                    </div>
+                                                )}
+
+                                                {filteredPhoneCodes.map((cc) => (
+                                                    <button
+                                                        key={cc.code}
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setPhoneCode(cc.code)
+                                                            setPhoneCodeOpen(false)
+                                                            setPhoneCodeQuery("")
+                                                        }}
+                                                        className="w-full text-left px-4 py-2.5 text-sm flex items-center gap-2 hover:bg-black/[0.03]"
+                                                        style={{ color: INK }}
+                                                    >
+                                                        <span>{cc.flag}</span>
+                                                        <span className="font-medium">{cc.code}</span>
+                                                        <span
+                                                            className="text-xs truncate"
+                                                            style={{ color: INK_SOFT }}
+                                                        >
+                                                            {cc.name}
+                                                        </span>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <input
+                                        type="tel"
+                                        placeholder="Phone number"
+                                        value={phone}
+                                        onChange={(e) => setPhone(e.target.value)}
+                                        className="flex-1 min-w-0 px-3 py-2.5 text-xs outline-none"
+                                        style={{
+                                            border: `1px solid ${LINE}`,
+                                            color: INK,
+                                            background: "transparent"
+                                        }}
+                                        autoComplete="tel"
+                                    />
+                                </div>
+
+                            </div>
+
+                            <div className="flex-1 min-w-0 relative">
+                                <FieldLabel>PASSWORD</FieldLabel>
+                                <input
+                                    type={showPassword ? "text" : "password"}
+                                    placeholder="Min 8 chars, uppercase, digit, special"
+                                    value={signupPassword}
+                                    onChange={(e) => setSignupPassword(e.target.value)}
+                                    className="w-full px-3 py-2.5 pr-10 text-xs outline-none"
+                                    style={{ border: `1px solid ${LINE}`, color: INK, background: "transparent" }}
+                                    autoComplete="new-password"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute right-3 top-[32px] text-sm"
+                                    style={{ color: INK_SOFT }}
+                                >
+                                    {showPassword ? "🙈" : "👁️"}
+                                </button>
+                            </div>
                         </div>
 
                         <div className="mb-4">
@@ -711,8 +825,14 @@ export default function SignUpForm({ onSwitchToLogin }) {
                         )}
                     </div>
 
-                    <TextInput label="STATE" placeholder="e.g. Telangana" value={stateName} onChange={(e) => setStateName(e.target.value)} />
-                    <TextInput label="CITY" placeholder="e.g. Hyderabad" value={cityName} onChange={(e) => setCityName(e.target.value)} />
+                    <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                        <div className="flex-1 min-w-0">
+                            <TextInput label="STATE" placeholder="e.g. Telangana" value={stateName} onChange={(e) => setStateName(e.target.value)} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <TextInput label="CITY" placeholder="e.g. Hyderabad" value={cityName} onChange={(e) => setCityName(e.target.value)} />
+                        </div>
+                    </div>
                     <TextAreaInput label="ADDRESS" rows={2} placeholder="Street, area, landmark..." value={addressLine} onChange={(e) => setAddressLine(e.target.value)} />
                 </div>
             )}
@@ -720,22 +840,26 @@ export default function SignUpForm({ onSwitchToLogin }) {
             {/* ── STEP: PROFILE ── */}
             {currentStepKey === "profile" && roleConfig && (
                 <div>
-                    {roleConfig.fields.map((field) => (
-                        <div key={field.id}>
-                            {field.type === "textarea" && (
-                                <TextAreaInput label={field.label} rows={3} placeholder={field.placeholder} value={roleFields[field.id] || ""} onChange={(e) => setRoleField(field.id, e.target.value)} />
-                            )}
-                            {(field.type === "text" || field.type === "number") && (
-                                <TextInput label={field.label} type={field.type} placeholder={field.placeholder} value={roleFields[field.id] || ""} onChange={(e) => setRoleField(field.id, e.target.value)} />
-                            )}
-                            {field.type === "select" && (
-                                <SelectInput label={field.label} value={roleFields[field.id] || ""} onChange={(e) => setRoleField(field.id, e.target.value)}>
-                                    <option value="">Select {field.label}</option>
-                                    {field.options?.map((opt) => (
-                                        <option key={opt} value={opt}>{opt}</option>
-                                    ))}
-                                </SelectInput>
-                            )}
+                    {profileRows.map((row, i) => (
+                        <div key={i} className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                            {row.map((field) => (
+                                <div key={field.id} className="flex-1 min-w-0">
+                                    {field.type === "textarea" && (
+                                        <TextAreaInput label={field.label} rows={3} placeholder={field.placeholder} value={roleFields[field.id] || ""} onChange={(e) => setRoleField(field.id, e.target.value)} />
+                                    )}
+                                    {(field.type === "text" || field.type === "number") && (
+                                        <TextInput label={field.label} type={field.type} placeholder={field.placeholder} value={roleFields[field.id] || ""} onChange={(e) => setRoleField(field.id, e.target.value)} />
+                                    )}
+                                    {field.type === "select" && (
+                                        <SelectInput label={field.label} value={roleFields[field.id] || ""} onChange={(e) => setRoleField(field.id, e.target.value)}>
+                                            <option value="">Select {field.label}</option>
+                                            {field.options?.map((opt) => (
+                                                <option key={opt} value={opt}>{opt}</option>
+                                            ))}
+                                        </SelectInput>
+                                    )}
+                                </div>
+                            ))}
                         </div>
                     ))}
                 </div>
@@ -777,8 +901,23 @@ export default function SignUpForm({ onSwitchToLogin }) {
                 </div>
             )}
 
+            {/* ── ERROR BANNER — sits right above the nav buttons, i.e. right
+                 where the user's eyes already are when they click Next/Back.
+                 No scrolling needed because it never renders far from the
+                 action that triggered it. ── */}
+            {errorMsg && (
+                <div
+                    role="alert"
+                    aria-live="assertive"
+                    className="mt-6 px-4 py-3 text-xs"
+                    style={{ background: ERROR_BG, color: ERROR_TEXT }}
+                >
+                    {errorMsg}
+                </div>
+            )}
+
             {/* ── WIZARD NAV ── */}
-            <div className="flex flex-col-reverse sm:flex-row gap-3 mt-8">
+            <div className="flex flex-col-reverse sm:flex-row gap-3 mt-4">
                 {!isFirstStep && (
                     <GhostButton type="button" onClick={handleWizardBack} className="w-full sm:w-auto sm:px-8">
                         Back
