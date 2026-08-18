@@ -1,5 +1,4 @@
-
-import { apiSlice } from "../../../../ApiSliceComponent/jaiMaxApi"
+import { apiSlice } from "../../../../ApiSliceComponent/jaiMaxApi";
 
 export const contractorApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
@@ -14,6 +13,20 @@ export const contractorApiSlice = apiSlice.injectEndpoints({
         params: status ? { status } : undefined,
       }),
       providesTags: ["ContractorQuotations"],
+    }),
+
+    getDesignerProfile: builder.query({
+      query: () => "/Designer/me/profile",
+      providesTags: ["DesignerProfile"],
+    }),
+
+    updateDesignerProfile: builder.mutation({
+      query: (body) => ({
+        url: "/Designer/me/profile",
+        method: "PATCH",
+        body,
+      }),
+      invalidatesTags: ["DesignerProfile", "DesignerUserDetails"],
     }),
 
     getContractorProjects: builder.query({
@@ -44,14 +57,14 @@ export const contractorApiSlice = apiSlice.injectEndpoints({
       invalidatesTags: ["ContractorUserDetails", "ContractorQuotations"],
     }),
   }),
-})
+});
 
 export const {
   useGetContractorUserDetailsQuery,
   useGetContractorQuotationsQuery,
+  useGetDesignerProfileQuery,
+  useUpdateDesignerProfileMutation,
   useGetContractorProjectsQuery,
   useSendContractorQuotationMutation,
   useWithdrawContractorQuotationMutation,
-} = contractorApiSlice
-
-
+} = contractorApiSlice;
