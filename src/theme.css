@@ -64,3 +64,79 @@
     --border: #403A35;
   }
 }
+
+/* Profile workspace — uses theme tokens exclusively so it follows light/dark mode. */
+.profile-page {
+  background: var(--background-secondary);
+  color: var(--text);
+}
+
+.profile-page__header {
+  position: relative;
+  overflow: hidden;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.profile-page__header::before {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 4px;
+  background: var(--gold);
+  content: "";
+}
+
+.profile-page__content {
+  width: min(100%, 1440px);
+  margin: 0 auto;
+}
+
+.profile-page__body {
+  padding-bottom: 2rem;
+}
+
+.profile-page__section {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  padding: 1.25rem;
+}
+
+.profile-page__section + .profile-page__section {
+  margin-top: 1rem;
+}
+
+.profile-page__section h2 {
+  display: flex;
+  align-items: center;
+  gap: .625rem;
+}
+
+.profile-page__section h2::before {
+  width: .35rem;
+  height: 1.25rem;
+  border-radius: var(--radius-sm);
+  background: var(--gold);
+  content: "";
+}
+
+.profile-page input:disabled,
+.profile-page textarea:disabled,
+.profile-page select:disabled {
+  background: var(--background-secondary);
+  color: var(--text);
+  opacity: 1;
+}
+
+.profile-page button:focus-visible,
+.profile-page input:focus-visible,
+.profile-page textarea:focus-visible,
+.profile-page select:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+@media (min-width: 640px) {
+  .profile-page__section { padding: 1.5rem; }
+}

@@ -30,6 +30,7 @@ import ProductDetailsPage from "./pages/produtsdetailsPage"
 import LeadPopup from "./pages/LeadPopup"
 import AllPortfolios from "./pages/AllPortfolios"
 import UserPortfolioProfile from "./pages/UserPortfolioProfile"
+import PortfolioProjectDetails from "./pages/PortfolioProjectDetails"
 import PortfoliosByRolePage from "./pages/explore"
 
 // ── Client ──
@@ -154,6 +155,7 @@ function App() {
         <Route path="/explore" element={<PortfoliosByRolePage />} />
         <Route path="/portfolios" element={<AllPortfolios />} />
         <Route path="/portfolio/:userId" element={<UserPortfolioProfile />} />
+        <Route path="/portfolio/:userId/project/:projectId" element={<PortfolioProjectDetails />} />
         <Route path="/products/:productId" element={<ProductDetailsPage />} />
         <Route path="/why-choose" element={<WhyChoose />} />
         <Route element={<PublicRoute restricted />}>
