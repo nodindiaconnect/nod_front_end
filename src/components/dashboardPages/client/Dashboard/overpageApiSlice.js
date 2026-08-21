@@ -118,6 +118,47 @@ export const clientApiSlice = apiSlice.injectEndpoints({
             ],
         }),
 
+        // Get Project Team
+        getProjectTeam: builder.query({
+            query: (projectId) => ({
+                url: `/Client/projects/${projectId}/team`,
+                method: "GET",
+            }),
+            providesTags: (result, error, projectId) => [
+                { type: "ProjectTeam", id: projectId },
+                "ProjectTeam",
+            ],
+        }),
+
+        // Transition Project Status
+        transitionProjectStatus: builder.mutation({
+            query: ({ projectId, status, reason }) => ({
+                url: `/Client/projects/${projectId}/status`,
+                method: "PATCH",
+                body: { status, reason },
+            }),
+            invalidatesTags: (result, error, { projectId }) => [
+                { type: "Project", id: projectId },
+                { type: "ProjectTeam", id: projectId },
+                "ProjectsList",
+                "DashboardStats",
+            ],
+        }),
+
+        // Remove Team Member
+        removeTeamMember: builder.mutation({
+            query: ({ projectId, memberId, reason }) => ({
+                url: `/Client/projects/${projectId}/team/${memberId}`,
+                method: "DELETE",
+                body: { reason },
+            }),
+            invalidatesTags: (result, error, { projectId }) => [
+                { type: "Project", id: projectId },
+                { type: "ProjectTeam", id: projectId },
+                "ProjectBids",
+            ],
+        }),
+
     }),
 });
 
@@ -130,5 +171,8 @@ export const {
     useGetProjectByIdQuery,
     useUpdateProjectMutation,
     useDeleteProjectMutation,
-    useUpdateProjectAvailabilityMutation
-} = clientApiSlice;
+    useUpdateProjectAvailabilityMutation,
+    useGetProjectTeamQuery,
+    useTransitionProjectStatusMutation,
+    useRemoveTeamMemberMutation,
+} = clientApiSlice;

@@ -1,9 +1,6 @@
-import React from 'react'
+import React from "react";
+import ReviewsWorkspace from "../../dashboard/shared/ReviewsWorkspace";
 
 export default function ReviewsPage() {
-  return (
-    <div>
-      ReviewsPage
-    </div>
-  )
+  return <ReviewsWorkspace roleTitle="Client" />;
 }

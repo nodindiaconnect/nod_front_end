@@ -1,9 +1,6 @@
-import React from 'react'
+import React from "react";
+import ProfessionalProjectsPage from "../shared/ProfessionalProjectsPage";
 
 export default function ProjectsPage() {
-  return (
-    <div>
-      ProjectsPage
-    </div>
-  )
+  return <ProfessionalProjectsPage roleTitle="Architect" />;
 }

@@ -6,13 +6,16 @@ import Table, { ExpandableCell } from "../../../global/Table";
 import Loader from "../../../global/Loader";
 import CreateProjectForm from "./CreateProjectForm";
 import Pagination from "../../../global/pagination";
+import ProjectWorkspace from "../../dashboard/shared/ProjectWorkspace";
 import {
     Plus, CheckCircle, MapPin, Briefcase, Calendar,
     FileText, ChevronLeft, ChevronRight, X, Upload, Image as ImageIcon,
     Video as VideoIcon, Users, MessageCircle, Tag, Home, Ruler, Layers,
     BedDouble, Bath, Palette, Sofa, Heart, AlertTriangle, UserCheck, Clock,
-    Wallet, Flag, StickyNote, FolderKanban, IndianRupee, Globe, Lock
+    Wallet, Flag, StickyNote, FolderKanban, IndianRupee, Globe, Lock,
+    Sparkles
 } from "lucide-react";
+
 
 const STATUS_BADGE = {
     WAITING_FOR_QUOTATIONS: { label: "Waiting Quotations", color: "var(--warning)" },
@@ -388,6 +391,7 @@ function ProjectDetailsModal({ project, onClose }) {
 export default function ProjectsPage() {
     const [showForm, setShowForm] = useState(false);
     const [selectedProject, setSelectedProject] = useState(null);
+    const [workspaceProjectId, setWorkspaceProjectId] = useState(null);
     const [currentPage, setCurrentPage] = useState(1);
     const [limit] = useState(10);
     const [statusFilter, setStatusFilter] = useState("");
@@ -397,6 +401,18 @@ export default function ProjectsPage() {
         limit: limit,
         ...(statusFilter && { status: statusFilter }),
     });
+
+    if (workspaceProjectId) {
+        return (
+            <div className="w-full py-2 px-3 sm:px-6 lg:px-10 sm:py-6">
+                <ProjectWorkspace
+                    projectId={workspaceProjectId}
+                    onBack={() => setWorkspaceProjectId(null)}
+                />
+            </div>
+        );
+    }
+
 
 
 
@@ -556,22 +572,29 @@ export default function ProjectsPage() {
             ),
         },
         {
-            key: "actions", label: "Actions", width: "20%",
+            key: "actions", label: "Actions", width: "24%",
             render: (project) => (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5">
                     <button
-                        className="px-3 py-1.5 text-white rounded-sm font-medium text-xs transition-colors whitespace-nowrap"
+                        className="px-3 py-1.5 text-white rounded-sm font-semibold text-xs transition-colors whitespace-nowrap flex items-center gap-1 shadow-xs"
                         style={{ backgroundColor: "var(--primary)" }}
                         onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--primary-hover)")}
                         onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "var(--primary)")}
+                        onClick={(e) => { e.stopPropagation(); setWorkspaceProjectId(project.id); }}
+                    >
+                        <FolderKanban size={13} /> Workspace
+                    </button>
+
+                    <button
+                        className="px-2.5 py-1.5 border border-border bg-white text-heading rounded-sm font-medium text-xs hover:bg-background-secondary transition-colors whitespace-nowrap"
                         onClick={(e) => { e.stopPropagation(); setSelectedProject(project); }}
                     >
-                        Details
+                        Specs
                     </button>
 
                     {project.availabilityStatus === "CLOSED" ? (
                         <button
-                            className="flex items-center gap-1 px-3 py-1.5 rounded-sm font-medium text-xs transition-colors whitespace-nowrap text-white"
+                            className="flex items-center gap-1 px-2.5 py-1.5 rounded-sm font-medium text-xs transition-colors whitespace-nowrap text-white"
                             style={{ backgroundColor: "#10b981" }}
                             disabled={isUpdatingAvailability}
                             onClick={(e) => {
@@ -581,11 +604,11 @@ export default function ProjectsPage() {
                             onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#059669")}
                             onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#10b981")}
                         >
-                            <Globe size={14} /> Publish
+                            <Globe size={13} /> Open
                         </button>
                     ) : (
                         <button
-                            className="flex items-center gap-1 px-3 py-1.5 rounded-sm font-medium text-xs transition-colors whitespace-nowrap text-white"
+                            className="flex items-center gap-1 px-2.5 py-1.5 rounded-sm font-medium text-xs transition-colors whitespace-nowrap text-white"
                             style={{ backgroundColor: "#ef4444" }}
                             disabled={isUpdatingAvailability}
                             onClick={(e) => {
@@ -595,12 +618,13 @@ export default function ProjectsPage() {
                             onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#dc2626")}
                             onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#ef4444")}
                         >
-                            <Lock size={14} /> Close
+                            <Lock size={13} /> Close
                         </button>
                     )}
                 </div>
             ),
         },
+
 
     ];
 

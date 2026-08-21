@@ -154,12 +154,19 @@ const baseQueryWithReAuth = async (args, api, extraOptions) => {
 export const apiSlice = createApi({
   reducerPath: "apiSlice",
   baseQuery: baseQueryWithReAuth,
-  tagTypes: ["getComment", "updateDetails", "getTicket", "shareholder", "WealthPlan", "WITHDRAW_HISTORY", "WITHDRAW_LIST", "withdrawal"],
+  tagTypes: [
+    "getComment", "updateDetails", "getTicket", "shareholder", "WealthPlan", "WITHDRAW_HISTORY", "WITHDRAW_LIST", "withdrawal",
+    "Bids", "ProjectBids", "MyBids", "Project", "ProjectsList", "ProjectTeam", "Chats", "Messages", "ProjectChats",
+    "UserDetails", "DesignerUserDetails", "ArchitectUserDetails", "ContractorUserDetails", "DashboardStats",
+    "Reviews", "MyReviews", "UserReviews", "ProjectReviews", "EligibleReviews"
+  ],
   refetchOnFocus: false,
   refetchOnReconnect: true,
   endpoints: (builder) => ({}),
 });
 
+
 export const { usePrefetch } = apiSlice;
+
 
 
