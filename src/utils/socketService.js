@@ -200,14 +200,14 @@ export function useSocketChat({
 
   // Emitters
   const emitSendMessage = useCallback(
-    (text, attachments = [], callback) => {
+    (text, attachments = [], callback, tempId = null) => {
       const s = getSocket();
       if (!s || !chatId) {
         if (callback) callback({ success: false, error: "Socket not connected" });
         return;
       }
 
-      s.emit("send_message", { chatId, text, attachments }, (res) => {
+      s.emit("send_message", { chatId, text, attachments, tempId }, (res) => {
         if (callback) callback(res);
       });
     },
@@ -252,3 +252,65 @@ export function useSocketChat({
     emitStopTyping,
   };
 }
+
+/**
+ * React hook to listen for real-time chat notifications and unread updates across the dashboard
+ */
+export function useGlobalChatNotifications({ onNewMessage = null, onUnreadUpdate = null } = {}) {
+  const [isConnected, setIsConnected] = useState(false);
+  const processedMessageIdsRef = useRef(new Set());
+
+  useEffect(() => {
+    const s = getSocket();
+    if (!s) return;
+
+    const handleConnect = () => setIsConnected(true);
+    const handleDisconnect = () => setIsConnected(false);
+
+    setIsConnected(s.connected);
+
+    s.on("connect", handleConnect);
+    s.on("disconnect", handleDisconnect);
+
+    const handleNotification = (data) => {
+      if (!data) return;
+      const message = data.message || data;
+      const messageId = message?.id;
+
+      if (messageId) {
+        if (processedMessageIdsRef.current.has(messageId)) {
+          return;
+        }
+        processedMessageIdsRef.current.add(messageId);
+        // Keep set size bounded
+        if (processedMessageIdsRef.current.size > 200) {
+          const first = processedMessageIdsRef.current.values().next().value;
+          processedMessageIdsRef.current.delete(first);
+        }
+      }
+
+      if (onNewMessage) {
+        onNewMessage(data);
+      }
+    };
+
+    const handleUnreadUpdate = (data) => {
+      if (onUnreadUpdate) {
+        onUnreadUpdate(data);
+      }
+    };
+
+    s.on("new_message_notification", handleNotification);
+    s.on("unread_count_update", handleUnreadUpdate);
+
+    return () => {
+      s.off("connect", handleConnect);
+      s.off("disconnect", handleDisconnect);
+      s.off("new_message_notification", handleNotification);
+      s.off("unread_count_update", handleUnreadUpdate);
+    };
+  }, [onNewMessage, onUnreadUpdate]);
+
+  return { isConnected };
+}
+

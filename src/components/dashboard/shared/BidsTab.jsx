@@ -35,6 +35,61 @@ const ROLE_TABS = [
   { key: "CONTRACTOR", label: "Contractors" },
 ];
 
+function ProAvatar({ src, name = "", size = 48, className = "" }) {
+  const [error, setError] = useState(false);
+
+  const getInitials = (n) => {
+    if (!n || typeof n !== "string") return "P";
+    const parts = n.trim().split(/\s+/);
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return n.slice(0, 2).toUpperCase();
+  };
+
+  const isInvalidSrc =
+    !src ||
+    typeof src !== "string" ||
+    src.trim().length === 0 ||
+    !src.startsWith("http");
+
+  if (error || isInvalidSrc) {
+    return (
+      <div
+        className={`rounded-full flex items-center justify-center font-bold text-xs uppercase flex-shrink-0 select-none shadow-xs ${className}`}
+        style={{
+          width: size,
+          height: size,
+          backgroundColor: "var(--background-secondary)",
+          color: "var(--primary)",
+          border: "1px solid var(--border)",
+        }}
+      >
+        {getInitials(name)}
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className={`rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center relative ${className}`}
+      style={{
+        width: size,
+        height: size,
+        border: "1px solid var(--border)",
+        backgroundColor: "var(--background-secondary)",
+      }}
+    >
+      <img
+        src={src}
+        alt=""
+        onError={() => setError(true)}
+        className="w-full h-full object-cover"
+      />
+    </div>
+  );
+}
+
 export default function BidsTab({
   project = null,
   onOpenChat,
@@ -83,13 +138,22 @@ export default function BidsTab({
   const getProDetails = (bid) => {
     const pro = bid.architect || bid.designer || bid.contractor;
     const user = pro?.user || {};
+    const img =
+      user.profileImageUrl ||
+      pro?.profileImageUrl ||
+      (typeof user.profile === "string" && (user.profile.startsWith("http") || user.profile.startsWith("/uploads") || user.profile.startsWith("data:"))
+        ? user.profile
+        : null) ||
+      (Array.isArray(pro?.photos) && pro.photos.length > 0 ? (typeof pro.photos[0] === "string" ? pro.photos[0] : pro.photos[0]?.url) : null) ||
+      null;
+
     return {
       userId: user.id || null,
       name: user.name || "Professional",
-      profileImg: user.profile || null,
+      profileImg: img,
       city: user.city || user.state ? `${user.city || ""}, ${user.state || ""}` : "Verified Location",
       role: bid.role ? bid.role.replace(/_/g, " ") : "Specialist",
-      experience: pro?.experience || "Verified Pro",
+      experience: pro?.experience || pro?.yearsOfExperience || "Verified Pro",
       rating: pro?.rating || 4.9,
     };
   };
@@ -120,19 +184,26 @@ export default function BidsTab({
     }
   };
 
-  // Handle Accept
+  // Handle Accept / Award
   const handleConfirmAccept = async () => {
     if (!acceptingBid) return;
     try {
       await acceptBidMutation(acceptingBid.id).unwrap();
-      toast.success(`Proposal accepted! Professional hired to project team.`);
+      toast.success(`Proposal awarded! Contract and 3-phase milestones generated.`);
       setAcceptingBid(null);
       if (onBidAccepted) onBidAccepted();
       refetch();
     } catch (err) {
-      toast.error(err?.data?.message || "Failed to accept proposal");
+      if (err?.status === 409 || err?.data?.message?.includes("already")) {
+        toast.warning(err?.data?.message || "This role has already been awarded by another session. Refreshing list...");
+        setAcceptingBid(null);
+        refetch();
+      } else {
+        toast.error(err?.data?.message || "Failed to award proposal");
+      }
     }
   };
+
 
   // Handle Reject
   const handleConfirmReject = async () => {
@@ -275,17 +346,11 @@ export default function BidsTab({
                     )}
 
                     {/* Pro Avatar */}
-                    <div className="w-13 h-13 rounded-full overflow-hidden bg-primary/10 flex items-center justify-center flex-shrink-0 border border-border">
-                      {pro.profileImg ? (
-                        <img
-                          src={pro.profileImg}
-                          alt={pro.name}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <User size={24} className="text-primary" />
-                      )}
-                    </div>
+                    <ProAvatar
+                      src={pro.profileImg}
+                      name={pro.name}
+                      size={52}
+                    />
 
                     {/* Pro Info */}
                     <div className="min-w-0 flex-1">

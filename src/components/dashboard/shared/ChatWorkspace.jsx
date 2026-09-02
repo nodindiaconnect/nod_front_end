@@ -4,17 +4,20 @@ import {
   Send,
   Users,
   User,
+  X,
   Search,
   Check,
   CheckCheck,
   Paperclip,
   Circle,
   ArrowLeft,
-  Briefcase,
-  Clock,
-  Shield,
   Smile,
-  MoreVertical,
+  SlidersHorizontal,
+  FileText,
+  Download,
+  ShieldCheck,
+  MapPin,
+  Star,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { getCurrentUser } from "../../../utils/auth";
@@ -27,6 +30,22 @@ import {
   useStartChatMutation,
 } from "../../../ApiSliceComponent/chatApiSlice";
 import { useSocketChat } from "../../../utils/socketService";
+
+const ROLE_NAMES = {
+  0: "Admin",
+  1: "Client",
+  2: "Interior Designer",
+  3: "Architect",
+  4: "Contractor",
+  5: "Material Supplier",
+  ADMIN: "Admin",
+  CLIENT: "Client",
+  DESIGNER: "Interior Designer",
+  INTERIOR_DESIGNER: "Interior Designer",
+  ARCHITECT: "Architect",
+  CONTRACTOR: "Contractor",
+  MATERIAL_SUPPLIER: "Material Supplier",
+};
 
 export default function ChatWorkspace({
   projectId = null,
@@ -41,13 +60,15 @@ export default function ChatWorkspace({
 
   const [activeChatId, setActiveChatId] = useState(initialChatId);
   const [searchQuery, setSearchQuery] = useState("");
-  const [chatFilter, setChatFilter] = useState("ALL"); // ALL | TEAM | DIRECT
+  const [chatFilter, setChatFilter] = useState("ALL"); // ALL | DIRECT | TEAM
   const [messageText, setMessageText] = useState("");
   const [localMessages, setLocalMessages] = useState([]);
   const [mobileShowChat, setMobileShowChat] = useState(!!initialChatId || !!initialRecipientId);
+  const [showDetailsDrawer, setShowDetailsDrawer] = useState(false);
 
   const messagesEndRef = useRef(null);
   const composerInputRef = useRef(null);
+  const isCreatingChatRef = useRef(false);
 
   // Queries
   const {
@@ -68,10 +89,32 @@ export default function ChatWorkspace({
     pollingInterval: 30000,
   });
 
+  const isQueryLoading = projectId ? loadingProjectChats : loadingMyChats;
+
+  // Deduplicate chats so multiple historical duplicate rooms never render twice
   const allChats = useMemo(() => {
     const raw = projectId ? projectChatsRes?.data || [] : myChatsRes?.data || [];
-    return Array.isArray(raw) ? raw : [];
-  }, [projectId, projectChatsRes, myChatsRes]);
+    if (!Array.isArray(raw)) return [];
+
+    const seen = new Set();
+    const unique = [];
+    for (const c of raw) {
+      let key;
+      if (c.type === "DIRECT") {
+        const other = (c.participants || []).find((p) => p.userId !== currentUserId);
+        const otherId = other ? other.userId : c.id;
+        key = `${c.projectId}_DIRECT_${otherId}`;
+      } else {
+        key = `${c.projectId}_${c.type}`;
+      }
+
+      if (!seen.has(key)) {
+        seen.add(key);
+        unique.push(c);
+      }
+    }
+    return unique;
+  }, [projectId, projectChatsRes, myChatsRes, currentUserId]);
 
   // Mutations
   const [sendMessageMutation] = useSendMessageMutation();
@@ -102,8 +145,27 @@ export default function ChatWorkspace({
   const handleMessageReceived = (msg) => {
     if (!msg) return;
     setLocalMessages((prev) => {
-      // Prevent duplicate
+      // 1. If exact real ID already exists, ignore duplicate
       if (prev.some((m) => m.id === msg.id)) return prev;
+
+      // 2. If optimistic message with matching tempId exists, replace it
+      if (msg.tempId && prev.some((m) => m.id === msg.tempId)) {
+        return prev.map((m) => (m.id === msg.tempId ? msg : m));
+      }
+
+      // 3. Fallback optimistic match (same senderId and text within temporary message)
+      const optIndex = prev.findIndex(
+        (m) =>
+          String(m.id).startsWith("temp-") &&
+          m.senderId === msg.senderId &&
+          m.text === msg.text
+      );
+      if (optIndex !== -1) {
+        const copy = [...prev];
+        copy[optIndex] = msg;
+        return copy;
+      }
+
       return [...prev, msg];
     });
 
@@ -151,17 +213,17 @@ export default function ChatWorkspace({
   });
 
   // Auto-scroll to bottom
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  const scrollToBottom = (behavior = "smooth") => {
+    messagesEndRef.current?.scrollIntoView({ behavior });
   };
 
   useEffect(() => {
-    scrollToBottom();
+    scrollToBottom(localMessages.length <= 1 ? "auto" : "smooth");
   }, [localMessages, typingUsers]);
 
-  // If initialRecipientId was passed (e.g. from Bids -> Chat or Team -> Chat), start or select chat
+  // If initialRecipientId was passed, start or select chat cleanly once loaded
   useEffect(() => {
-    if (initialRecipientId && projectId) {
+    if (initialRecipientId && projectId && !isQueryLoading) {
       const existing = allChats.find(
         (c) =>
           c.type === "DIRECT" &&
@@ -171,8 +233,8 @@ export default function ChatWorkspace({
       if (existing) {
         setActiveChatId(existing.id);
         setMobileShowChat(true);
-      } else {
-        // Create new direct chat
+      } else if (!isCreatingChatRef.current) {
+        isCreatingChatRef.current = true;
         startChatMutation({
           projectId,
           professionalId: initialRecipientId,
@@ -189,10 +251,13 @@ export default function ChatWorkspace({
           })
           .catch((err) => {
             console.error("Failed to start chat:", err);
+          })
+          .finally(() => {
+            isCreatingChatRef.current = false;
           });
       }
     }
-  }, [initialRecipientId, projectId, allChats]);
+  }, [initialRecipientId, projectId, isQueryLoading, allChats]);
 
   // Set default active chat if none selected
   useEffect(() => {
@@ -237,30 +302,55 @@ export default function ChatWorkspace({
     setLocalMessages((prev) => [...prev, optimisticMsg]);
 
     // Send via socket with REST fallback
-    emitSendMessage(text, [], async (ack) => {
-      if (ack?.success && ack.data) {
-        setLocalMessages((prev) =>
-          prev.map((m) => (m.id === tempId ? ack.data : m))
-        );
-      } else {
-        // Fallback to REST API
-        try {
-          const res = await sendMessageMutation({
-            chatId: activeChatId,
-            text,
-            attachments: [],
-          }).unwrap();
-          if (res?.data) {
-            setLocalMessages((prev) =>
-              prev.map((m) => (m.id === tempId ? res.data : m))
-            );
+    emitSendMessage(
+      text,
+      [],
+      async (ack) => {
+        if (ack?.success && ack.data) {
+          const realMsg = ack.data;
+          setLocalMessages((prev) => {
+            const hasReal = prev.some((m) => m.id === realMsg.id);
+            if (hasReal) {
+              return prev.filter((m) => m.id !== tempId);
+            }
+            return prev.map((m) => (m.id === tempId ? realMsg : m));
+          });
+        } else {
+          const socketError = ack?.error;
+          // If socket returned a validation error, do not retry REST, directly notify user and rollback
+          if (socketError) {
+            toast.error(socketError);
+            setLocalMessages((prev) => prev.filter((m) => m.id !== tempId));
+            return;
           }
-        } catch (err) {
-          toast.error("Failed to send message");
-          setLocalMessages((prev) => prev.filter((m) => m.id !== tempId));
+
+          // Fallback to REST API
+          try {
+            const res = await sendMessageMutation({
+              chatId: activeChatId,
+              text,
+              attachments: [],
+            }).unwrap();
+            if (res?.data) {
+              const realMsg = res.data;
+              setLocalMessages((prev) => {
+                const hasReal = prev.some((m) => m.id === realMsg.id);
+                if (hasReal) {
+                  return prev.filter((m) => m.id !== tempId);
+                }
+                return prev.map((m) => (m.id === tempId ? realMsg : m));
+              });
+            }
+          } catch (err) {
+            const errMsg =
+              err?.data?.message || err?.message || "Failed to send message";
+            toast.error(errMsg);
+            setLocalMessages((prev) => prev.filter((m) => m.id !== tempId));
+          }
         }
-      }
-    });
+      },
+      tempId
+    );
 
     composerInputRef.current?.focus();
   };
@@ -274,28 +364,66 @@ export default function ChatWorkspace({
     );
     const primaryOther = otherParticipants[0]?.user || {};
 
+    const roleName =
+      primaryOther.role != null
+        ? ROLE_NAMES[primaryOther.role] || String(primaryOther.role).replace(/_/g, " ")
+        : null;
+
     const title = isTeam
       ? chat.title || `${chat.project?.title || "Project"} Team`
       : primaryOther.name || chat.title || "Direct Chat";
 
     const subtitle = isTeam
       ? `${chat.participants?.length || 0} members`
-      : primaryOther.role
-      ? String(primaryOther.role).replace(/_/g, " ")
-      : chat.project?.title || "Pre-Award Negotiation";
+      : roleName || chat.project?.title || "Professional Chat";
 
     const isOnline = isTeam
       ? otherParticipants.some((p) => onlineUsers.has(p.userId))
       : onlineUsers.has(primaryOther.id);
 
+    const profileImageUrl =
+      primaryOther.profileImageUrl ||
+      (typeof primaryOther.profile === "string" &&
+      (primaryOther.profile.startsWith("http") || primaryOther.profile.startsWith("/uploads"))
+        ? primaryOther.profile
+        : null);
+
+    const profileObj =
+      typeof primaryOther.profile === "object" && primaryOther.profile !== null
+        ? primaryOther.profile
+        : null;
+
+    const initials = (title || "U")
+      .split(" ")
+      .map((w) => w[0])
+      .filter(Boolean)
+      .slice(0, 2)
+      .join("")
+      .toUpperCase();
+
     return {
       title,
       subtitle,
+      roleName,
       isTeam,
       isOnline,
-      profile: primaryOther.profile,
+      profileImageUrl,
+      profile: profileObj,
+      user: primaryOther,
       projectTitle: chat.project?.title,
+      initials,
+      unreadCount: chat.unreadCount || 0,
     };
+  };
+
+  const isAttachmentMessage = (msg) =>
+    Array.isArray(msg.attachments) && msg.attachments.length > 0;
+
+  const formatFileSize = (bytes) => {
+    if (!bytes && bytes !== 0) return "";
+    const kb = bytes / 1024;
+    if (kb < 1024) return `${kb.toFixed(1)} KB`;
+    return `${(kb / 1024).toFixed(1)} MB`;
   };
 
   // Filter conversations
@@ -303,7 +431,8 @@ export default function ChatWorkspace({
     const meta = getChatMetadata(chat);
     const matchesSearch =
       meta.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      meta.projectTitle?.toLowerCase().includes(searchQuery.toLowerCase());
+      meta.projectTitle?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (meta.roleName && meta.roleName.toLowerCase().includes(searchQuery.toLowerCase()));
 
     if (!matchesSearch) return false;
     if (chatFilter === "TEAM") return meta.isTeam;
@@ -311,31 +440,153 @@ export default function ChatWorkspace({
     return true;
   });
 
+  const directChats = filteredChats.filter((c) => !getChatMetadata(c).isTeam);
+  const teamChats = filteredChats.filter((c) => getChatMetadata(c).isTeam);
+
   const activeMeta = getChatMetadata(activeChat);
+
+  // Group messages by day for the "Today" style divider
+  const messageGroups = useMemo(() => {
+    const groups = [];
+    let lastLabel = null;
+    for (const msg of localMessages) {
+      const d = new Date(msg.createdAt);
+      const today = new Date();
+      const isToday = d.toDateString() === today.toDateString();
+      const yesterday = new Date();
+      yesterday.setDate(today.getDate() - 1);
+      const isYesterday = d.toDateString() === yesterday.toDateString();
+      const label = isToday
+        ? "Today"
+        : isYesterday
+        ? "Yesterday"
+        : d.toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" });
+
+      if (label !== lastLabel) {
+        groups.push({ type: "divider", label, key: `divider-${groups.length}` });
+        lastLabel = label;
+      }
+      groups.push({ type: "message", msg });
+    }
+    return groups;
+  }, [localMessages]);
+
+  function ChatListRow({ chat }) {
+    const meta = getChatMetadata(chat);
+    const isSelected = chat.id === activeChatId;
+    const lastMsg = chat.messages?.[chat.messages.length - 1] || chat.lastMessage;
+    const isLastMsgMine = lastMsg?.senderId === currentUserId;
+
+    return (
+      <div
+        onClick={() => {
+          setActiveChatId(chat.id);
+          setMobileShowChat(true);
+        }}
+        className={`px-3.5 py-3 flex items-center gap-3 cursor-pointer transition-all border-l-[3px] ${
+          isSelected
+            ? "bg-[var(--background-secondary)] border-l-[var(--gold)]"
+            : "border-l-transparent hover:bg-black/[0.02]"
+        }`}
+      >
+        {/* Avatar with Online Ring */}
+        <div className="relative flex-shrink-0">
+          <div
+            className="w-11 h-11 rounded-full flex items-center justify-center font-semibold text-sm overflow-hidden border border-border"
+            style={{ backgroundColor: "var(--background-secondary)", color: "var(--heading)" }}
+          >
+            {meta.isTeam ? (
+              <Users size={18} style={{ color: "var(--primary)" }} />
+            ) : meta.profileImageUrl ? (
+              <img
+                src={meta.profileImageUrl}
+                alt={meta.title}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  e.currentTarget.style.display = "none";
+                }}
+              />
+            ) : (
+              <span>{meta.initials}</span>
+            )}
+          </div>
+          {meta.isOnline && (
+            <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full" />
+          )}
+        </div>
+
+        {/* Chat Item Info */}
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center justify-between gap-2 mb-1">
+            <h4 className="font-semibold text-heading text-sm truncate">{meta.title}</h4>
+            {lastMsg && (
+              <span className="text-[11px] text-muted whitespace-nowrap flex-shrink-0">
+                {new Date(lastMsg.createdAt).toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </span>
+            )}
+          </div>
+
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-[12.5px] text-muted truncate flex items-center gap-1">
+              {isLastMsgMine && (
+                <span className="inline-flex shrink-0">
+                  {lastMsg.isRead ? (
+                    <CheckCheck size={14} className="text-[var(--gold)]" />
+                  ) : (
+                    <Check size={14} className="text-muted" />
+                  )}
+                </span>
+              )}
+              <span className="truncate">{lastMsg ? lastMsg.text || "Attachment" : meta.subtitle}</span>
+            </p>
+            {meta.unreadCount > 0 && (
+              <span className="flex-shrink-0 min-w-[20px] h-5 px-1.5 rounded-full bg-[#D4AF37] text-black text-[11px] font-bold flex items-center justify-center shadow-xs">
+                {meta.unreadCount > 99 ? "99+" : meta.unreadCount}
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const totalWorkspaceUnread = allChats.reduce((acc, c) => acc + (c.unreadCount || 0), 0);
+  const unreadDirectCount = directChats.reduce((acc, c) => acc + (c.unreadCount || 0), 0);
+  const unreadTeamCount = teamChats.reduce((acc, c) => acc + (c.unreadCount || 0), 0);
 
   return (
     <div
-      className={`bg-white rounded-lg border border-border overflow-hidden shadow-sm flex flex-col ${
+      className={`bg-white rounded-2xl border border-border overflow-hidden shadow-sm flex flex-col ${
         isEmbedded ? "h-[680px]" : "h-[calc(100vh-140px)] min-h-[550px]"
       }`}
     >
       <div className="flex-1 flex overflow-hidden">
         {/* Left Sidebar: Conversations List */}
         <div
-          className={`w-full md:w-80 lg:w-96 border-r border-border flex flex-col bg-surface transition-all ${
+          className={`w-full md:w-80 lg:w-[350px] border-r border-border flex flex-col bg-white transition-all ${
             mobileShowChat ? "hidden md:flex" : "flex"
           }`}
         >
           {/* Sidebar Top Search & Filter */}
-          <div className="p-4 border-b border-border bg-[var(--background-secondary)]/50 space-y-3">
+          <div className="p-3.5 border-b border-border space-y-2.5">
             <div className="flex items-center justify-between">
-              <h3
-                className="font-bold text-heading text-base"
-                style={{ fontFamily: "var(--font-heading)" }}
-              >
-                Messages
-              </h3>
-              <div className="flex items-center gap-1 text-[11px] text-muted">
+              <div className="flex items-center gap-2">
+                <h3
+                  className="font-bold text-heading text-lg"
+                  style={{ fontFamily: "var(--font-heading)" }}
+                >
+                  Messages
+                </h3>
+                {totalWorkspaceUnread > 0 && (
+                  <span className="px-2 py-0.5 rounded-full text-[10.5px] font-bold bg-[#D4AF37] text-black shadow-xs">
+                    {totalWorkspaceUnread} new
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-1.5 text-[12px] text-muted">
                 <Circle
                   size={8}
                   className={isConnected ? "text-emerald-500 fill-emerald-500" : "text-amber-500 fill-amber-500"}
@@ -345,37 +596,81 @@ export default function ChatWorkspace({
             </div>
 
             {/* Search Input */}
-            <div className="relative">
-              <Search size={15} className="absolute left-3 top-2.5 text-muted" />
-              <input
-                type="text"
-                placeholder="Search conversations..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-white text-xs pl-9 pr-3 py-2 rounded-md border border-border focus:outline-none focus:border-primary transition"
-              />
+            <div className="relative flex items-center gap-2">
+              <div className="relative flex-1">
+                <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
+                <input
+                  type="text"
+                  placeholder="Search conversations..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full bg-[var(--background-secondary)] text-sm pl-9 pr-7 py-2 rounded-lg border border-transparent focus:border-[var(--gold)] focus:bg-white focus:outline-none transition"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted hover:text-heading"
+                  >
+                    <X size={14} />
+                  </button>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() =>
+                  setChatFilter((f) => (f === "ALL" ? "DIRECT" : f === "DIRECT" ? "TEAM" : "ALL"))
+                }
+                className={`p-2 rounded-lg border transition flex-shrink-0 cursor-pointer ${
+                  chatFilter !== "ALL"
+                    ? "bg-[var(--gold)] text-black border-[var(--gold)]"
+                    : "border-border text-muted hover:text-heading hover:bg-black/[0.02]"
+                }`}
+                title={`Filter: ${chatFilter}`}
+              >
+                <SlidersHorizontal size={15} />
+              </button>
             </div>
 
-            {/* Chat Type Filter */}
-            <div className="flex gap-1 bg-black/5 p-0.5 rounded-md text-[11px]">
-              {["ALL", "DIRECT", "TEAM"].map((f) => (
-                <button
-                  key={f}
-                  onClick={() => setChatFilter(f)}
-                  className={`flex-1 py-1 rounded font-semibold uppercase tracking-wider transition ${
-                    chatFilter === f
-                      ? "bg-white text-heading shadow-xs"
-                      : "text-muted hover:text-heading"
-                  }`}
-                >
-                  {f === "ALL" ? "All" : f === "DIRECT" ? "Direct" : "Team"}
-                </button>
-              ))}
+            {/* Quick Filter Pills */}
+            <div className="flex items-center gap-1.5 pt-1">
+              <button
+                type="button"
+                onClick={() => setChatFilter("ALL")}
+                className={`px-3 py-1 rounded-full text-xs font-medium transition ${
+                  chatFilter === "ALL"
+                    ? "bg-[var(--heading)] text-white"
+                    : "bg-[var(--background-secondary)] text-muted hover:text-heading"
+                }`}
+              >
+                All
+              </button>
+              <button
+                type="button"
+                onClick={() => setChatFilter("DIRECT")}
+                className={`px-3 py-1 rounded-full text-xs font-medium transition flex items-center gap-1 ${
+                  chatFilter === "DIRECT"
+                    ? "bg-[var(--heading)] text-white"
+                    : "bg-[var(--background-secondary)] text-muted hover:text-heading"
+                }`}
+              >
+                Direct {unreadDirectCount > 0 && <span className="w-1.5 h-1.5 rounded-full bg-[var(--gold)]" />}
+              </button>
+              <button
+                type="button"
+                onClick={() => setChatFilter("TEAM")}
+                className={`px-3 py-1 rounded-full text-xs font-medium transition flex items-center gap-1 ${
+                  chatFilter === "TEAM"
+                    ? "bg-[var(--heading)] text-white"
+                    : "bg-[var(--background-secondary)] text-muted hover:text-heading"
+                }`}
+              >
+                Teams {unreadTeamCount > 0 && <span className="w-1.5 h-1.5 rounded-full bg-[var(--gold)]" />}
+              </button>
             </div>
           </div>
 
           {/* Conversations List Scrollable */}
-          <div className="flex-1 overflow-y-auto divide-y divide-border/60">
+          <div className="flex-1 overflow-y-auto chat-scrollbar divide-y divide-border/40">
             {loadingMyChats || loadingProjectChats ? (
               <div className="p-8 text-center text-xs text-muted">Loading conversations...</div>
             ) : filteredChats.length === 0 ? (
@@ -384,262 +679,462 @@ export default function ChatWorkspace({
                 <p className="text-xs text-muted">No conversations found</p>
               </div>
             ) : (
-              filteredChats.map((chat) => {
-                const meta = getChatMetadata(chat);
-                const isSelected = chat.id === activeChatId;
-                const lastMsg = chat.messages?.[chat.messages.length - 1] || chat.lastMessage;
-
-                return (
-                  <div
-                    key={chat.id}
-                    onClick={() => {
-                      setActiveChatId(chat.id);
-                      setMobileShowChat(true);
-                    }}
-                    className={`p-3.5 flex items-start gap-3 cursor-pointer transition-colors ${
-                      isSelected
-                        ? "bg-[var(--primary)]/10 border-l-4 border-l-[var(--primary)]"
-                        : "hover:bg-[var(--background-secondary)]/50"
-                    }`}
-                  >
-                    {/* Avatar */}
-                    <div className="relative flex-shrink-0">
-                      <div
-                        className={`w-11 h-11 rounded-full flex items-center justify-center font-bold text-sm overflow-hidden border border-border ${
-                          meta.isTeam
-                            ? "bg-[var(--gold)]/20 text-[var(--primary)]"
-                            : "bg-primary/10 text-primary"
-                        }`}
-                      >
-                        {meta.isTeam ? (
-                          <Users size={18} />
-                        ) : meta.profile ? (
-                          <img
-                            src={meta.profile}
-                            alt={meta.title}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <span>{meta.title?.charAt(0) || "U"}</span>
-                        )}
-                      </div>
-
-                      {meta.isOnline && (
-                        <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full" />
+              <>
+                {(chatFilter === "ALL" || chatFilter === "DIRECT") && directChats.length > 0 && (
+                  <div>
+                    <div className="px-3.5 pt-2.5 pb-1 flex items-center justify-between bg-black/[0.01]">
+                      <span className="text-[10.5px] font-bold tracking-wider text-muted uppercase">
+                        Direct Messages ({directChats.length})
+                      </span>
+                      {unreadDirectCount > 0 && (
+                        <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-[#D4AF37] text-black font-bold">
+                          {unreadDirectCount} new
+                        </span>
                       )}
                     </div>
-
-                    {/* Chat Item Info */}
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center justify-between mb-0.5">
-                        <h4 className="font-semibold text-heading text-xs truncate max-w-[140px] sm:max-w-[170px]">
-                          {meta.title}
-                        </h4>
-                        {lastMsg && (
-                          <span className="text-[10px] text-muted whitespace-nowrap">
-                            {new Date(lastMsg.createdAt).toLocaleTimeString([], {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="flex items-center justify-between gap-1">
-                        <p className="text-[11px] text-muted truncate max-w-[180px]">
-                          {lastMsg ? lastMsg.text || "Attachment" : meta.subtitle}
-                        </p>
-
-                        {meta.isTeam && (
-                          <span className="text-[9px] px-1.5 py-0.2 rounded font-bold uppercase bg-[var(--gold)]/20 text-[var(--primary)]">
-                            Team
-                          </span>
-                        )}
-                      </div>
+                    <div>
+                      {directChats.map((chat) => (
+                        <ChatListRow key={chat.id} chat={chat} />
+                      ))}
                     </div>
                   </div>
-                );
-              })
+                )}
+
+                {(chatFilter === "ALL" || chatFilter === "TEAM") && teamChats.length > 0 && (
+                  <div>
+                    <div className="px-3.5 pt-3 pb-1 flex items-center justify-between bg-black/[0.01]">
+                      <span className="text-[10.5px] font-bold tracking-wider text-muted uppercase">
+                        Project Teams ({teamChats.length})
+                      </span>
+                      {unreadTeamCount > 0 && (
+                        <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-[#D4AF37] text-black font-bold">
+                          {unreadTeamCount} new
+                        </span>
+                      )}
+                    </div>
+                    <div>
+                      {teamChats.map((chat) => (
+                        <ChatListRow key={chat.id} chat={chat} />
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>
 
         {/* Right Main Panel: Active Chat Messages & Composer */}
         <div
-          className={`flex-1 flex flex-col bg-surface transition-all ${
+          className={`flex-1 flex flex-col bg-[#FDFCFB] dark:bg-[var(--surface)] transition-all ${
             !mobileShowChat ? "hidden md:flex" : "flex"
           }`}
         >
           {activeChat ? (
             <>
-              {/* Chat Header */}
-              <div className="px-4 py-3 border-b border-border bg-[var(--background-secondary)] flex items-center justify-between">
+              {/* WhatsApp-Style Chat Header */}
+              <div className="px-4 py-3 border-b border-border flex items-center justify-between bg-white dark:bg-[var(--surface)] shrink-0 shadow-xs">
                 <div className="flex items-center gap-3 min-w-0">
                   {/* Mobile Back Button */}
                   <button
                     onClick={() => setMobileShowChat(false)}
-                    className="md:hidden p-1 rounded-md text-muted hover:text-heading"
+                    className="md:hidden p-1.5 rounded-md text-muted hover:text-heading hover:bg-black/[0.04]"
                   >
                     <ArrowLeft size={18} />
                   </button>
 
                   {/* Header Avatar */}
-                  <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-sm overflow-hidden flex-shrink-0 border border-border">
-                    {activeMeta.isTeam ? (
-                      <Users size={18} />
-                    ) : activeMeta.profile ? (
-                      <img
-                        src={activeMeta.profile}
-                        alt={activeMeta.title}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <span>{activeMeta.title?.charAt(0) || "U"}</span>
+                  <div
+                    onClick={() => !activeMeta.isTeam && setShowDetailsDrawer((v) => !v)}
+                    className={`relative flex-shrink-0 ${!activeMeta.isTeam ? "cursor-pointer" : ""}`}
+                    title={!activeMeta.isTeam ? "Click to view professional details" : undefined}
+                  >
+                    <div
+                      className="w-10 h-10 rounded-full flex items-center justify-center font-semibold text-sm overflow-hidden border border-border"
+                      style={{ backgroundColor: "var(--background-secondary)", color: "var(--heading)" }}
+                    >
+                      {activeMeta.isTeam ? (
+                        <Users size={18} style={{ color: "var(--primary)" }} />
+                      ) : activeMeta.profileImageUrl ? (
+                        <img
+                          src={activeMeta.profileImageUrl}
+                          alt={activeMeta.title}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.style.display = "none";
+                          }}
+                        />
+                      ) : (
+                        <span>{activeMeta.initials}</span>
+                      )}
+                    </div>
+                    {activeMeta.isOnline && (
+                      <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 border-2 border-white rounded-full" />
                     )}
                   </div>
 
                   {/* Header Titles */}
-                  <div className="min-w-0">
+                  <div
+                    onClick={() => !activeMeta.isTeam && setShowDetailsDrawer((v) => !v)}
+                    className={`min-w-0 ${!activeMeta.isTeam ? "cursor-pointer" : ""}`}
+                  >
                     <div className="flex items-center gap-2">
-                      <h3 className="font-bold text-heading text-sm truncate">
+                      <h3 className="font-bold text-heading text-[14.5px] truncate">
                         {activeMeta.title}
                       </h3>
                       {activeMeta.isTeam && (
-                        <span className="text-[10px] px-2 py-0.2 rounded-full font-semibold bg-[var(--gold)] text-black">
+                        <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-[var(--gold)] text-black">
                           Team Chat
                         </span>
                       )}
                     </div>
-                    <div className="flex items-center gap-2 text-[11px] text-muted truncate">
-                      {activeMeta.projectTitle && (
-                        <span className="font-medium text-heading/80">
-                          Project: {activeMeta.projectTitle}
-                        </span>
-                      )}
-                      <span>•</span>
+                    <div className="flex items-center gap-1.5 text-[12px] text-muted truncate">
                       <span className={activeMeta.isOnline ? "text-emerald-600 font-medium" : "text-muted"}>
                         {activeMeta.isOnline ? "Online" : "Offline"}
                       </span>
+                      {activeMeta.roleName && (
+                        <>
+                          <span>•</span>
+                          <span className="font-semibold text-heading">{activeMeta.roleName}</span>
+                        </>
+                      )}
+                      {activeMeta.profile?.experience > 0 && (
+                        <>
+                          <span>•</span>
+                          <span>{activeMeta.profile.experience} yrs exp</span>
+                        </>
+                      )}
+                      {activeMeta.projectTitle && (
+                        <>
+                          <span>•</span>
+                          <span className="truncate max-w-[200px]">{activeMeta.projectTitle}</span>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
+
+                {/* Header Actions */}
+                <div className="flex items-center gap-1 text-muted flex-shrink-0">
+                  {!activeMeta.isTeam && (
+                    <button
+                      onClick={() => setShowDetailsDrawer((v) => !v)}
+                      className={`px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 text-xs font-semibold ${
+                        showDetailsDrawer
+                          ? "bg-[#D4AF37] text-black shadow-xs"
+                          : "hover:bg-black/[0.04] hover:text-heading bg-[var(--background-secondary)] text-heading"
+                      }`}
+                      title="Toggle Professional Profile Details"
+                    >
+                      <User size={15} />
+                      <span className="hidden sm:inline">Profile</span>
+                    </button>
+                  )}
+                </div>
               </div>
 
-              {/* Messages Stream */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-[var(--background)]">
-                {loadingMessages ? (
-                  <div className="flex items-center justify-center h-full text-xs text-muted">
-                    Loading messages...
-                  </div>
-                ) : localMessages.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-full text-center p-6 text-muted">
-                    <MessageSquare size={36} className="opacity-20 mb-2" />
-                    <p className="text-xs font-semibold text-heading">Start the conversation</p>
-                    <p className="text-[11px] text-muted max-w-xs mt-1">
-                      Discuss project details, questions, deadlines, and milestone deliverables.
-                    </p>
-                  </div>
-                ) : (
-                  localMessages.map((msg, index) => {
-                    const isMine = msg.senderId === currentUserId;
-                    const senderName = msg.sender?.name || (isMine ? "You" : "Specialist");
+              {/* Chat Body + Professional Details Drawer */}
+              <div className="flex-1 flex overflow-hidden">
+                {/* Messages Stream */}
+                <div
+                  className="flex-1 overflow-y-auto chat-scrollbar px-4 py-4 space-y-3"
+                  style={{ backgroundColor: "var(--background-secondary)" }}
+                >
+                  {loadingMessages ? (
+                    <div className="flex items-center justify-center h-full text-xs text-muted">
+                      Loading messages...
+                    </div>
+                  ) : localMessages.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center h-full text-center p-6 text-muted">
+                      <MessageSquare size={36} className="opacity-20 mb-2" />
+                      <p className="text-xs font-semibold text-heading">Start the conversation</p>
+                      <p className="text-[11px] text-muted max-w-xs mt-1">
+                        Discuss project details, requirements, quotations, and milestone deliverables.
+                      </p>
+                    </div>
+                  ) : (
+                    messageGroups.map((item) => {
+                      if (item.type === "divider") {
+                        return (
+                          <div key={item.key} className="flex items-center justify-center my-2">
+                            <span className="text-[11px] font-medium px-3.5 py-1 rounded-full bg-white/90 dark:bg-[var(--surface)] text-[var(--muted)] shadow-xs border border-border/60 uppercase tracking-wide">
+                              {item.label}
+                            </span>
+                          </div>
+                        );
+                      }
 
-                    return (
-                      <div
-                        key={msg.id || index}
-                        className={`flex flex-col ${isMine ? "items-end" : "items-start"}`}
-                      >
-                        {/* Group Sender Name in Team Chat */}
-                        {activeMeta.isTeam && !isMine && (
-                          <span className="text-[10px] font-semibold text-muted mb-1 px-1">
-                            {senderName}
-                          </span>
-                        )}
+                      const msg = item.msg;
+                      const isMine = msg.senderId === currentUserId;
+                      const senderName = msg.sender?.name || (isMine ? "You" : activeMeta.title);
 
+                      return (
                         <div
-                          className={`max-w-[85%] sm:max-w-[70%] rounded-2xl px-4 py-2.5 text-xs shadow-xs leading-relaxed ${
-                            isMine
-                              ? "bg-[var(--primary)] text-white rounded-br-xs"
-                              : "bg-[var(--background-secondary)] text-heading rounded-bl-xs border border-border/60"
-                          }`}
+                          key={msg.id}
+                          className={`flex ${isMine ? "justify-end" : "justify-start"} w-full`}
                         >
-                          <p className="whitespace-pre-wrap break-words">{msg.text}</p>
-
-                          {/* Message Time and Delivery Checks */}
                           <div
-                            className={`flex items-center justify-end gap-1 mt-1 text-[10px] ${
-                              isMine ? "text-white/70" : "text-muted"
+                            className={`max-w-[85%] sm:max-w-[65%] rounded-2xl px-3.5 py-2 shadow-xs transition-all ${
+                              isMine
+                                ? "bg-[#FDF7E7] dark:bg-[#342D24] text-[var(--heading)] border border-[#EADBBD]/80 rounded-tr-xs"
+                                : "bg-white dark:bg-[var(--surface)] text-[var(--heading)] border border-border/80 rounded-tl-xs"
                             }`}
                           >
-                            <span>
-                              {new Date(msg.createdAt).toLocaleTimeString([], {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })}
-                            </span>
-                            {isMine && (
-                              <span>
-                                {msg.isRead ? (
-                                  <CheckCheck size={13} className="text-[var(--gold)]" />
-                                ) : msg.deliveredAt ? (
-                                  <CheckCheck size={13} className="text-white/70" />
-                                ) : (
-                                  <Check size={13} />
-                                )}
-                              </span>
+                            {/* In Project Teams, show sender name for incoming message */}
+                            {activeMeta.isTeam && !isMine && (
+                              <p className="text-[11px] font-bold text-[var(--primary)] mb-0.5">
+                                {senderName}
+                              </p>
                             )}
+
+                            {isAttachmentMessage(msg) ? (
+                              <div className="space-y-2">
+                                {msg.text && (
+                                  <p className="text-[13.5px] leading-relaxed whitespace-pre-wrap break-words">
+                                    {msg.text}
+                                  </p>
+                                )}
+                                {msg.attachments.map((att, i) => (
+                                  <a
+                                    key={i}
+                                    href={att.url}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="flex items-center gap-2.5 rounded-xl border border-border bg-white dark:bg-[var(--background-secondary)] p-2 hover:shadow-xs transition-shadow min-w-[200px]"
+                                  >
+                                    <div className="w-8 h-8 rounded-lg bg-red-500 text-white flex items-center justify-center text-[9px] font-bold flex-shrink-0">
+                                      {att.type || "FILE"}
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                      <div className="text-xs font-semibold text-heading truncate">
+                                        {att.name || "Attachment"}
+                                      </div>
+                                      <div className="text-[10px] text-muted">{formatFileSize(att.size)}</div>
+                                    </div>
+                                    <Download size={15} className="text-muted flex-shrink-0" />
+                                  </a>
+                                ))}
+                              </div>
+                            ) : (
+                              <p className="text-[13.5px] leading-relaxed whitespace-pre-wrap break-words">
+                                {msg.text}
+                              </p>
+                            )}
+
+                            {/* Message Timestamp and Delivery Status */}
+                            <div className="flex items-center justify-end gap-1 mt-1 text-[10.5px] text-muted select-none">
+                              <span>
+                                {new Date(msg.createdAt).toLocaleTimeString([], {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })}
+                              </span>
+                              {isMine && (
+                                <span className="inline-flex items-center ml-0.5">
+                                  {msg.isRead ? (
+                                    <CheckCheck size={13} className="text-[#D4AF37]" />
+                                  ) : msg.deliveredAt ? (
+                                    <CheckCheck size={13} className="text-muted" />
+                                  ) : (
+                                    <Check size={13} className="text-muted" />
+                                  )}
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    );
-                  })
-                )}
+                      );
+                    })
+                  )}
 
-                {/* Typing Indicator Display */}
-                {typingUsers.length > 0 && (
-                  <div className="flex items-center gap-2 text-xs text-muted italic px-2 py-1">
-                    <div className="flex gap-1">
-                      <span className="w-1.5 h-1.5 bg-muted rounded-full animate-bounce" />
-                      <span className="w-1.5 h-1.5 bg-muted rounded-full animate-bounce [animation-delay:0.2s]" />
-                      <span className="w-1.5 h-1.5 bg-muted rounded-full animate-bounce [animation-delay:0.4s]" />
+                  {/* Typing Indicator Display */}
+                  {typingUsers.length > 0 && (
+                    <div className="flex items-center gap-2 text-xs text-muted italic px-2 py-1 bg-white/70 rounded-full w-fit shadow-xs">
+                      <div className="flex gap-1">
+                        <span className="w-1.5 h-1.5 bg-muted rounded-full animate-bounce" />
+                        <span className="w-1.5 h-1.5 bg-muted rounded-full animate-bounce [animation-delay:0.2s]" />
+                        <span className="w-1.5 h-1.5 bg-muted rounded-full animate-bounce [animation-delay:0.4s]" />
+                      </div>
+                      <span>
+                        {typingUsers.join(", ")} {typingUsers.length > 1 ? "are" : "is"} typing...
+                      </span>
                     </div>
-                    <span>
-                      {typingUsers.join(", ")} {typingUsers.length > 1 ? "are" : "is"} typing...
-                    </span>
+                  )}
+
+                  <div ref={messagesEndRef} />
+                </div>
+
+                {/* Professional Details Side Drawer */}
+                {showDetailsDrawer && !activeMeta.isTeam && (
+                  <div className="w-80 max-w-sm border-l border-border bg-white p-4.5 flex flex-col overflow-y-auto chat-scrollbar overflow-x-hidden space-y-4 flex-shrink-0 animate-in slide-in-from-right-4 duration-200 shadow-sm">
+                    <div className="flex items-center justify-between pb-2 border-b border-border">
+                      <h4 className="font-bold text-heading text-xs uppercase tracking-wider">
+                        Professional Profile
+                      </h4>
+                      <button
+                        onClick={() => setShowDetailsDrawer(false)}
+                        className="p-1 rounded-md text-muted hover:text-heading hover:bg-black/[0.04]"
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+
+                    <div className="flex flex-col items-center text-center pb-3 border-b border-border">
+                      <div
+                        className="w-16 h-16 rounded-full flex items-center justify-center font-bold text-lg overflow-hidden mb-2 border-2 border-[var(--gold)] shadow-xs"
+                        style={{ backgroundColor: "var(--background-secondary)", color: "var(--heading)" }}
+                      >
+                        {activeMeta.profileImageUrl ? (
+                          <img
+                            src={activeMeta.profileImageUrl}
+                            alt={activeMeta.title}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.currentTarget.style.display = "none";
+                            }}
+                          />
+                        ) : (
+                          <span>{activeMeta.initials}</span>
+                        )}
+                      </div>
+                      <h4 className="font-bold text-heading text-base">{activeMeta.title}</h4>
+                      {activeMeta.roleName && (
+                        <span className="mt-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#D4AF37] text-black">
+                          {activeMeta.roleName}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Role-Specific Profile Schema Info */}
+                    {activeMeta.profile ? (
+                      <div className="space-y-3 text-xs">
+                        {activeMeta.profile.bio && (
+                          <div>
+                            <span className="font-semibold text-heading block mb-0.5">About</span>
+                            <p className="text-muted leading-relaxed whitespace-pre-wrap break-words overflow-hidden" style={{ overflowWrap: "anywhere" }}>
+                              {activeMeta.profile.bio}
+                            </p>
+                          </div>
+                        )}
+
+                        {activeMeta.profile.specialization && (
+                          <div>
+                            <span className="font-semibold text-heading block mb-1">Specialization</span>
+                            <div className="flex flex-wrap gap-1">
+                              {String(activeMeta.profile.specialization)
+                                .split(",")
+                                .map((s, idx) => (
+                                  <span
+                                    key={idx}
+                                    className="px-2 py-0.5 rounded-md bg-[var(--background-secondary)] text-heading font-medium text-[11px]"
+                                  >
+                                    {s.trim()}
+                                  </span>
+                                ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {activeMeta.profile.experience != null && (
+                          <div className="flex justify-between py-1.5 border-b border-border/50">
+                            <span className="text-muted">Experience</span>
+                            <span className="font-semibold text-heading">
+                              {activeMeta.profile.experience} years
+                            </span>
+                          </div>
+                        )}
+
+                        {activeMeta.profile.licenseNumber && (
+                          <div className="py-1.5 border-b border-border/50">
+                            <span className="text-muted block mb-0.5">License / Reg. No.</span>
+                            <span className="font-semibold text-heading font-mono text-[11px] break-all block">
+                              {activeMeta.profile.licenseNumber}
+                            </span>
+                          </div>
+                        )}
+
+                        {Array.isArray(activeMeta.profile.serviceCities) && activeMeta.profile.serviceCities.length > 0 && (
+                          <div>
+                            <span className="font-semibold text-heading block mb-1">Service Locations</span>
+                            <div className="flex flex-wrap gap-1">
+                              {activeMeta.profile.serviceCities.map((city, idx) => (
+                                <span
+                                  key={idx}
+                                  className="px-2 py-0.5 rounded-md bg-black/[0.03] text-muted text-[11px] flex items-center gap-1"
+                                >
+                                  <MapPin size={10} /> {city}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {activeMeta.profile.rating != null && (
+                          <div className="flex justify-between py-1.5 border-b border-border/50">
+                            <span className="text-muted">Rating & Reviews</span>
+                            <span className="font-semibold text-heading text-amber-600 flex items-center gap-1">
+                              <Star size={12} className="fill-amber-500 text-amber-500" />
+                              {activeMeta.profile.rating} ({activeMeta.profile.totalReviews || 0} reviews)
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-muted text-center italic py-2">
+                        Professional verified profile loaded from schema.
+                      </p>
+                    )}
                   </div>
                 )}
-
-                <div ref={messagesEndRef} />
               </div>
 
-              {/* Message Composer */}
-              <div className="p-3 border-t border-border bg-white">
+              {/* Message Composer (Bottom Bar) */}
+              <div className="px-4 py-3 border-t border-border bg-white dark:bg-[var(--surface)] shrink-0">
                 <form
                   onSubmit={handleSendMessage}
-                  className="flex items-center gap-2 bg-[var(--background-secondary)] p-1.5 rounded-xl border border-border focus-within:border-[var(--primary)] transition"
+                  className="flex items-center gap-2"
                 >
-                  <textarea
-                    ref={composerInputRef}
-                    rows={1}
-                    value={messageText}
-                    onChange={(e) => {
-                      setMessageText(e.target.value);
-                      emitTyping();
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && !e.shiftKey) {
-                        e.preventDefault();
-                        handleSendMessage();
-                      }
-                    }}
-                    placeholder="Type your message... (Enter to send)"
-                    className="flex-1 bg-transparent text-xs text-heading px-3 py-1.5 resize-none focus:outline-none max-h-24 overflow-y-auto"
-                  />
+                  <button
+                    type="button"
+                    className="p-2 rounded-full text-muted hover:text-heading hover:bg-black/[0.04] transition flex-shrink-0"
+                    title="Attach files (plans, photos, docs)"
+                  >
+                    <Paperclip size={18} />
+                  </button>
+
+                  <div className="flex-1 flex items-center gap-2 rounded-full bg-[var(--background-secondary)] px-4 py-1.5 focus-within:ring-2 focus-within:ring-[var(--gold)]/30 focus-within:bg-white transition border border-transparent focus-within:border-[var(--gold)]">
+                    <textarea
+                      ref={composerInputRef}
+                      rows={1}
+                      value={messageText}
+                      onChange={(e) => {
+                        setMessageText(e.target.value);
+                        emitTyping();
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.shiftKey) {
+                          e.preventDefault();
+                          handleSendMessage();
+                        }
+                      }}
+                      placeholder="Type a message..."
+                      className="flex-1 bg-transparent text-sm text-heading py-1 resize-none focus:outline-none max-h-24 overflow-y-auto chat-scrollbar"
+                    />
+                    <button
+                      type="button"
+                      className="text-muted hover:text-heading transition flex-shrink-0"
+                      title="Insert emoji"
+                    >
+                      <Smile size={18} />
+                    </button>
+                  </div>
 
                   <button
                     type="submit"
                     disabled={!messageText.trim()}
-                    className="p-2 rounded-lg bg-[var(--primary)] text-white disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[var(--primary-hover)] transition shadow-xs flex-shrink-0"
+                    className="w-9 h-9 rounded-full text-white disabled:opacity-40 disabled:cursor-not-allowed transition flex items-center justify-center flex-shrink-0 shadow-xs"
+                    style={{ backgroundColor: "var(--heading)" }}
+                    title="Send message"
                   >
                     <Send size={15} />
                   </button>
@@ -648,16 +1143,18 @@ export default function ChatWorkspace({
             </>
           ) : (
             /* No Chat Selected Placeholder */
-            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
-              <MessageSquare size={48} className="text-muted opacity-20 mb-3" />
+            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-white dark:bg-[var(--surface)]">
+              <div className="w-16 h-16 rounded-full bg-[var(--background-secondary)] flex items-center justify-center mb-3">
+                <MessageSquare size={28} className="text-[var(--gold)]" />
+              </div>
               <h3
                 className="text-lg font-bold text-heading"
                 style={{ fontFamily: "var(--font-heading)" }}
               >
                 Select a Conversation
               </h3>
-              <p className="text-xs text-muted max-w-xs mt-1">
-                Choose a project team chat or professional negotiation from the sidebar to view messages.
+              <p className="text-xs text-muted max-w-xs mt-1 leading-relaxed">
+                Choose a project team chat or professional negotiation from the sidebar to view and send messages.
               </p>
             </div>
           )}

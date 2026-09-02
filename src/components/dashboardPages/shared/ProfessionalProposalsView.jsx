@@ -465,6 +465,13 @@ export default function ProfessionalProposalsView({
                           )}
 
                           <button
+                            onClick={() => setViewingProject(proj)}
+                            className="py-1.5 px-3 rounded text-xs font-semibold border border-border bg-white hover:bg-background-secondary text-heading transition flex items-center gap-1 cursor-pointer"
+                          >
+                            <Eye size={13} /> Specs
+                          </button>
+
+                          <button
                             onClick={() => navigate(`/dashboard/messages`)}
                             className="py-1.5 px-3 rounded text-xs font-medium border border-border bg-white hover:bg-background-secondary text-heading transition flex items-center gap-1"
                           >

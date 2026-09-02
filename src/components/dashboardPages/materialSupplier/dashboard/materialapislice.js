@@ -120,7 +120,22 @@ export const materialSupplierApiSlice = apiSlice.injectEndpoints({
     }),
 
 
-    
+    getSupplierProfile: builder.query({
+      query: () => ({
+        url: "/materialSupplier/me/profile",
+        method: "GET",
+      }),
+      providesTags: ["SupplierProfile"],
+    }),
+
+    updateSupplierProfile: builder.mutation({
+      query: (payload) => ({
+        url: "/materialSupplier/me/profile",
+        method: "PATCH",
+        body: payload,
+      }),
+      invalidatesTags: ["SupplierProfile", "SupplierUserDetails", "ContactDetails"],
+    }),
   }),
 })
 
@@ -133,6 +148,9 @@ export const {
   useGetContactDetailsQuery,
   useCreateContactDetailsMutation,
   useUpdateContactDetailsMutation,
-  useDeleteContactDetailsMutation
+  useDeleteContactDetailsMutation,
+  useGetSupplierProfileQuery,
+  useUpdateSupplierProfileMutation,
 } = materialSupplierApiSlice
+
 

@@ -1,9 +1,6 @@
-import React from 'react'
+import React from "react";
+import EarningsWorkspace from "../../dashboard/shared/EarningsWorkspace";
 
 export default function EarningsPage() {
-  return (
-    <div>
-      EarningsPage
-    </div>
-  )
+  return <EarningsWorkspace roleTitle="Architect" />;
 }

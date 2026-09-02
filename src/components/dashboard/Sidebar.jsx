@@ -3,17 +3,64 @@ import { Menu, X, UserRound } from "lucide-react"
 import logo from "../../assets/logo.png"
 import { NAV_CONFIG, ROLE_NAMES } from "./roleNavConfig"
 import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { useCallback } from "react";
+import { chatApiSlice, useGetMyChatsQuery } from "../../ApiSliceComponent/chatApiSlice";
+import { useGlobalChatNotifications } from "../../utils/socketService";
 
 export default function Sidebar({ role, collapsed, onToggle }) {
   const navItems = NAV_CONFIG[role] || []
   const roleLabel = ROLE_NAMES[role] || "Account"
 
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+
+  const { data: myChatsRes, refetch: refetchChats } = useGetMyChatsQuery(undefined, {
+    pollingInterval: 30000,
+  });
+
+  const handleGlobalNewMessage = useCallback((data) => {
+    const message = data.message || data;
+    const chatId = data.chatId || message?.chatId;
+    if (!chatId) return;
+
+    // Optimistically update RTK Query cache so badge increments instantly
+    dispatch(
+      chatApiSlice.util.updateQueryData("getMyChats", undefined, (draft) => {
+        if (!draft || !Array.isArray(draft.data)) return;
+        const targetChat = draft.data.find((c) => c.id === chatId);
+        if (targetChat) {
+          targetChat.unreadCount = (targetChat.unreadCount || 0) + 1;
+          targetChat.updatedAt = new Date().toISOString();
+          if (message) {
+            targetChat.messages = [message];
+          }
+        }
+      })
+    );
+
+    // Sync with backend source of truth
+    refetchChats();
+  }, [dispatch, refetchChats]);
+
+  const handleGlobalUnreadUpdate = useCallback(() => {
+    refetchChats();
+  }, [refetchChats]);
+
+  // Connect & listen to WebSocket notifications globally on dashboard
+  useGlobalChatNotifications({
+    onNewMessage: handleGlobalNewMessage,
+    onUnreadUpdate: handleGlobalUnreadUpdate,
+  });
+
+  const totalUnreadCount = (Array.isArray(myChatsRes?.data) ? myChatsRes.data : []).reduce(
+    (acc, c) => acc + (c.unreadCount || 0),
+    0
+  );
 
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("userData");
-    // remove any other auth data if you store it
     navigate("/Signin", { replace: true });
   }
 
@@ -75,6 +122,7 @@ export default function Sidebar({ role, collapsed, onToggle }) {
       <nav className="flex-1 overflow-y-auto px-3 py-3 space-y-1">
         {navItems.map((item) => {
           const Icon = item.icon
+          const isMessages = item.label === "Messages" || item.path?.includes("/messages");
 
           // Handle logout button separately
           if (item.action === "logout") {
@@ -99,7 +147,7 @@ export default function Sidebar({ role, collapsed, onToggle }) {
               to={item.path}
               end={item.end}
               className={({ isActive }) =>
-                `flex items-center gap-3 rounded-sm px-3 py-2.5 text-sm transition-colors duration-200 ${collapsed ? "justify-center" : ""
+                `flex items-center gap-3 rounded-sm px-3 py-2.5 text-sm transition-colors duration-200 relative ${collapsed ? "justify-center" : ""
                 } ${!isActive ? "hover:bg-[var(--background-secondary)]" : ""}`
               }
               style={({ isActive }) => ({
@@ -109,8 +157,20 @@ export default function Sidebar({ role, collapsed, onToggle }) {
               })}
               title={collapsed ? item.label : undefined}
             >
-              {Icon && <Icon size={18} strokeWidth={1.75} className="shrink-0" />}
-              {!collapsed && <span className="truncate">{item.label}</span>}
+              <div className="relative flex items-center justify-center shrink-0">
+                {Icon && <Icon size={18} strokeWidth={1.75} />}
+                {isMessages && totalUnreadCount > 0 && collapsed && (
+                  <span className="absolute -top-1.5 -right-2 min-w-[17px] h-[17px] px-1 rounded-full text-[9.5px] font-bold bg-[#D4AF37] text-black flex items-center justify-center shadow-xs">
+                    {totalUnreadCount > 99 ? "99+" : totalUnreadCount}
+                  </span>
+                )}
+              </div>
+              {!collapsed && <span className="truncate flex-1">{item.label}</span>}
+              {!collapsed && isMessages && totalUnreadCount > 0 && (
+                <span className="ml-auto px-2 py-0.5 rounded-full text-[10.5px] font-bold bg-[#D4AF37] text-black shadow-xs">
+                  {totalUnreadCount > 99 ? "99+" : totalUnreadCount}
+                </span>
+              )}
             </NavLink>
           )
         })}

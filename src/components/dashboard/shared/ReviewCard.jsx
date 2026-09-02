@@ -11,25 +11,51 @@ import {
   Sparkles,
   ExternalLink,
   ShieldCheck,
+  Edit2,
+  Trash2,
 } from "lucide-react";
 import { toast } from "react-toastify";
-import { useReplyToReviewMutation } from "../../../ApiSliceComponent/reviewApiSlice";
+import {
+  useReplyToReviewMutation,
+  useDeleteReviewMutation,
+} from "../../../ApiSliceComponent/reviewApiSlice";
 import { getCurrentUser } from "../../../utils/auth";
+import SubmitReviewModal from "./SubmitReviewModal";
 
-export default function ReviewCard({ review, isRecipientView = false }) {
+export default function ReviewCard({
+  review,
+  isRecipientView = false,
+  onReviewUpdated,
+  onReviewDeleted,
+}) {
   const currentUser = getCurrentUser() || {};
   const currentUserId = currentUser.id || currentUser.userId;
 
   const [isReplying, setIsReplying] = useState(false);
   const [replyText, setReplyText] = useState("");
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const [replyToReview, { isLoading: isPostingReply }] = useReplyToReviewMutation();
+  const [deleteReview, { isLoading: isDeletingReview }] = useDeleteReviewMutation();
 
   const reviewer = review.reviewer || {};
   const reviewee = review.reviewee || {};
   const project = review.project || {};
 
   const isMyReceivedReview = review.revieweeId === currentUserId;
+  const isMyGivenReview = review.reviewerId === currentUserId;
+
+  const handleDeleteReview = async () => {
+    if (!window.confirm("Are you sure you want to delete this review?")) return;
+    try {
+      await deleteReview(review.id).unwrap();
+      toast.success("Review deleted successfully");
+      if (onReviewDeleted) onReviewDeleted(review.id);
+    } catch (err) {
+      toast.error(err?.data?.message || "Failed to delete review");
+    }
+  };
 
   const handlePostReply = async (e) => {
     e.preventDefault();
@@ -54,17 +80,34 @@ export default function ReviewCard({ review, isRecipientView = false }) {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           {/* Avatar */}
-          <div className="w-10 h-10 rounded-full bg-primary/10 text-primary font-bold text-sm flex items-center justify-center overflow-hidden border border-border flex-shrink-0">
-            {reviewer.profile ? (
-              <img
-                src={reviewer.profile}
-                alt={reviewer.name}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <span>{reviewer.name?.charAt(0) || "U"}</span>
-            )}
-          </div>
+          {(() => {
+            const reviewerAvatar =
+              reviewer.profileImageUrl ||
+              (typeof reviewer.profile === "string" &&
+              (reviewer.profile.startsWith("http") ||
+                reviewer.profile.startsWith("/uploads") ||
+                reviewer.profile.startsWith("data:"))
+                ? reviewer.profile
+                : null);
+
+            return (
+              <div className="w-10 h-10 rounded-full bg-primary/10 text-primary font-bold text-sm flex items-center justify-center overflow-hidden border border-border flex-shrink-0">
+                {reviewerAvatar ? (
+                  <img
+                    src={reviewerAvatar}
+                    alt={reviewer.name || "Reviewer"}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.currentTarget.style.display = "none";
+                    }}
+                  />
+                ) : null}
+                <span className={reviewerAvatar ? "hidden" : "flex items-center justify-center"}>
+                  {reviewer.name?.charAt(0)?.toUpperCase() || "U"}
+                </span>
+              </div>
+            );
+          })()}
 
           <div>
             <div className="flex items-center gap-2">
@@ -192,7 +235,10 @@ export default function ReviewCard({ review, isRecipientView = false }) {
 
       {/* Reply Input Form */}
       {isReplying && (
-        <form onSubmit={handlePostReply} className="mt-3 p-3 bg-[var(--background-secondary)] rounded-md border border-border space-y-2">
+        <form
+          onSubmit={handlePostReply}
+          className="mt-3 p-3 bg-[var(--background-secondary)] rounded-md border border-border space-y-2"
+        >
           <div className="text-xs font-bold text-heading">Your Official Response:</div>
           <textarea
             rows={3}
@@ -220,6 +266,36 @@ export default function ReviewCard({ review, isRecipientView = false }) {
             </button>
           </div>
         </form>
+      )}
+
+      {/* Author Edit & Delete Actions */}
+      {isMyGivenReview && (
+        <div className="flex items-center justify-end gap-2 pt-2 border-t border-border/40">
+          <button
+            onClick={() => setIsEditModalOpen(true)}
+            className="text-xs font-semibold text-[var(--gold)] hover:underline flex items-center gap-1 py-1 px-2 rounded hover:bg-[var(--gold)]/10 transition"
+          >
+            <Edit2 size={12} /> Edit Review
+          </button>
+          <button
+            onClick={handleDeleteReview}
+            disabled={isDeletingReview}
+            className="text-xs font-semibold text-red-600 hover:underline flex items-center gap-1 py-1 px-2 rounded hover:bg-red-50 transition"
+          >
+            <Trash2 size={12} /> {isDeletingReview ? "Deleting..." : "Delete"}
+          </button>
+        </div>
+      )}
+
+      {/* Edit Review Modal */}
+      {isEditModalOpen && (
+        <SubmitReviewModal
+          existingReview={review}
+          onClose={() => setIsEditModalOpen(false)}
+          onSuccess={() => {
+            if (onReviewUpdated) onReviewUpdated();
+          }}
+        />
       )}
     </div>
   );

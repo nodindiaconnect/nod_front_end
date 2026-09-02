@@ -13,8 +13,6 @@ import OurServices from "./pages/Ourprocess"
 import NewHeritage from "./pages/subsection"
 import WhyChoose from "./pages/WhyChooseUs"
 
-// CHANGED: use the AuthPage switcher (Login/SignUp toggle) instead of
-// the standalone LoginPage, so /Signin can serve both flows.
 import AuthPage from "./Authentication/Authpage"
 
 import DashboardLayout from "./components/dashboard/Dashboardlayout"
@@ -65,19 +63,19 @@ const ArchitectProfile = lazy(() => import("./components/dashboardPages/architec
 
 // ── Contractor ──
 const ContractorOverview = lazy(() => import("./components/dashboardPages/contractor/dashboard/dashbaord"))
-const ContractorPortfolio = lazy(() => import("./components/dashboardPages/architech/PortfolioPage"))
-const ContractorProjects = lazy(() => import("./components/dashboardPages/architech/ProjectsPage"))
+const ContractorPortfolio = lazy(() => import("./components/dashboardPages/contractor/PortfolioPage"))
+const ContractorProjects = lazy(() => import("./components/dashboardPages/contractor/ProjectsPage"))
 const ContractorProposals = lazy(() => import("./components/dashboardPages/contractor/ProposalsPage"))
-const ContractorEarnings = lazy(() => import("./components/dashboardPages/architech/EarningsPage"))
-const ContractorSettings = lazy(() => import("./components/dashboardPages/architech/SettingsPage"))
-const ContractorReviews = lazy(() => import("./components/dashboardPages/architech/ReviewsPage"))
+const ContractorEarnings = lazy(() => import("./components/dashboardPages/contractor/EarningsPage"))
+const ContractorSettings = lazy(() => import("./components/dashboardPages/contractor/SettingsPage"))
+const ContractorReviews = lazy(() => import("./components/dashboardPages/contractor/ReviewsPage"))
 const ContractorProfile = lazy(() => import("./components/dashboardPages/contractor/ProfilePage"))
-
 
 // ── Material Supplier ──
 const SupplierOverview = lazy(() => import("./components/dashboardPages/materialSupplier/dashboard/materialSupplierdashboard"))
 const SupplierProducts = lazy(() => import("./components/dashboardPages/materialSupplier/Products"))
 const SupplierCreateProduct = lazy(() => import("./components/dashboardPages/materialSupplier/addProduct"))
+const SupplierProfile = lazy(() => import("./components/dashboardPages/materialSupplier/ProfilePage"))
 
 // ── Shared ──
 const MessagesPage = lazy(() => import("./components/dashboard/shared/MessagesPage"))
@@ -85,11 +83,11 @@ const MessagesPage = lazy(() => import("./components/dashboard/shared/MessagesPa
 const PAGE_MAP = {
   overview: { Client: ClientDashboard, Designer: DesignerOverview, Architect: ArchitectOverview, Contractor: ContractorOverview, MaterialSupplier: SupplierOverview },
   projects: { Client: ClientProjects, Designer: DesignerProjects, Architect: ArchitectProjects, Contractor: ContractorProjects },
-  posts: { Designer: DesignerPosts },
+  posts: { Designer: DesignerPortfolio, Architect: ArchitectPortfolio, Contractor: ContractorPortfolio },
   products: { MaterialSupplier: SupplierProducts },
   createProduct: { MaterialSupplier: SupplierCreateProduct },
   messages: { Client: MessagesPage, Designer: MessagesPage, Architect: MessagesPage, Contractor: MessagesPage, MaterialSupplier: MessagesPage },
-  settings: { Client: ClientSettings, Designer: DesignerSettings, Architect: ArchitectSettings, Contractor: ContractorSettings },
+  settings: { Client: ClientSettings, Designer: DesignerSettings, Architect: ArchitectSettings, Contractor: ContractorSettings, MaterialSupplier: ClientSettings },
   find: { Client: ClientFindPros },
   payments: { Client: ClientPayments },
   profile: {
@@ -97,6 +95,7 @@ const PAGE_MAP = {
     Designer: DesignerProfile,
     Architect: ArchitectProfile,
     Contractor: ContractorProfile,
+    MaterialSupplier: SupplierProfile,
   },
   portfolio: { Designer: DesignerPortfolio, Architect: ArchitectPortfolio, Contractor: ContractorPortfolio },
   proposals: { Designer: DesignerProposals, Architect: ArchitectProposals, Contractor: ContractorProposals },
@@ -113,8 +112,8 @@ function Home() {
       <LeadPopup />
 
       {/* Fixed "Explore" tag - right side, vertically centered, stays fixed on scroll */}
-
-      <a href="/explore"
+      <a
+        href="/explore"
         className="hidden lg:flex fixed top-1/2 right-0 -translate-y-1/2 z-50 items-center px-4 py-3 bg-[var(--gold)] text-black text-xs font-semibold tracking-wide rounded-l-lg shadow-lg hover:pr-6 transition-all duration-200"
         style={{ writingMode: "vertical-rl" }}
       >
@@ -141,11 +140,6 @@ function App() {
   return (
     <Suspense fallback={<div className="p-10 text-center text-sm"><Loader /></div>}>
       <Routes>
-        {/* <Route
-          path="/"
-          element={isAuthenticated() ? <Navigate to="/dashboard" replace /> : <Home />}
-        /> */}
-
         <Route path="/" element={<Home />} />
 
         <Route path="/About" element={<About />} />
@@ -191,13 +185,3 @@ function App() {
 }
 
 export default App
-
-
-
-
-
-
-
-
-
-

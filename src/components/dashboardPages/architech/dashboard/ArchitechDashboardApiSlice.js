@@ -16,18 +16,33 @@ export const architectApiSlice = apiSlice.injectEndpoints({
       providesTags: ["ArchitectQuotations"],
     }),
 
+    getArchitectProfile: builder.query({
+      query: () => "/Architech/me/profile",
+      providesTags: ["ArchitectProfile"],
+    }),
+
+    updateArchitectProfile: builder.mutation({
+      query: (body) => ({
+        url: "/Architech/me/profile",
+        method: "PATCH",
+        body,
+      }),
+      invalidatesTags: ["ArchitectProfile", "ArchitectOverview"],
+    }),
+
+    // Aliases for compatibility
     getDesignerProfile: builder.query({
-      query: () => "/Designer/me/profile",
-      providesTags: ["DesignerProfile"],
+      query: () => "/Architech/me/profile",
+      providesTags: ["ArchitectProfile"],
     }),
 
     updateDesignerProfile: builder.mutation({
       query: (body) => ({
-        url: "/Designer/me/profile",
+        url: "/Architech/me/profile",
         method: "PATCH",
         body,
       }),
-      invalidatesTags: ["DesignerProfile", "DesignerUserDetails"],
+      invalidatesTags: ["ArchitectProfile", "ArchitectOverview"],
     }),
 
     getArchitechProjects: builder.query({
@@ -62,7 +77,9 @@ export const architectApiSlice = apiSlice.injectEndpoints({
 export const {
   useGetDesignerUserDetailsQuery,
   useGetDesignerQuotationsQuery,
-    useGetDesignerProfileQuery,
+  useGetArchitectProfileQuery,
+  useUpdateArchitectProfileMutation,
+  useGetDesignerProfileQuery,
   useUpdateDesignerProfileMutation,
   useGetArchitechProjectsQuery,
   useSendArchitectQuotationMutation,

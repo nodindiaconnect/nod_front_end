@@ -1,17 +1,11 @@
 import React, { useState } from "react";
 import {
   Star,
-  MessageSquare,
-  FileCheck,
-  Send,
+  MessageSquareText,
+  UserPlus,
   Search,
-  Filter,
   CheckCircle2,
   Award,
-  Sparkles,
-  Plus,
-  Briefcase,
-  Users,
 } from "lucide-react";
 import ReviewCard from "./ReviewCard";
 import ReviewsBreakdown from "./ReviewsBreakdown";
@@ -75,7 +69,7 @@ export default function ReviewsWorkspace({ roleTitle = "Client" }) {
   };
 
   return (
-    <div className="w-full py-2 px-3 sm:px-6 lg:px-10 sm:py-6 space-y-6">
+    <div className="w-full py-2 px-3 sm:px-6 lg:px-10 sm:py-6 space-y-5">
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -93,16 +87,12 @@ export default function ReviewsWorkspace({ roleTitle = "Client" }) {
         {/* Primary CTA */}
         <button
           onClick={() => handleOpenSubmitReview(null)}
-          className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-sm text-xs font-semibold text-white transition shadow-sm self-start sm:self-auto"
-          style={{ backgroundColor: "var(--primary)" }}
-          onMouseEnter={(e) =>
-            (e.currentTarget.style.backgroundColor = "var(--primary-hover)")
-          }
-          onMouseLeave={(e) =>
-            (e.currentTarget.style.backgroundColor = "var(--primary)")
-          }
+          className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-md text-sm font-semibold text-white transition self-start sm:self-auto"
+          style={{ backgroundColor: "var(--heading)", boxShadow: "0 2px 6px rgba(0,0,0,0.18)" }}
+          onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.9")}
+          onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
         >
-          <Plus size={16} /> Leave a Review
+          <span className="text-base leading-none">+</span> Leave a Review
         </button>
       </div>
 
@@ -114,34 +104,25 @@ export default function ReviewsWorkspace({ roleTitle = "Client" }) {
       />
 
       {/* Tabs Row */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-1">
-        <div className="flex gap-1">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap gap-2">
           {[
-            { key: "received", label: "Reviews Received", count: summary.totalReviews || receivedReviews.length },
-            { key: "given", label: "Reviews Given", count: givenReviews.length },
-            { key: "pending", label: "Pending Reviews", count: eligibleList.length },
+            { key: "received", label: "Reviews Received" },
+            { key: "given", label: "Reviews Given" },
+            { key: "pending", label: "Pending Reviews" },
           ].map((tab) => {
             const isActive = activeTab === tab.key;
             return (
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
-                className={`flex items-center gap-1.5 px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-sm transition ${
-                  isActive
-                    ? "bg-[var(--primary)] text-white shadow-xs"
-                    : "bg-[var(--background-secondary)] text-muted hover:text-heading"
-                }`}
+                className="px-4 py-2.5 text-xs font-bold uppercase tracking-wider rounded-md transition-colors"
+                style={{
+                  backgroundColor: isActive ? "var(--heading)" : "var(--background-secondary)",
+                  color: isActive ? "#fff" : "var(--muted)",
+                }}
               >
-                <span>{tab.label}</span>
-                {tab.count > 0 && (
-                  <span
-                    className={`w-4 h-4 rounded-full text-[10px] flex items-center justify-center font-bold ${
-                      isActive ? "bg-white/25 text-white" : "bg-black/10 text-heading"
-                    }`}
-                  >
-                    {tab.count}
-                  </span>
-                )}
+                {tab.label}
               </button>
             );
           })}
@@ -150,13 +131,13 @@ export default function ReviewsWorkspace({ roleTitle = "Client" }) {
         {/* Search Bar for Reviews */}
         {activeTab === "received" && (
           <div className="relative w-full sm:w-64">
-            <Search size={14} className="absolute left-3 top-2.5 text-muted" />
+            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
             <input
               type="text"
               placeholder="Search feedback..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-8 pr-3 py-1.5 text-xs bg-white border border-border rounded focus:outline-none focus:border-[var(--primary)] text-heading"
+              className="w-full pl-9 pr-3 py-2.5 text-sm bg-white border border-border rounded-md focus:outline-none focus:border-[var(--primary)] text-heading"
             />
           </div>
         )}
@@ -181,19 +162,42 @@ export default function ReviewsWorkspace({ roleTitle = "Client" }) {
           {loadingReviews ? (
             <Loader />
           ) : filteredReceived.length === 0 ? (
-            <div className="text-center py-16 bg-white rounded-lg border border-border p-8">
-              <Award size={44} className="mx-auto text-muted opacity-30 mb-3" />
+            <div
+              className="text-center py-20 bg-white rounded-md border border-border"
+              style={{ boxShadow: "0 1px 2px rgba(16,24,40,0.04)" }}
+            >
+              <div
+                className="w-20 h-20 rounded-full mx-auto mb-5 flex items-center justify-center"
+                style={{ backgroundColor: "var(--background-secondary)" }}
+              >
+                <MessageSquareText size={30} style={{ color: "var(--heading)" }} strokeWidth={1.75} />
+              </div>
               <h3
-                className="text-lg font-bold text-heading"
+                className="text-xl font-bold text-heading"
                 style={{ fontFamily: "var(--font-heading)" }}
               >
                 No Reviews Found
               </h3>
-              <p className="text-xs text-muted max-w-sm mx-auto mt-1">
-                {starFilter
-                  ? `No ${starFilter}-star reviews found.`
-                  : "You haven't received any reviews yet. Complete projects with clients to build your verified reputation!"}
+              <p className="text-sm text-muted max-w-sm mx-auto mt-2 leading-relaxed">
+                {starFilter ? (
+                  `No ${starFilter}-star reviews found.`
+                ) : (
+                  <>
+                    You haven't received any reviews yet.
+                    <br />
+                    Complete projects with clients to build your verified reputation!
+                  </>
+                )}
               </p>
+              <button
+                onClick={() => handleOpenSubmitReview(null)}
+                className="mt-6 inline-flex items-center gap-2 px-5 py-2.5 rounded-md border text-sm font-semibold text-heading transition-colors"
+                style={{ borderColor: "var(--heading)" }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--background-secondary)")}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+              >
+                <UserPlus size={16} /> Leave a Review
+              </button>
             </div>
           ) : (
             <div className="space-y-4">
@@ -202,6 +206,14 @@ export default function ReviewsWorkspace({ roleTitle = "Client" }) {
                   key={rev.id}
                   review={rev}
                   isRecipientView={true}
+                  onReviewUpdated={() => {
+                    refetchReviews();
+                    refetchEligible();
+                  }}
+                  onReviewDeleted={() => {
+                    refetchReviews();
+                    refetchEligible();
+                  }}
                 />
               ))}
 
@@ -223,21 +235,30 @@ export default function ReviewsWorkspace({ roleTitle = "Client" }) {
           {loadingReviews ? (
             <Loader />
           ) : givenReviews.length === 0 ? (
-            <div className="text-center py-16 bg-white rounded-lg border border-border p-8">
-              <MessageSquare size={44} className="mx-auto text-muted opacity-30 mb-3" />
+            <div
+              className="text-center py-20 bg-white rounded-md border border-border"
+              style={{ boxShadow: "0 1px 2px rgba(16,24,40,0.04)" }}
+            >
+              <div
+                className="w-20 h-20 rounded-full mx-auto mb-5 flex items-center justify-center"
+                style={{ backgroundColor: "var(--background-secondary)" }}
+              >
+                <MessageSquareText size={30} style={{ color: "var(--heading)" }} strokeWidth={1.75} />
+              </div>
               <h3
-                className="text-lg font-bold text-heading"
+                className="text-xl font-bold text-heading"
                 style={{ fontFamily: "var(--font-heading)" }}
               >
                 No Reviews Given Yet
               </h3>
-              <p className="text-xs text-muted max-w-sm mx-auto mt-1">
+              <p className="text-sm text-muted max-w-sm mx-auto mt-2">
                 You have not submitted reviews for any project members yet.
               </p>
               {eligibleList.length > 0 && (
                 <button
                   onClick={() => setActiveTab("pending")}
-                  className="mt-4 px-5 py-2 bg-[var(--primary)] text-white text-xs rounded font-semibold"
+                  className="mt-6 px-5 py-2.5 text-white text-sm rounded-md font-semibold"
+                  style={{ backgroundColor: "var(--heading)" }}
                 >
                   Review Pending Projects ({eligibleList.length})
                 </button>
@@ -250,6 +271,14 @@ export default function ReviewsWorkspace({ roleTitle = "Client" }) {
                   key={rev.id}
                   review={rev}
                   isRecipientView={false}
+                  onReviewUpdated={() => {
+                    refetchReviews();
+                    refetchEligible();
+                  }}
+                  onReviewDeleted={() => {
+                    refetchReviews();
+                    refetchEligible();
+                  }}
                 />
               ))}
             </div>
@@ -263,15 +292,23 @@ export default function ReviewsWorkspace({ roleTitle = "Client" }) {
           {loadingEligible ? (
             <Loader />
           ) : eligibleList.length === 0 ? (
-            <div className="text-center py-16 bg-white rounded-lg border border-border p-8">
-              <CheckCircle2 size={44} className="mx-auto text-emerald-500 opacity-40 mb-3" />
+            <div
+              className="text-center py-20 bg-white rounded-md border border-border"
+              style={{ boxShadow: "0 1px 2px rgba(16,24,40,0.04)" }}
+            >
+              <div
+                className="w-20 h-20 rounded-full mx-auto mb-5 flex items-center justify-center"
+                style={{ backgroundColor: "#eafaf0" }}
+              >
+                <CheckCircle2 size={30} className="text-emerald-500" strokeWidth={1.75} />
+              </div>
               <h3
-                className="text-lg font-bold text-heading"
+                className="text-xl font-bold text-heading"
                 style={{ fontFamily: "var(--font-heading)" }}
               >
                 All Caught Up!
               </h3>
-              <p className="text-xs text-muted max-w-sm mx-auto mt-1">
+              <p className="text-sm text-muted max-w-sm mx-auto mt-2 leading-relaxed">
                 You have reviewed all eligible project collaborators. As new projects progress, eligible reviews will appear here.
               </p>
             </div>
@@ -280,7 +317,8 @@ export default function ReviewsWorkspace({ roleTitle = "Client" }) {
               {eligibleList.map((item, idx) => (
                 <div
                   key={`${item.projectId}-${item.revieweeId}-${idx}`}
-                  className="bg-white rounded-lg border border-border p-5 shadow-xs flex flex-col justify-between space-y-4"
+                  className="bg-white rounded-md border border-border p-5 flex flex-col justify-between space-y-4"
+                  style={{ boxShadow: "0 1px 2px rgba(16,24,40,0.04)" }}
                 >
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
@@ -306,14 +344,10 @@ export default function ReviewsWorkspace({ roleTitle = "Client" }) {
 
                   <button
                     onClick={() => handleOpenSubmitReview(item)}
-                    className="w-full py-2 px-3 rounded text-xs font-semibold text-white transition flex items-center justify-center gap-1.5 shadow-xs"
-                    style={{ backgroundColor: "var(--primary)" }}
-                    onMouseEnter={(e) =>
-                      (e.currentTarget.style.backgroundColor = "var(--primary-hover)")
-                    }
-                    onMouseLeave={(e) =>
-                      (e.currentTarget.style.backgroundColor = "var(--primary)")
-                    }
+                    className="w-full py-2.5 px-3 rounded-md text-xs font-semibold text-white transition flex items-center justify-center gap-1.5"
+                    style={{ backgroundColor: "var(--heading)" }}
+                    onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.9")}
+                    onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
                   >
                     <Star size={13} className="fill-white" /> Write Review
                   </button>

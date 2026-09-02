@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   X,
   CheckCircle,
@@ -13,6 +13,61 @@ import {
   Briefcase,
   User,
 } from "lucide-react";
+
+function ProAvatar({ src, name = "", size = 48, className = "" }) {
+  const [error, setError] = useState(false);
+
+  const getInitials = (n) => {
+    if (!n || typeof n !== "string") return "P";
+    const parts = n.trim().split(/\s+/);
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return n.slice(0, 2).toUpperCase();
+  };
+
+  const isInvalidSrc =
+    !src ||
+    typeof src !== "string" ||
+    src.trim().length === 0 ||
+    !src.startsWith("http");
+
+  if (error || isInvalidSrc) {
+    return (
+      <div
+        className={`rounded-full flex items-center justify-center font-bold text-xs uppercase flex-shrink-0 select-none shadow-xs ${className}`}
+        style={{
+          width: size,
+          height: size,
+          backgroundColor: "var(--background-secondary)",
+          color: "var(--primary)",
+          border: "1px solid var(--border)",
+        }}
+      >
+        {getInitials(name)}
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className={`rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center relative ${className}`}
+      style={{
+        width: size,
+        height: size,
+        border: "1px solid var(--border)",
+        backgroundColor: "var(--background-secondary)",
+      }}
+    >
+      <img
+        src={src}
+        alt=""
+        onError={() => setError(true)}
+        className="w-full h-full object-cover"
+      />
+    </div>
+  );
+}
 
 export default function CompareBidsModal({
   bids = [],
@@ -36,9 +91,18 @@ export default function CompareBidsModal({
   const getProDetails = (bid) => {
     const pro = bid.architect || bid.designer || bid.contractor;
     const user = pro?.user || {};
+    const img =
+      user.profileImageUrl ||
+      pro?.profileImageUrl ||
+      (typeof user.profile === "string" && (user.profile.startsWith("http") || user.profile.startsWith("/uploads") || user.profile.startsWith("data:"))
+        ? user.profile
+        : null) ||
+      (Array.isArray(pro?.photos) && pro.photos.length > 0 ? (typeof pro.photos[0] === "string" ? pro.photos[0] : pro.photos[0]?.url) : null) ||
+      null;
+
     return {
       name: user.name || "Professional",
-      profileImg: user.profile || null,
+      profileImg: img,
       city: user.city || user.state ? `${user.city || ""}, ${user.state || ""}` : "Location not specified",
       role: bid.role ? bid.role.replace(/_/g, " ") : "Specialist",
       experience: pro?.experience || pro?.yearsOfExperience || "Verified Pro",
@@ -113,17 +177,11 @@ export default function CompareBidsModal({
                   {/* Pro Top Header */}
                   <div>
                     <div className="flex items-center gap-3 mb-4">
-                      <div className="w-12 h-12 rounded-full overflow-hidden bg-primary/10 flex items-center justify-center flex-shrink-0 border border-border">
-                        {pro.profileImg ? (
-                          <img
-                            src={pro.profileImg}
-                            alt={pro.name}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <User size={22} className="text-primary" />
-                        )}
-                      </div>
+                      <ProAvatar
+                        src={pro.profileImg}
+                        name={pro.name}
+                        size={48}
+                      />
                       <div className="min-w-0 flex-1">
                         <h4 className="font-bold text-heading text-base truncate">
                           {pro.name}

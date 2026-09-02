@@ -169,6 +169,14 @@ export const materialSupplierApiSlice = apiSlice.injectEndpoints({
             providesTags: (result, error, userId) => [{ type: "Portfolio", id: userId }],
         }),
 
+        getUserPerformance: builder.query({
+            query: (userId) => ({
+                url: `/portfolio/performance/${userId}`,
+                method: "GET",
+            }),
+            providesTags: (result, error, userId) => [{ type: "Portfolio", id: userId }],
+        }),
+
         getHomeFeed: builder.query({
             query: (params = {}) => ({
                 url: "/feed",
@@ -229,6 +237,7 @@ export const {
     useSubmitContactSectionLeadMutation,
     useGetAllPortfoliosQuery,
     useGetUserPortfolioQuery,
+    useGetUserPerformanceQuery,
     useGetHomeFeedQuery,
     useFollowUserMutation,
     useUnfollowUserMutation,
@@ -236,4 +245,5 @@ export const {
     useGetFollowingQuery,
     useGetAllPortfoliosByRoleQuery
 } = materialSupplierApiSlice
+
 

@@ -1,8 +1,9 @@
-  import { useState } from "react"
+  import { useState, useEffect } from "react"
   import { Navigate, Outlet, useLocation } from "react-router-dom"
   import Sidebar from "./Sidebar"
   import Header from "./Header"
   import { getStoredUser } from "./roleNavConfig"
+  import { getSocket } from "../../utils/socketService"
   import "../../theme.css"
 
   const PAGE_TITLES = {
@@ -22,6 +23,12 @@
     const [collapsed, setCollapsed] = useState(false)
     const location = useLocation()
     const user = getStoredUser()
+
+    useEffect(() => {
+      if (user) {
+        getSocket();
+      }
+    }, [user]);
 
     // Belt-and-suspenders: PrivateRoute already blocks unauthenticated access,
     // but this keeps DashboardLayout safe if it's ever rendered on its own.

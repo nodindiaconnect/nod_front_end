@@ -1,9 +1,6 @@
-import React from 'react'
+import React from "react";
+import SettingsWorkspace from "../../dashboard/shared/SettingsWorkspace";
 
 export default function SettingsPage() {
-  return (
-    <div>
-      SettingsPage
-    </div>
-  )
+  return <SettingsWorkspace roleTitle="Contractor" />;
 }

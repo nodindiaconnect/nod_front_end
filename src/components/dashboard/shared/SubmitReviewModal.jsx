@@ -13,7 +13,10 @@ import {
   User,
 } from "lucide-react";
 import { toast } from "react-toastify";
-import { useCreateReviewMutation } from "../../../ApiSliceComponent/reviewApiSlice";
+import {
+  useCreateReviewMutation,
+  useUpdateReviewMutation,
+} from "../../../ApiSliceComponent/reviewApiSlice";
 
 function StarRatingInput({
   label,
@@ -61,21 +64,51 @@ function StarRatingInput({
 export default function SubmitReviewModal({
   target = null,
   eligibleList = [],
+  existingReview = null,
   onClose,
   onSuccess,
 }) {
+  const isEditMode = Boolean(existingReview);
+
   const [selectedTargetIndex, setSelectedTargetIndex] = useState(0);
-  const activeTarget = target || eligibleList[selectedTargetIndex] || null;
+  const activeTarget = isEditMode
+    ? {
+        projectId: existingReview.projectId,
+        projectTitle: existingReview.project?.title || "Project",
+        revieweeId: existingReview.revieweeId,
+        revieweeName: existingReview.reviewee?.name || "Participant",
+        revieweeRole: existingReview.role || "SPECIALIST",
+      }
+    : target || eligibleList[selectedTargetIndex] || null;
 
-  const [overallRating, setOverallRating] = useState(5);
-  const [qualityRating, setQualityRating] = useState(5);
-  const [communicationRating, setCommunicationRating] = useState(5);
-  const [timelinessRating, setTimelinessRating] = useState(5);
-  const [budgetRating, setBudgetRating] = useState(5);
-  const [title, setTitle] = useState("");
-  const [comment, setComment] = useState("");
+  const [overallRating, setOverallRating] = useState(
+    existingReview?.rating ? Math.round(existingReview.rating) : 5
+  );
+  const [qualityRating, setQualityRating] = useState(
+    existingReview?.qualityRating ? Math.round(existingReview.qualityRating) : 5
+  );
+  const [communicationRating, setCommunicationRating] = useState(
+    existingReview?.communicationRating
+      ? Math.round(existingReview.communicationRating)
+      : 5
+  );
+  const [timelinessRating, setTimelinessRating] = useState(
+    existingReview?.timelinessRating
+      ? Math.round(existingReview.timelinessRating)
+      : 5
+  );
+  const [budgetRating, setBudgetRating] = useState(
+    existingReview?.budgetRating
+      ? Math.round(existingReview.budgetRating)
+      : 5
+  );
+  const [title, setTitle] = useState(existingReview?.title || "");
+  const [comment, setComment] = useState(existingReview?.comment || "");
 
-  const [createReview, { isLoading: isSubmitting }] = useCreateReviewMutation();
+  const [createReview, { isLoading: isCreating }] = useCreateReviewMutation();
+  const [updateReview, { isLoading: isUpdating }] = useUpdateReviewMutation();
+
+  const isSubmitting = isCreating || isUpdating;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -96,20 +129,34 @@ export default function SubmitReviewModal({
     }
 
     try {
-      await createReview({
-        projectId: activeTarget.projectId,
-        revieweeId: activeTarget.revieweeId,
-        rating: overallRating,
-        qualityRating,
-        communicationRating,
-        timelinessRating,
-        budgetRating,
-        title: title.trim() || null,
-        comment: comment.trim(),
-        role: activeTarget.revieweeRole || undefined,
-      }).unwrap();
+      if (isEditMode) {
+        await updateReview({
+          reviewId: existingReview.id,
+          rating: overallRating,
+          qualityRating,
+          communicationRating,
+          timelinessRating,
+          budgetRating,
+          title: title.trim() || null,
+          comment: comment.trim(),
+        }).unwrap();
+        toast.success("Review updated successfully!");
+      } else {
+        await createReview({
+          projectId: activeTarget.projectId,
+          revieweeId: activeTarget.revieweeId,
+          rating: overallRating,
+          qualityRating,
+          communicationRating,
+          timelinessRating,
+          budgetRating,
+          title: title.trim() || null,
+          comment: comment.trim(),
+          role: activeTarget.revieweeRole || undefined,
+        }).unwrap();
+        toast.success("Review submitted successfully!");
+      }
 
-      toast.success("Review submitted successfully!");
       if (onSuccess) onSuccess();
       onClose();
     } catch (err) {
@@ -136,7 +183,7 @@ export default function SubmitReviewModal({
               className="text-lg sm:text-xl font-bold text-heading"
               style={{ fontFamily: "var(--font-heading)" }}
             >
-              Leave a Review
+              {isEditMode ? "Edit Review" : "Leave a Review"}
             </h3>
           </div>
           <button
@@ -147,8 +194,8 @@ export default function SubmitReviewModal({
           </button>
         </div>
 
-        {/* Target Selection Dropdown (if not pre-set) */}
-        {!target && eligibleList.length > 1 && (
+        {/* Target Selection Dropdown (if not pre-set and not edit mode) */}
+        {!isEditMode && !target && eligibleList.length > 1 && (
           <div>
             <label className="text-xs font-bold uppercase tracking-wider text-muted block mb-1">
               Select Project & Participant
@@ -160,7 +207,8 @@ export default function SubmitReviewModal({
             >
               {eligibleList.map((item, idx) => (
                 <option key={`${item.projectId}-${item.revieweeId}`} value={idx}>
-                  {item.projectTitle} — {item.revieweeName} ({item.revieweeRole?.replace(/_/g, " ")})
+                  {item.projectTitle} — {item.revieweeName} (
+                  {item.revieweeRole?.replace(/_/g, " ")})
                 </option>
               ))}
             </select>
@@ -171,14 +219,20 @@ export default function SubmitReviewModal({
         {activeTarget ? (
           <div className="p-3 bg-[var(--background-secondary)] rounded-md border border-border flex items-center justify-between text-xs">
             <div>
-              <span className="text-muted block text-[10px] uppercase font-bold">Reviewing</span>
-              <span className="font-bold text-heading">{activeTarget.revieweeName}</span>
+              <span className="text-muted block text-[10px] uppercase font-bold">
+                Reviewing
+              </span>
+              <span className="font-bold text-heading">
+                {activeTarget.revieweeName}
+              </span>
               <span className="text-muted ml-1.5">
                 ({activeTarget.revieweeRole?.replace(/_/g, " ")})
               </span>
             </div>
             <div className="text-right">
-              <span className="text-muted block text-[10px] uppercase font-bold">Project</span>
+              <span className="text-muted block text-[10px] uppercase font-bold">
+                Project
+              </span>
               <span className="font-semibold text-heading truncate max-w-[160px] inline-block">
                 {activeTarget.projectTitle}
               </span>
@@ -187,7 +241,7 @@ export default function SubmitReviewModal({
         ) : (
           <div className="p-4 bg-amber-50 rounded-md border border-amber-200 text-xs text-amber-800 flex items-center gap-2">
             <AlertCircle size={16} />
-            <span>No eligible completed projects available for review.</span>
+            <span>No eligible collaborators available for review.</span>
           </div>
         )}
 
@@ -257,7 +311,7 @@ export default function SubmitReviewModal({
             <textarea
               required
               rows={4}
-              placeholder="Share your experience working with this specialist. What went well? How was their communication and quality?"
+              placeholder="Share your experience working together. What went well? How was the communication and delivery?"
               value={comment}
               onChange={(e) => setComment(e.target.value)}
               className="w-full p-2.5 text-xs border border-border rounded focus:outline-none focus:border-[var(--primary)] text-heading leading-relaxed"
@@ -287,7 +341,13 @@ export default function SubmitReviewModal({
               }
             >
               <Send size={13} />
-              {isSubmitting ? "Submitting Review..." : "Submit Review"}
+              {isSubmitting
+                ? isEditMode
+                  ? "Updating Review..."
+                  : "Submitting Review..."
+                : isEditMode
+                ? "Update Review"
+                : "Submit Review"}
             </button>
           </div>
         </form>

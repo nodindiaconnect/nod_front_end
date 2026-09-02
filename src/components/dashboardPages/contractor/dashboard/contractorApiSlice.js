@@ -15,18 +15,33 @@ export const contractorApiSlice = apiSlice.injectEndpoints({
       providesTags: ["ContractorQuotations"],
     }),
 
+    getContractorProfile: builder.query({
+      query: () => "/Contractor/me/profile",
+      providesTags: ["ContractorProfile"],
+    }),
+
+    updateContractorProfile: builder.mutation({
+      query: (body) => ({
+        url: "/Contractor/me/profile",
+        method: "PATCH",
+        body,
+      }),
+      invalidatesTags: ["ContractorProfile", "ContractorUserDetails"],
+    }),
+
+    // Aliases for compatibility
     getDesignerProfile: builder.query({
-      query: () => "/Designer/me/profile",
-      providesTags: ["DesignerProfile"],
+      query: () => "/Contractor/me/profile",
+      providesTags: ["ContractorProfile"],
     }),
 
     updateDesignerProfile: builder.mutation({
       query: (body) => ({
-        url: "/Designer/me/profile",
+        url: "/Contractor/me/profile",
         method: "PATCH",
         body,
       }),
-      invalidatesTags: ["DesignerProfile", "DesignerUserDetails"],
+      invalidatesTags: ["ContractorProfile", "ContractorUserDetails"],
     }),
 
     getContractorProjects: builder.query({
@@ -62,6 +77,8 @@ export const contractorApiSlice = apiSlice.injectEndpoints({
 export const {
   useGetContractorUserDetailsQuery,
   useGetContractorQuotationsQuery,
+  useGetContractorProfileQuery,
+  useUpdateContractorProfileMutation,
   useGetDesignerProfileQuery,
   useUpdateDesignerProfileMutation,
   useGetContractorProjectsQuery,

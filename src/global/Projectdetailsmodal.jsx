@@ -1,994 +1,775 @@
-import React, { useState, useEffect, useRef, useMemo } from "react"
+import React, { useState } from "react";
 import {
   X,
-  ChevronLeft,
-  ChevronRight,
-  Check,
-  Send,
-  MapPin,
-  Building2,
-  Palette,
-  Sofa,
-  Wallet,
-  MessageCircle,
-  Paperclip,
-  FileText,
-  Image as ImageIcon,
-  Film,
-  ExternalLink,
+  Briefcase,
   Calendar,
   IndianRupee,
+  FileText,
+  Tag,
+  Home,
+  CheckCircle,
+  Flag,
+  Users,
+  MessageCircle,
+  Clock,
   Ruler,
   Layers,
-  ClipboardList,
   BedDouble,
   Bath,
-  CalendarCheck,
+  Palette,
+  FolderOpen,
+  StickyNote,
   ListChecks,
-} from "lucide-react"
+  ExternalLink,
+  ChevronRight,
+  MapPin,
+  FileSpreadsheet,
+  Image as ImageIcon,
+  Video,
+} from "lucide-react";
+import "../theme.css";
+import { useGetProjectByIdQuery } from "../components/dashboardPages/client/Dashboard/overpageApiSlice";
 
-const C = {
-  primary: "var(--primary)",
-  primaryHover: "var(--primary-hover)",
-  gold: "var(--gold)",
-  goldHover: "var(--gold-hover)",
-  background: "var(--background)",
-  surface: "var(--surface)",
-  backgroundSecondary: "var(--background-secondary)",
-  heading: "var(--heading)",
-  text: "var(--text)",
-  muted: "var(--muted)",
-  border: "var(--border)",
-  success: "var(--success)",
-  warning: "var(--warning)",
-  danger: "var(--danger)",
-  shadowSm: "var(--shadow-sm)",
-  shadowMd: "var(--shadow-md)",
-  shadowLg: "var(--shadow-lg)",
-  radiusSm: "var(--radius-sm)",
-  radiusMd: "var(--radius-md)",
-  radiusLg: "var(--radius-lg)",
-  fontHeading: "var(--font-heading)",
-  fontBody: "var(--font-body)",
-  transition: "var(--transition)",
+const SECTION_META = [
+  { key: "basics", label: "Basics", Icon: ListChecks },
+  { key: "timeline", label: "Timeline", Icon: Calendar },
+  { key: "budget", label: "Budget & Cost", Icon: WalletIcon },
+  { key: "services", label: "Services & Design", Icon: Briefcase },
+  { key: "documents", label: "Documents & Media", Icon: FolderOpen },
+  { key: "notes", label: "Notes", Icon: StickyNote },
+];
+
+function WalletIcon(props) {
+  return <IndianRupee {...props} />;
 }
 
-const ATTACHMENT_LABELS = {
-  FLOOR_PLAN: "Floor plan",
-  PROPERTY_PHOTO: "Property photo",
-  REFERENCE_IMAGE: "Reference image",
-  VIDEO: "Video",
-}
+const formatEnumLabel = (v) =>
+  !v ? "" : String(v).split("_").map((w) => w[0] + w.slice(1).toLowerCase()).join(" ");
 
-// Decorative icon per section — rendered without any background chip, just tinted glyphs.
-const SECTION_ICONS = {
-  Basics: ClipboardList,
-  Location: MapPin,
-  Property: Building2,
-  Design: Palette,
-  "Current space": Sofa,
-  Budget: Wallet,
-  Communication: MessageCircle,
-  Attachments: Paperclip,
-  "Files & notes": FileText,
-}
+const isVideoUrl = (url = "") => /\.(mp4|mov|webm|avi|mkv)$/i.test(url);
+const isPdfUrl = (url = "") => /\.pdf$/i.test(url);
 
-// Decorative icon per field label, purely to aid scanning — optional, falls back to none.
-const FIELD_ICONS = {
-  Address: MapPin,
-  City: MapPin,
-  "Property size": Ruler,
-  Floors: Layers,
-  Bedrooms: BedDouble,
-  Bathrooms: Bath,
-  "Site visit required": CalendarCheck,
-  "Budget range": IndianRupee,
-  "Start date": Calendar,
-  "Completion date": Calendar,
-  "Preferred communication": MessageCircle,
-  "Services required": ListChecks,
-}
+function InfoField({ label, value, Icon }) {
+  const displayValue =
+    value !== null && value !== undefined && String(value).trim() !== ""
+      ? value
+      : "—";
 
-const IMAGE_ATTACHMENT_TYPES = ["PROPERTY_PHOTO", "REFERENCE_IMAGE", "FLOOR_PLAN_IMAGE"]
-
-function isImageUrl(url = "") {
-  return /\.(jpe?g|png|gif|webp|avif)$/i.test(url)
-}
-
-function isPdfUrl(url = "") {
-  return /\.pdf$/i.test(url)
-}
-
-function isVideoUrl(url = "") {
-  return /\.(mp4|webm|mov|m4v)$/i.test(url)
-}
-
-function formatCurrency(n) {
-  if (n === null || n === undefined) return "-"
-  return new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency: "INR",
-    maximumFractionDigits: 0,
-  }).format(n)
-}
-
-function isEmpty(v) {
-  if (v === null || v === undefined) return true
-  if (typeof v === "string" && v.trim() === "") return true
-  if (Array.isArray(v) && v.length === 0) return true
-  return false
-}
-
-/* Each section declares its own fields as a function of the project so we can:
-   1) drop a field that has no real data instead of printing "-"
-   2) drop the whole section/step when none of its fields have data
-   `full: true` marks a field that should span both grid columns (long text). */
-function buildSections(project) {
-  const sections = [
-    {
-      label: "Basics",
-      fields: [
-        { label: "Project title", value: project.title },
-        { label: "Category", value: project.category },
-        { label: "Property status", value: project.propertyStatus },
-        {
-          label: "Services required",
-          value: project.servicesRequired?.length ? project.servicesRequired.join(", ") : null,
-        },
-        { label: "Description", value: project.description, full: true },
-      ],
-    },
-    {
-      label: "Location",
-      fields: [
-        { label: "Address", value: project.address, full: true },
-        { label: "City", value: project.city },
-        { label: "State", value: project.state },
-        { label: "Pincode", value: project.pincode },
-      ],
-    },
-    {
-      label: "Property",
-      fields: [
-        { label: "Property size", value: project.propertySize ? `${project.propertySize} sq.ft` : null },
-        { label: "Floors", value: project.numberOfFloors },
-        { label: "Bedrooms", value: project.numberOfBedrooms },
-        { label: "Bathrooms", value: project.numberOfBathrooms },
-        {
-          label: "Site visit required",
-          value: project.siteVisitRequired === undefined ? null : project.siteVisitRequired ? "Yes" : "No",
-        },
-      ],
-    },
-    {
-      label: "Design",
-      fields: [
-        {
-          label: "Design style",
-          value: project.designStyle?.length ? project.designStyle.join(", ") : null,
-        },
-        { label: "Color preferences", value: project.colorPreferences },
-        {
-          label: "Space requirements",
-          value: project.spaceRequirements?.length ? project.spaceRequirements.join(", ") : null,
-        },
-        { label: "Accessibility needs", value: project.accessibilityNeeds, full: true },
-      ],
-    },
-    {
-      label: "Current space",
-      fields: [
-        { label: "Space users", value: project.spaceUsers },
-        { label: "What client likes", value: project.currentSpaceLikes, full: true },
-        { label: "Current problems", value: project.currentSpaceProblems, full: true },
-        { label: "Client involvement", value: project.clientInvolvement },
-      ],
-    },
-    {
-      label: "Budget",
-      fields: [
-        {
-          label: "Budget range",
-          value:
-            project.budgetMin != null || project.budgetMax != null
-              ? `${formatCurrency(project.budgetMin)} - ${formatCurrency(project.budgetMax)}`
-              : null,
-        },
-        { label: "Start date", value: project.startDate ? new Date(project.startDate).toLocaleDateString() : null },
-        {
-          label: "Completion date",
-          value: project.completionDate ? new Date(project.completionDate).toLocaleDateString() : null,
-        },
-        { label: "Priority", value: project.priority },
-      ],
-    },
-    {
-      label: "Communication",
-      fields: [
-        { label: "Preferred communication", value: project.preferredCommunication },
-        { label: "Preferred working hours", value: project.preferredWorkingHours },
-      ],
-    },
-    {
-      label: "Attachments",
-      isAttachments: true,
-      fields: [],
-    },
-    {
-      label: "Files & notes",
-      fields: [
-        { label: "Status", value: project.status },
-        { label: "Additional notes", value: project.additionalNotes, full: true },
-      ],
-    },
-  ]
-
-  return sections
-    .map((section) => {
-      if (section.isAttachments) {
-        const hasAttachments = project.attachments && project.attachments.length > 0
-        return { ...section, hasContent: hasAttachments }
-      }
-      return { ...section, fields: section.fields.filter((f) => !isEmpty(f.value)), hasContent: undefined }
-    })
-    .filter((section) => (section.isAttachments ? section.hasContent : section.fields.length > 0))
-}
-
-/* Every value is wrapped so long, unbroken strings (urls, ids, long text)
-   always wrap onto new lines instead of overflowing or forcing scroll. */
-function ModalRow({ label, value, full }) {
-  const Icon = FIELD_ICONS[label]
   return (
-    <div
-      style={{
-        padding: "12px 0",
-        borderBottom: `1px solid ${C.border}`,
-        gridColumn: full ? "1 / -1" : "auto",
-      }}
-    >
+    <div className="flex items-start gap-3 py-1.5 px-1 rounded-md">
       <div
+        className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
         style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 6,
-          fontFamily: C.fontBody,
-          fontSize: 12,
-          color: C.primary,
-          fontWeight: 600,
-          marginBottom: 4,
-          letterSpacing: "0.01em",
+          backgroundColor: "var(--background-secondary)",
+          color: "var(--primary)",
         }}
       >
-        {Icon && <Icon size={13} strokeWidth={2.25} style={{ flexShrink: 0 }} aria-hidden="true" />}
-        <span>{label}</span>
+        {Icon ? <Icon size={16} /> : <FileText size={16} />}
       </div>
-      <div
-        style={{
-          fontFamily: C.fontBody,
-          fontSize: 14,
-          color: C.heading,
-          lineHeight: 1.6,
-          whiteSpace: "pre-wrap",
-          overflowWrap: "anywhere",
-          wordBreak: "break-word",
-        }}
-      >
-        {value}
+      <div className="min-w-0 flex-1">
+        <span className="text-[10px] font-bold uppercase tracking-wider text-muted block mb-0.5">
+          {label}
+        </span>
+        <span className="text-sm font-semibold text-heading break-words">
+          {displayValue}
+        </span>
       </div>
     </div>
-  )
+  );
 }
 
-/* Lightbox for viewing a single image attachment at full size. */
-function ImageLightbox({ attachment, onClose }) {
-  if (!attachment) return null
+function InfoGrid({ items }) {
   return (
     <div
-      onClick={onClose}
-      style={{
-        position: "fixed",
-        inset: 0,
-        background: "rgba(10, 8, 6, 0.85)",
-        zIndex: 1100,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: 24,
-        boxSizing: "border-box",
-        cursor: "zoom-out",
-        animation: "modalFadeIn 0.2s ease",
-      }}
+      className="grid grid-cols-1 sm:grid-cols-2 gap-4 rounded-xl border border-border p-3.5 bg-white"
+      style={{ boxShadow: "0 1px 2px rgba(16,24,40,0.04)" }}
     >
-      <figure style={{ margin: 0, maxWidth: "92vw", maxHeight: "88vh", display: "flex", flexDirection: "column", gap: 10 }}>
-        <img
-          src={attachment.url}
-          alt={ATTACHMENT_LABELS[attachment.type] || "Attachment"}
-          style={{
-            maxWidth: "92vw",
-            maxHeight: "78vh",
-            objectFit: "contain",
-            borderRadius: C.radiusSm,
-            boxShadow: C.shadowLg,
-            display: "block",
-            margin: "0 auto",
-          }}
-        />
-        <figcaption
-          style={{
-            fontFamily: C.fontBody,
-            fontSize: 13,
-            color: "#fff",
-            textAlign: "center",
-          }}
-        >
-          {ATTACHMENT_LABELS[attachment.type] || "Attachment"}
-        </figcaption>
-      </figure>
-      <button
-        onClick={onClose}
-        aria-label="Close image preview"
-        className="icon-btn"
-        style={{
-          position: "absolute",
-          top: 18,
-          right: 18,
-          width: 36,
-          height: 36,
-          border: "none",
-          background: "transparent",
-          color: "#fff",
-          cursor: "pointer",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          filter: "drop-shadow(0 1px 3px rgba(0,0,0,0.7))",
-        }}
-      >
-        <X size={22} strokeWidth={2} aria-hidden="true" />
-      </button>
+      {items.map((item, idx) => (
+        <InfoField key={idx} {...item} />
+      ))}
     </div>
-  )
+  );
 }
 
-/* One tile in the attachments grid. Routes to the right preview based on
-   the file's type/extension: inline image, inline video, or a PDF/file link card. */
-function AttachmentTile({ attachment, onOpenImage }) {
-  const label = ATTACHMENT_LABELS[attachment.type] || attachment.type
-  const url = attachment.url || ""
-
-  const tileShellStyle = {
-    borderRadius: C.radiusMd,
-    border: `1px solid ${C.border}`,
-    background: C.backgroundSecondary,
-    overflow: "hidden",
-    display: "flex",
-    flexDirection: "column",
-    transition: C.transition,
-  }
-
-  if (isImageUrl(url)) {
-    return (
-      <div className="attachment-tile" style={tileShellStyle}>
-        <button
-          type="button"
-          onClick={() => onOpenImage(attachment)}
-          aria-label={`View full size ${label}`}
-          style={{
-            all: "unset",
-            cursor: "zoom-in",
-            display: "block",
-            width: "100%",
-            aspectRatio: "4 / 3",
-            position: "relative",
-            background: C.border,
-          }}
-        >
-          <img
-            src={url}
-            alt={label}
-            loading="lazy"
-            style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
-          />
-          <ImageIcon
-            size={15}
-            strokeWidth={2.25}
-            aria-hidden="true"
-            style={{
-              position: "absolute",
-              top: 8,
-              left: 8,
-              color: "#fff",
-              filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.65))",
-            }}
-          />
-        </button>
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 6,
-            padding: "8px 10px",
-            fontFamily: C.fontBody,
-            fontSize: 12,
-            fontWeight: 600,
-            color: C.heading,
-          }}
-        >
-          {label}
-        </div>
-      </div>
-    )
-  }
-
-  if (isVideoUrl(url)) {
-    return (
-      <div className="attachment-tile" style={tileShellStyle}>
-        <div style={{ position: "relative" }}>
-          <video
-            src={url}
-            controls
-            preload="metadata"
-            style={{ width: "100%", aspectRatio: "4 / 3", background: "#000", display: "block" }}
-          />
-          <Film
-            size={15}
-            strokeWidth={2.25}
-            aria-hidden="true"
-            style={{
-              position: "absolute",
-              top: 8,
-              left: 8,
-              color: "#fff",
-              filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.65))",
-              pointerEvents: "none",
-            }}
-          />
-        </div>
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 6,
-            padding: "8px 10px",
-            fontFamily: C.fontBody,
-            fontSize: 12,
-            fontWeight: 600,
-            color: C.heading,
-          }}
-        >
-          {label}
-        </div>
-      </div>
-    )
-  }
-
-  // PDF or any other file type: show an icon card that links out.
+function SectionHeading({ Icon, children }) {
   return (
-    <a
-      href={url}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="attachment-tile"
-      style={{
-        ...tileShellStyle,
-        textDecoration: "none",
-        alignItems: "center",
-        justifyContent: "center",
-        aspectRatio: "4 / 3",
-        gap: 8,
-        color: C.heading,
-      }}
-    >
-      <FileText size={30} strokeWidth={1.75} color={C.primary} aria-hidden="true" />
-      <span style={{ fontFamily: C.fontBody, fontSize: 12, fontWeight: 600 }}>{label}</span>
-      <span
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          gap: 4,
-          fontFamily: C.fontBody,
-          fontSize: 11,
-          fontWeight: 600,
-          color: C.primary,
-        }}
-      >
-        {isPdfUrl(url) ? "Open PDF" : "Open file"}
-        <ExternalLink size={12} strokeWidth={2.25} aria-hidden="true" />
-      </span>
-    </a>
-  )
-}
-
-function AttachmentsGrid({ attachments }) {
-  const [lightboxAttachment, setLightboxAttachment] = useState(null)
-
-  if (!attachments || attachments.length === 0) return null
-
-  return (
-    <>
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))",
-          gap: 16,
-        }}
-      >
-        {attachments.map((a) => (
-          <AttachmentTile key={a.id} attachment={a} onOpenImage={setLightboxAttachment} />
-        ))}
-      </div>
-      {lightboxAttachment && (
-        <ImageLightbox attachment={lightboxAttachment} onClose={() => setLightboxAttachment(null)} />
+    <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-heading pt-1">
+      {Icon && (
+        <div
+          className="w-6 h-6 rounded-md flex items-center justify-center text-white flex-shrink-0"
+          style={{ backgroundColor: "var(--primary)" }}
+        >
+          <Icon size={13} />
+        </div>
       )}
-    </>
-  )
+      <span style={{ fontFamily: "var(--font-heading)" }}>{children}</span>
+    </div>
+  );
 }
 
-function StepIndicator({ steps, current, onJump }) {
+export default function ProjectDetailsModal({ project: initialProject, onClose }) {
+  const [activeKey, setActiveKey] = useState(SECTION_META[0].key);
+  const [docFilter, setDocFilter] = useState("ALL");
+
+  const projectId = initialProject?.id || initialProject?.projectId;
+  const { data: fullProjectData } = useGetProjectByIdQuery(projectId, {
+    skip: !projectId,
+  });
+
+  const project = fullProjectData?.data || initialProject;
+
+  if (!project) return null;
+
+  const activeIndex = SECTION_META.findIndex((s) => s.key === activeKey);
+  const isLast = activeIndex === SECTION_META.length - 1;
+
+  const goNext = () => {
+    if (!isLast) setActiveKey(SECTION_META[activeIndex + 1].key);
+  };
+
+  const ATTACHMENT_TYPE_LABELS = {
+    FLOOR_PLAN: "Floor Plan",
+    PROPERTY_PHOTO: "Property Photo",
+    REFERENCE_IMAGE: "Reference Image",
+    VIDEO: "Video Tour",
+    DOCUMENT: "Document",
+  };
+
+  const seenUrls = new Set();
+  const rawList = [
+    ...(Array.isArray(project.attachments)
+      ? project.attachments.map((a) => ({
+          url: a.url,
+          type: a.type || "DOCUMENT",
+          label:
+            ATTACHMENT_TYPE_LABELS[a.type] ||
+            formatEnumLabel(a.type) ||
+            "Attachment",
+        }))
+      : []),
+    ...(project.floorPlanUrls || []).map((u) => ({
+      url: u,
+      type: "FLOOR_PLAN",
+      label: "Floor Plan",
+    })),
+    ...(project.propertyPhotoUrls || []).map((u) => ({
+      url: u,
+      type: "PROPERTY_PHOTO",
+      label: "Property Photo",
+    })),
+    ...(project.referenceImageUrls || []).map((u) => ({
+      url: u,
+      type: "REFERENCE_IMAGE",
+      label: "Reference Image",
+    })),
+    ...(project.videoUrls || []).map((u) => ({
+      url: u,
+      type: "VIDEO",
+      label: "Video Tour",
+    })),
+  ];
+
+  const mediaList = rawList.filter((m) => {
+    if (!m.url || seenUrls.has(m.url)) return false;
+    seenUrls.add(m.url);
+    return true;
+  });
+
+  const filteredMedia = mediaList.filter((m) => {
+    if (docFilter === "ALL") return true;
+    return m.type === docFilter;
+  });
+
+  const docCounts = {
+    ALL: mediaList.length,
+    FLOOR_PLAN: mediaList.filter((m) => m.type === "FLOOR_PLAN").length,
+    PROPERTY_PHOTO: mediaList.filter((m) => m.type === "PROPERTY_PHOTO").length,
+    REFERENCE_IMAGE: mediaList.filter((m) => m.type === "REFERENCE_IMAGE").length,
+    VIDEO: mediaList.filter((m) => m.type === "VIDEO").length,
+  };
+
+  // Location string formatter
+  const locationParts = [project.address, project.city, project.state, project.pincode].filter(Boolean);
+  const locationStr = locationParts.length > 0 ? locationParts.join(", ") : "—";
+
   return (
     <div
-      role="tablist"
-      aria-label="Project detail sections"
-      className="modal-step-indicator"
-      style={{
-        display: "flex",
-        alignItems: "flex-start",
-        flexWrap: "wrap",
-        rowGap: 12,
-        padding: "14px 8px 12px",
-      }}
+      className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4 animate-[fadeIn_0.15s_ease-out]"
+      onClick={onClose}
     >
-      {steps.map((label, i) => {
-        const Icon = SECTION_ICONS[label]
-        const done = i < current
-        const active = i === current
-        const tone = done || active ? C.primary : C.border
-        return (
-          <React.Fragment key={label}>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={active}
-              aria-controls={`step-panel-${i}`}
-              id={`step-tab-${i}`}
-              onClick={() => onJump(i)}
-              className="step-tab"
+      <div
+        className="w-full sm:max-w-4xl bg-white sm:rounded-2xl flex flex-col overflow-hidden shadow-2xl"
+        style={{
+          maxHeight: "90vh",
+          boxShadow:
+            "0 25px 50px -12px rgba(0,0,0,0.35), 0 0 0 1px rgba(0,0,0,0.04)",
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div
+          className="flex justify-between items-start gap-3 p-4 sm:p-5 border-b border-border relative z-10 bg-white"
+          style={{ boxShadow: "0 1px 2px rgba(16,24,40,0.04)" }}
+        >
+          <div className="min-w-0 flex items-center gap-3">
+            <div
+              className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 text-white"
               style={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                cursor: "pointer",
-                minWidth: 60,
-                background: "transparent",
-                border: "none",
-                padding: 0,
-                font: "inherit",
+                background:
+                  "linear-gradient(135deg, var(--primary), var(--primary-hover, var(--primary)))",
+                boxShadow: "0 4px 10px rgba(0,0,0,0.2)",
               }}
             >
-              <span
-                aria-hidden="true"
-                style={{
-                  width: 28,
-                  height: 28,
-                  borderRadius: "50%",
-                  border: `1.5px solid ${tone}`,
-                  background: "transparent",
-                  color: active ? C.primary : done ? C.primary : C.muted,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  transition: C.transition,
-                  flexShrink: 0,
-                }}
+              <Briefcase size={19} />
+            </div>
+            <div className="min-w-0">
+              <h2
+                className="text-lg sm:text-xl text-heading truncate"
+                style={{ fontFamily: "var(--font-heading)", fontWeight: 700 }}
               >
-                {done ? (
-                  <Check size={14} strokeWidth={2.5} />
-                ) : Icon ? (
-                  <Icon size={13} strokeWidth={2.25} />
-                ) : (
-                  <span style={{ fontFamily: C.fontBody, fontSize: 11, fontWeight: 700 }}>{i + 1}</span>
-                )}
-              </span>
-              <span
-                style={{
-                  fontFamily: C.fontBody,
-                  fontSize: 10,
-                  color: active ? C.heading : C.muted,
-                  fontWeight: active ? 700 : 500,
-                  marginTop: 4,
-                  textAlign: "center",
-                  whiteSpace: "normal",
-                  maxWidth: 72,
-                }}
-              >
-                {label}
-              </span>
-            </button>
-            {i < steps.length - 1 && (
-              <div
-                aria-hidden="true"
-                className="modal-step-connector"
-                style={{
-                  flex: "1 1 16px",
-                  height: 1.5,
-                  background: i < current ? C.primary : C.border,
-                  marginTop: 13,
-                  minWidth: 16,
-                  alignSelf: "flex-start",
-                  transition: C.transition,
-                }}
-              />
-            )}
-          </React.Fragment>
-        )
-      })}
-    </div>
-  )
-}
-
-export default function ProjectDetailsModal({ project, onClose, onBid }) {
-  const [step, setStep] = useState(0)
-  const dialogRef = useRef(null)
-  const closeBtnRef = useRef(null)
-
-  const sections = useMemo(() => (project ? buildSections(project) : []), [project])
-  const stepLabels = sections.map((s) => s.label)
-
-  useEffect(() => {
-    if (project) setStep(0)
-  }, [project])
-
-  useEffect(() => {
-    if (!project) return
-
-    const previouslyFocused = document.activeElement
-    closeBtnRef.current?.focus()
-
-    const handleKeyDown = (e) => {
-      if (e.key === "Escape") {
-        onClose()
-        return
-      }
-      if (e.key === "Tab" && dialogRef.current) {
-        const focusables = dialogRef.current.querySelectorAll(
-          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-        )
-        if (focusables.length === 0) return
-        const first = focusables[0]
-        const last = focusables[focusables.length - 1]
-        if (e.shiftKey && document.activeElement === first) {
-          e.preventDefault()
-          last.focus()
-        } else if (!e.shiftKey && document.activeElement === last) {
-          e.preventDefault()
-          first.focus()
-        }
-      }
-    }
-
-    document.addEventListener("keydown", handleKeyDown)
-    const originalOverflow = document.body.style.overflow
-    document.body.style.overflow = "hidden"
-
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown)
-      document.body.style.overflow = originalOverflow
-      previouslyFocused && previouslyFocused.focus && previouslyFocused.focus()
-    }
-  }, [project, onClose])
-
-  if (!project) return null
-  if (sections.length === 0) return null
-
-  const safeStep = Math.min(step, sections.length - 1)
-  const isLast = safeStep === sections.length - 1
-  const isFirst = safeStep === 0
-  const currentSection = sections[safeStep]
-  const CurrentIcon = SECTION_ICONS[currentSection.label]
-
-  return (
-    <div
-      onClick={onClose}
-      className="modal-overlay"
-      style={{
-        position: "fixed",
-        inset: 0,
-        background: "rgba(20, 16, 12, 0.55)",
-        backdropFilter: "blur(2px)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        zIndex: 1000,
-        padding: 16,
-        boxSizing: "border-box",
-        animation: "modalFadeIn 0.25s ease",
-      }}
-    >
-      <div
-        ref={dialogRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="modal-title"
-        aria-describedby="modal-step-desc"
-        onClick={(e) => e.stopPropagation()}
-        className="modal-panel"
-        style={{
-          background: C.surface,
-          borderRadius: C.radiusLg,
-          maxWidth: 920,
-          width: "100%",
-          maxHeight: "82vh",
-          boxShadow: C.shadowLg,
-          animation: "modalSlideUp 0.3s ease",
-          display: "flex",
-          flexDirection: "column",
-          boxSizing: "border-box",
-          overflow: "hidden",
-          position: "relative",
-        }}
-      >
-        <div
-          aria-hidden="true"
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            height: 3,
-            background: `linear-gradient(90deg, ${C.primary}, ${C.gold})`,
-          }}
-        />
-
-        <div
-          className="modal-header"
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "flex-start",
-            gap: 12,
-            padding: "24px 24px 0",
-            flexShrink: 0,
-          }}
-        >
-          <div style={{ minWidth: 0, display: "flex", gap: 12, alignItems: "flex-start" }}>
-            <Building2
-              size={20}
-              strokeWidth={2}
-              color={C.primary}
-              aria-hidden="true"
-              style={{ flexShrink: 0, marginTop: 2 }}
-            />
-            <div style={{ minWidth: 0 }}>
-
-              <span
-                className="text-md font-bold tracking-wider mr-2"
-                style={{ color: "var(--text-muted)" }}
-              >
-                Title :-
-              </span>
-
-              <span className="text-sm">
                 {project.title || "Project Details"}
-              </span>
+              </h2>
               <p
-                id="modal-step-desc"
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 6,
-                  fontFamily: C.fontBody,
-                  color: C.muted,
-                  fontSize: 13,
-                  margin: "4px 0 0",
-                }}
+                className="text-xs sm:text-sm text-muted mt-0.5"
+                style={{ fontWeight: 500 }}
               >
-                Section {safeStep + 1} of {sections.length} &middot; {currentSection.label}
+                Section {activeIndex + 1} of {SECTION_META.length} ·{" "}
+                {SECTION_META[activeIndex]?.label}
               </p>
             </div>
           </div>
           <button
-            ref={closeBtnRef}
             onClick={onClose}
-            aria-label="Close project details dialog"
-            className="icon-btn"
-            style={{
-              background: "transparent",
-              border: "none",
-              cursor: "pointer",
-              color: C.muted,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              padding: 6,
-              flexShrink: 0,
-              borderRadius: C.radiusSm,
-            }}
+            className="text-muted hover:text-white hover:bg-red-500 transition-all duration-150 p-1.5 -mr-1 shrink-0 rounded-lg cursor-pointer"
+            aria-label="Close"
           >
-            <X size={20} strokeWidth={2} aria-hidden="true" />
+            <X size={20} />
           </button>
         </div>
 
-        <div style={{ flexShrink: 0 }}>
-          <StepIndicator steps={stepLabels} current={safeStep} onJump={setStep} />
-        </div>
-
-        <div
-          id={`step-panel-${safeStep}`}
-          role="tabpanel"
-          aria-labelledby={`step-tab-${safeStep}`}
-          className="modal-body"
-          style={{
-            padding: "4px 24px 20px",
-            borderTop: `1px solid ${C.border}`,
-            overflowY: "auto",
-            flex: 1,
-            minHeight: 0,
-          }}
-        >
-          {currentSection.isAttachments ? (
-            <AttachmentsGrid attachments={project.attachments} />
-          ) : (
-            <div
-              className="modal-grid"
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                columnGap: 32,
-              }}
-            >
-              {currentSection.fields.map((f) => (
-                <ModalRow key={f.label} label={f.label} value={f.value} full={f.full} />
-              ))}
+        {/* Body: left vertical sidebar + right content pane (No Scrollbars) */}
+        <div className="flex flex-1 min-h-0 flex-col sm:flex-row overflow-hidden">
+          {/* Left vertical stepper sidebar */}
+          <div
+            className="sm:w-60 flex-shrink-0 border-b sm:border-b-0 sm:border-r border-border overflow-x-auto sm:overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+            style={{
+              background:
+                "linear-gradient(180deg, var(--background-secondary), var(--background))",
+            }}
+          >
+            <div className="flex sm:flex-col p-2 sm:p-3 gap-1.5">
+              {SECTION_META.map((section, idx) => {
+                const isActive = section.key === activeKey;
+                return (
+                  <button
+                    key={section.key}
+                    type="button"
+                    onClick={() => setActiveKey(section.key)}
+                    className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-left whitespace-nowrap transition-all duration-150 cursor-pointer"
+                    style={{
+                      backgroundColor: isActive ? "var(--primary)" : "transparent",
+                      color: isActive ? "#fff" : "var(--heading)",
+                      fontWeight: isActive ? 700 : 500,
+                      boxShadow: isActive
+                        ? "0 4px 12px rgba(0,0,0,0.18), 0 1px 2px rgba(0,0,0,0.1)"
+                        : "none",
+                      transform: isActive ? "translateX(2px)" : "none",
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isActive)
+                        e.currentTarget.style.backgroundColor =
+                          "rgba(0,0,0,0.04)";
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isActive)
+                        e.currentTarget.style.backgroundColor = "transparent";
+                    }}
+                  >
+                    <span
+                      className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] flex-shrink-0 transition-colors"
+                      style={{
+                        backgroundColor: isActive
+                          ? "rgba(255,255,255,0.25)"
+                          : "var(--background)",
+                        color: isActive ? "#fff" : "var(--muted)",
+                        fontWeight: 700,
+                        boxShadow: isActive
+                          ? "none"
+                          : "inset 0 0 0 1px rgba(0,0,0,0.06)",
+                      }}
+                    >
+                      {idx + 1}
+                    </span>
+                    <span className="text-sm">{section.label}</span>
+                  </button>
+                );
+              })}
             </div>
-          )}
+          </div>
+
+          {/* Right content pane */}
+          <div className="flex-1 px-4 sm:px-6 py-4 sm:py-5 overflow-y-auto space-y-5 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+            {/* SECTION 1: BASICS */}
+            {activeKey === "basics" && (
+              <>
+                <SectionHeading Icon={FileText}>Basic Information</SectionHeading>
+                <InfoGrid
+                  items={[
+                    {
+                      label: "Project Title",
+                      value: project.title,
+                      Icon: FileText,
+                    },
+                    {
+                      label: "Current Stage",
+                      value: formatEnumLabel(project.status),
+                      Icon: CheckCircle,
+                    },
+                  ]}
+                />
+                <InfoGrid
+                  items={[
+                    {
+                      label: "Category",
+                      value: formatEnumLabel(project.category),
+                      Icon: Tag,
+                    },
+                    {
+                      label: "Project Scope",
+                      value: formatEnumLabel(project.scope),
+                      Icon: Layers,
+                    },
+                  ]}
+                />
+                <InfoGrid
+                  items={[
+                    {
+                      label: "Property Status",
+                      value: formatEnumLabel(project.propertyStatus),
+                      Icon: Home,
+                    },
+                    {
+                      label: "Location",
+                      value: locationStr,
+                      Icon: MapPin,
+                    },
+                  ]}
+                />
+                <SectionHeading Icon={FileText}>Description</SectionHeading>
+                <div
+                  className="rounded-xl border border-border p-3.5 bg-white"
+                  style={{ boxShadow: "0 1px 2px rgba(16,24,40,0.04)" }}
+                >
+                  <div
+                    className="text-sm text-heading whitespace-pre-wrap break-words"
+                    style={{ fontWeight: 400, lineHeight: 1.6 }}
+                  >
+                    {project.description || "—"}
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* SECTION 2: TIMELINE */}
+            {activeKey === "timeline" && (
+              <>
+                <SectionHeading Icon={Calendar}>Timeline & Execution Details</SectionHeading>
+                <InfoGrid
+                  items={[
+                    {
+                      label: "Target Start Date",
+                      value: project.startDate
+                        ? new Date(project.startDate).toLocaleDateString("en-IN", {
+                            day: "numeric",
+                            month: "short",
+                            year: "numeric",
+                          })
+                        : "—",
+                      Icon: Calendar,
+                    },
+                    {
+                      label: "Target Completion Date",
+                      value: project.completionDate
+                        ? new Date(project.completionDate).toLocaleDateString("en-IN", {
+                            day: "numeric",
+                            month: "short",
+                            year: "numeric",
+                          })
+                        : "—",
+                      Icon: Calendar,
+                    },
+                  ]}
+                />
+                <InfoGrid
+                  items={[
+                    {
+                      label: "Priority",
+                      value: formatEnumLabel(project.priority),
+                      Icon: Flag,
+                    },
+                    {
+                      label: "Client Involvement",
+                      value: formatEnumLabel(project.clientInvolvement),
+                      Icon: Users,
+                    },
+                  ]}
+                />
+                <InfoGrid
+                  items={[
+                    {
+                      label: "Preferred Communication",
+                      value: formatEnumLabel(project.preferredCommunication),
+                      Icon: MessageCircle,
+                    },
+                    {
+                      label: "Preferred Working Hours",
+                      value: project.preferredWorkingHours || "—",
+                      Icon: Clock,
+                    },
+                  ]}
+                />
+                <InfoGrid
+                  items={[
+                    {
+                      label: "Site Visit Requirement",
+                      value: project.siteVisitRequired
+                        ? "Site Visit Required Before Execution"
+                        : "Remote Ready / Site Visit Optional",
+                      Icon: MapPin,
+                    },
+                    {
+                      label: "Availability Status",
+                      value: formatEnumLabel(project.availabilityStatus || "OPEN"),
+                      Icon: CheckCircle,
+                    },
+                  ]}
+                />
+              </>
+            )}
+
+            {/* SECTION 3: BUDGET & PROPERTY SPECS */}
+            {activeKey === "budget" && (
+              <>
+                <SectionHeading Icon={IndianRupee}>
+                  Budget & Property Specifications
+                </SectionHeading>
+                <InfoGrid
+                  items={[
+                    {
+                      label: "Minimum Budget",
+                      value:
+                        project.budgetMin != null
+                          ? `₹${Number(project.budgetMin).toLocaleString("en-IN")}`
+                          : "—",
+                      Icon: IndianRupee,
+                    },
+                    {
+                      label: "Maximum Budget",
+                      value:
+                        project.budgetMax != null
+                          ? `₹${Number(project.budgetMax).toLocaleString("en-IN")}`
+                          : "—",
+                      Icon: IndianRupee,
+                    },
+                  ]}
+                />
+                <InfoGrid
+                  items={[
+                    {
+                      label: "Property Size (sq ft)",
+                      value:
+                        project.propertySize != null
+                          ? `${Number(project.propertySize).toLocaleString("en-IN")} sq ft`
+                          : "—",
+                      Icon: Ruler,
+                    },
+                    {
+                      label: "Number of Floors",
+                      value:
+                        project.numberOfFloors != null
+                          ? `${project.numberOfFloors} Floor${Number(project.numberOfFloors) === 1 ? "" : "s"}`
+                          : "—",
+                      Icon: Layers,
+                    },
+                  ]}
+                />
+                <InfoGrid
+                  items={[
+                    {
+                      label: "Bedrooms",
+                      value:
+                        project.numberOfBedrooms != null
+                          ? `${project.numberOfBedrooms} BHK / Bedrooms`
+                          : "—",
+                      Icon: BedDouble,
+                    },
+                    {
+                      label: "Bathrooms",
+                      value:
+                        project.numberOfBathrooms != null
+                          ? `${project.numberOfBathrooms} Bathrooms`
+                          : "—",
+                      Icon: Bath,
+                    },
+                  ]}
+                />
+              </>
+            )}
+
+            {/* SECTION 4: SERVICES & DESIGN */}
+            {activeKey === "services" && (
+              <>
+                <SectionHeading Icon={Briefcase}>Services Required</SectionHeading>
+                <div
+                  className="rounded-xl border border-border p-4 bg-white space-y-3"
+                  style={{ boxShadow: "0 1px 2px rgba(16,24,40,0.04)" }}
+                >
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-muted">
+                    Required Disciplines
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {Array.isArray(project.servicesRequired) && project.servicesRequired.length > 0 ? (
+                      project.servicesRequired.map((srv, idx) => (
+                        <span
+                          key={idx}
+                          className="px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider bg-[#FAF0E6] text-gray-900 border border-[#EDE8E1]"
+                        >
+                          {formatEnumLabel(srv)}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="text-xs text-muted">No specific services selected</span>
+                    )}
+                  </div>
+                </div>
+
+                <SectionHeading Icon={Palette}>Design & Space Preferences</SectionHeading>
+                <InfoGrid
+                  items={[
+                    {
+                      label: "Design Style(s)",
+                      value: Array.isArray(project.designStyle) && project.designStyle.length > 0
+                        ? project.designStyle.map(formatEnumLabel).join(", ")
+                        : "—",
+                      Icon: Palette,
+                    },
+                    {
+                      label: "Color Preferences",
+                      value: project.colorPreferences || "—",
+                      Icon: Palette,
+                    },
+                  ]}
+                />
+
+                <InfoGrid
+                  items={[
+                    {
+                      label: "Space Requirements",
+                      value: Array.isArray(project.spaceRequirements) && project.spaceRequirements.length > 0
+                        ? project.spaceRequirements.map(formatEnumLabel).join(", ")
+                        : "—",
+                      Icon: Layers,
+                    },
+                    {
+                      label: "Who Will Use This Space",
+                      value: project.spaceUsers || "—",
+                      Icon: Users,
+                    },
+                  ]}
+                />
+
+                {(project.currentSpaceLikes || project.currentSpaceProblems || project.accessibilityNeeds) && (
+                  <InfoGrid
+                    items={[
+                      {
+                        label: "Current Space Likes",
+                        value: project.currentSpaceLikes || "—",
+                        Icon: FileText,
+                      },
+                      {
+                        label: "Current Space Problems",
+                        value: project.currentSpaceProblems || "—",
+                        Icon: FileText,
+                      },
+                    ]}
+                  />
+                )}
+              </>
+            )}
+
+            {/* SECTION 5: DOCUMENTS & MEDIA */}
+            {activeKey === "documents" && (
+              <>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <SectionHeading Icon={FolderOpen}>
+                    Project Documents & Media ({mediaList.length})
+                  </SectionHeading>
+
+                  {/* Filter Pills */}
+                  {mediaList.length > 0 && (
+                    <div className="flex flex-wrap items-center gap-1.5 text-xs">
+                      {[
+                        { key: "ALL", label: `All (${docCounts.ALL})` },
+                        ...(docCounts.FLOOR_PLAN > 0 ? [{ key: "FLOOR_PLAN", label: `Floor Plans (${docCounts.FLOOR_PLAN})` }] : []),
+                        ...(docCounts.PROPERTY_PHOTO > 0 ? [{ key: "PROPERTY_PHOTO", label: `Photos (${docCounts.PROPERTY_PHOTO})` }] : []),
+                        ...(docCounts.REFERENCE_IMAGE > 0 ? [{ key: "REFERENCE_IMAGE", label: `References (${docCounts.REFERENCE_IMAGE})` }] : []),
+                        ...(docCounts.VIDEO > 0 ? [{ key: "VIDEO", label: `Videos (${docCounts.VIDEO})` }] : []),
+                      ].map((tab) => (
+                        <button
+                          key={tab.key}
+                          onClick={() => setDocFilter(tab.key)}
+                          className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition cursor-pointer ${
+                            docFilter === tab.key
+                              ? "bg-gray-900 text-white"
+                              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                          }`}
+                        >
+                          {tab.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {filteredMedia.length === 0 ? (
+                  <div className="text-sm text-muted italic rounded-xl border border-border p-8 bg-gray-50 text-center space-y-1">
+                    <FolderOpen size={32} className="mx-auto text-gray-400 mb-2 opacity-50" />
+                    <div>No documents or photos found for this category.</div>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {filteredMedia.map((m, i) => {
+                      const isPdf = isPdfUrl(m.url);
+                      const isVideo = isVideoUrl(m.url);
+
+                      return (
+                        <a
+                          key={i}
+                          href={m.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="group relative rounded-xl border border-border bg-white p-2.5 flex flex-col items-center justify-between hover:border-[var(--primary)] hover:shadow-md transition cursor-pointer"
+                        >
+                          <div className="w-full aspect-video rounded-lg overflow-hidden bg-slate-100 flex items-center justify-center relative">
+                            {isVideo ? (
+                              <div className="w-full h-full bg-slate-900 flex flex-col items-center justify-center text-white gap-1">
+                                <Video size={24} />
+                                <span className="text-[10px] font-semibold uppercase tracking-wider">Video Tour</span>
+                              </div>
+                            ) : isPdf ? (
+                              <div className="w-full h-full bg-red-50 border border-red-100 flex flex-col items-center justify-center text-red-600 gap-1.5 p-2">
+                                <FileSpreadsheet size={26} />
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-red-700 text-center">
+                                  PDF Blueprint
+                                </span>
+                              </div>
+                            ) : (
+                              <img
+                                src={m.url}
+                                alt={m.label}
+                                className="w-full h-full object-cover group-hover:scale-105 transition duration-200"
+                              />
+                            )}
+
+                            <span className="absolute top-1.5 left-1.5 px-2 py-0.5 rounded bg-black/60 backdrop-blur-xs text-white text-[9px] font-bold uppercase tracking-wider">
+                              {m.label}
+                            </span>
+                          </div>
+
+                          <div className="w-full mt-2 flex items-center justify-between text-[11px] font-semibold text-heading px-0.5">
+                            <span className="truncate">{m.label} #{i + 1}</span>
+                            <ExternalLink size={12} className="text-gray-400 group-hover:text-[var(--primary)] shrink-0 ml-1" />
+                          </div>
+                        </a>
+                      );
+                    })}
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* SECTION 6: NOTES */}
+            {activeKey === "notes" && (
+              <>
+                <SectionHeading Icon={StickyNote}>Additional Client Notes</SectionHeading>
+                <div
+                  className="rounded-xl border border-border p-4 bg-white space-y-3"
+                  style={{ boxShadow: "0 1px 2px rgba(16,24,40,0.04)" }}
+                >
+                  <div
+                    className="text-sm text-heading whitespace-pre-wrap break-words leading-relaxed"
+                    style={{ fontWeight: 400 }}
+                  >
+                    {project.additionalNotes || "No additional notes provided for this project."}
+                  </div>
+                </div>
+
+                {project.client && (
+                  <>
+                    <SectionHeading Icon={Users}>Client Overview</SectionHeading>
+                    <InfoGrid
+                      items={[
+                        {
+                          label: "Client Name",
+                          value: project.client.name || "Client",
+                          Icon: Users,
+                        },
+                        {
+                          label: "Client Email",
+                          value: project.client.email || "—",
+                          Icon: MessageCircle,
+                        },
+                      ]}
+                    />
+                  </>
+                )}
+              </>
+            )}
+          </div>
         </div>
 
+        {/* Footer: Close + Next button */}
         <div
-          className="modal-footer"
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            flexWrap: "wrap",
-            gap: 10,
-            padding: "16px 24px",
-            borderTop: `1px solid ${C.border}`,
-            flexShrink: 0,
-          }}
+          className="flex items-center gap-3 p-4 sm:p-5 border-t border-border relative z-10 bg-white"
+          style={{ boxShadow: "0 -1px 2px rgba(16,24,40,0.04)" }}
         >
-          <button
-            onClick={isFirst ? onClose : () => setStep((s) => s - 1)}
-            className="footer-btn footer-btn--ghost"
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 6,
-              padding: "11px 22px",
-              borderRadius: C.radiusSm,
-              border: `1px solid ${C.border}`,
-              background: "transparent",
-              color: C.text,
-              fontFamily: C.fontBody,
-              fontWeight: 600,
-              fontSize: 13,
-              cursor: "pointer",
-              transition: C.transition,
-            }}
-          >
-            {!isFirst && <ChevronLeft size={15} strokeWidth={2.25} aria-hidden="true" />}
-            {isFirst ? "Close" : "Back"}
-          </button>
+          <div className="ml-auto flex gap-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-5 py-2.5 border rounded-xl transition-all duration-150 hover:shadow-sm cursor-pointer"
+              style={{
+                borderColor: "var(--border)",
+                color: "var(--muted)",
+                fontWeight: 600,
+              }}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.backgroundColor =
+                  "var(--background-secondary)")
+              }
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.backgroundColor = "transparent")
+              }
+            >
+              Close
+            </button>
 
-          {!isLast ? (
-            <button
-              onClick={() => setStep((s) => s + 1)}
-              className="footer-btn"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 6,
-                padding: "11px 26px",
-                borderRadius: C.radiusSm,
-                border: "none",
-                background: C.primary,
-                color: "#fff",
-                fontFamily: C.fontBody,
-                fontWeight: 600,
-                fontSize: 13,
-                cursor: "pointer",
-                transition: C.transition,
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = C.primaryHover)}
-              onMouseLeave={(e) => (e.currentTarget.style.background = C.primary)}
-            >
-              Next
-              <ChevronRight size={15} strokeWidth={2.25} aria-hidden="true" />
-            </button>
-          ) : (
-            <button
-              onClick={() => onBid(project)}
-              className="footer-btn"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 7,
-                padding: "11px 26px",
-                borderRadius: C.radiusSm,
-                border: "none",
-                background: C.gold,
-                color: "#fff",
-                fontFamily: C.fontBody,
-                fontWeight: 600,
-                fontSize: 13,
-                cursor: "pointer",
-                transition: C.transition,
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = C.goldHover)}
-              onMouseLeave={(e) => (e.currentTarget.style.background = C.gold)}
-            >
-              Send bid
-              <Send size={14} strokeWidth={2.25} aria-hidden="true" />
-            </button>
-          )}
+            {!isLast && (
+              <button
+                type="button"
+                onClick={goNext}
+                className="px-6 py-2.5 rounded-xl text-white transition-all duration-150 hover:shadow-md active:scale-95 flex items-center gap-1.5 cursor-pointer"
+                style={{
+                  backgroundColor: "var(--primary)",
+                  fontWeight: 600,
+                }}
+              >
+                Next <ChevronRight size={16} />
+              </button>
+            )}
+          </div>
         </div>
       </div>
-
-      <style>{`
-        @keyframes modalFadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes modalSlideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-
-        .modal-overlay { overflow-y: auto; }
-
-        .step-tab:focus-visible,
-        .icon-btn:focus-visible,
-        .footer-btn:focus-visible {
-          outline: 2px solid ${C.primary};
-          outline-offset: 2px;
-          border-radius: ${C.radiusSm};
-        }
-
-        .step-tab:hover span:first-child { border-color: ${C.primary}; }
-
-        .icon-btn:hover { color: ${C.heading}; }
-
-        .footer-btn--ghost:hover {
-          border-color: ${C.primary};
-          color: ${C.primary};
-        }
-
-        .attachment-tile {
-          box-shadow: ${C.shadowSm};
-        }
-        .attachment-tile:hover {
-          box-shadow: ${C.shadowMd};
-          border-color: ${C.primary};
-          transform: translateY(-1px);
-        }
-
-        .modal-body::-webkit-scrollbar { width: 8px; }
-        .modal-body::-webkit-scrollbar-track { background: transparent; }
-        .modal-body::-webkit-scrollbar-thumb { background: ${C.border}; border-radius: 8px; }
-        .modal-body::-webkit-scrollbar-thumb:hover { background: ${C.primary}; }
-
-        @media (max-width: 760px) {
-          .modal-grid { grid-template-columns: 1fr !important; }
-        }
-
-        @media (max-width: 640px) {
-          .modal-panel { max-height: 94vh; border-radius: ${C.radiusMd}; }
-          .modal-header h2 { font-size: 18px !important; }
-          .modal-step-indicator { justify-content: flex-start; gap: 6px; }
-          .modal-step-connector { display: none; }
-          .modal-footer { flex-direction: column-reverse; }
-          .modal-footer button { width: 100%; }
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-          .modal-overlay, .modal-panel, .attachment-tile { animation: none !important; transition: none !important; }
-        }
-      `}</style>
     </div>
-  )
+  );
 }

@@ -1,6 +1,17 @@
-import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { ArrowUpRight, ChevronDown, ChevronLeft, ChevronRight, MapPin, Search } from "lucide-react";
+import React, { useMemo, useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import {
+  ArrowRight,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Heart,
+  MapPin,
+  Search,
+  Star,
+  Bell,
+  Building2,
+} from "lucide-react";
 import { useGetAllPortfoliosQuery } from "./supplyproductsapislice";
 
 const ROLE_LABELS = {
@@ -12,11 +23,51 @@ const ROLE_LABELS = {
 };
 
 const FILTER_ROLES = [
+  { id: "ALL", label: "All Roles" },
   { id: 3, label: "Architect" },
   { id: 2, label: "Interior Designer" },
   { id: 4, label: "Contractor" },
-  { id: 6, label: "Landscape Designer" }, // update this id to match your real role number
+  { id: 5, label: "Material Supplier" },
 ];
+
+const ROLE_CONFIG = {
+  2: {
+    name: "Interior Designer",
+    badgeBg: "bg-purple-100 text-purple-700",
+    catBg: "bg-purple-50 text-purple-700 border-purple-100",
+    defaultCat: "Interior Design",
+    defaultSpec: "Interior Designer",
+    defaultCover:
+      "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=800&q=80",
+  },
+  3: {
+    name: "Architect",
+    badgeBg: "bg-sky-100 text-sky-700",
+    catBg: "bg-sky-50 text-sky-700 border-sky-100",
+    defaultCat: "Residential Architecture",
+    defaultSpec: "Architect",
+    defaultCover:
+      "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80",
+  },
+  4: {
+    name: "Contractor",
+    badgeBg: "bg-emerald-100 text-emerald-700",
+    catBg: "bg-emerald-50 text-emerald-700 border-emerald-100",
+    defaultCat: "Civil Construction",
+    defaultSpec: "General Contractor",
+    defaultCover:
+      "https://images.unsplash.com/photo-1541888946425-d0fbb18086f6?auto=format&fit=crop&w=800&q=80",
+  },
+  5: {
+    name: "Material Supplier",
+    badgeBg: "bg-amber-100 text-amber-800",
+    catBg: "bg-orange-50 text-orange-700 border-orange-100",
+    defaultCat: "Building Materials",
+    defaultSpec: "Material Supplier",
+    defaultCover:
+      "https://images.unsplash.com/photo-1590381105924-c72589b9ef3f?auto=format&fit=crop&w=800&q=80",
+  },
+};
 
 const PAGE_SIZE = 8;
 
@@ -31,9 +82,80 @@ function safeParseProfile(profile) {
 }
 
 function normalisePortfolio(user) {
+  const profile = safeParseProfile(user?.profile);
+  const roleNum = Number(user.role);
+  const cfg = ROLE_CONFIG[roleNum] || ROLE_CONFIG[2];
+
+  // Dynamic Category Extraction
+  const category =
+    user.category ||
+    profile.category ||
+    user.designer?.category ||
+    cfg.defaultCat;
+
+  // Dynamic Specialization Extraction
+  const rawSpecialization =
+    user.specialization ||
+    profile.specialization ||
+    profile.trade ||
+    profile.businessType ||
+    user.designer?.specializations?.[0] ||
+    cfg.defaultSpec;
+
+  // Dynamic Experience Extraction
+  const experience =
+    profile.experience !== undefined && profile.experience !== null
+      ? Number(profile.experience)
+      : user.designer?.yearsOfExperience !== undefined && user.designer?.yearsOfExperience !== null
+      ? Number(user.designer.yearsOfExperience)
+      : user.architect?.yearsOfExperience !== undefined && user.architect?.yearsOfExperience !== null
+      ? Number(user.architect.yearsOfExperience)
+      : user.contractor?.yearsOfExperience !== undefined && user.contractor?.yearsOfExperience !== null
+      ? Number(user.contractor.yearsOfExperience)
+      : 2;
+
+  // Dynamic Rating & Reviews
+  const rating = Number(
+    user.rating ||
+      user.ratingCache ||
+      user.designer?.rating ||
+      user.architect?.rating ||
+      user.contractor?.rating ||
+      0
+  );
+  const totalReviews = Number(
+    user.totalReviews ||
+      user._count?.reviewsReceived ||
+      user.designer?.totalReviews ||
+      user.architect?.totalReviews ||
+      user.contractor?.totalReviews ||
+      0
+  );
+
+  // Cover image from real posts, uploaded profile photos, or role-specific showcase
+  const cover =
+    user.posts?.[0]?.images?.[0] ||
+    profile.photos?.[0] ||
+    user.designer?.photos?.[0] ||
+    cfg.defaultCover;
+
+  // Format Location string (e.g. "Hyderabad, Telangana, India")
+  const locationParts = [user.city, user.state, user.country].filter(
+    (p) => p && p !== "N/A"
+  );
+  const location = locationParts.length > 0 ? locationParts.join(", ") : "India";
+
   return {
     ...user,
-    profile: safeParseProfile(user?.profile),
+    profile,
+    category,
+    specialization: rawSpecialization,
+    experience,
+    rating,
+    totalReviews,
+    cover,
+    location,
+    roleConfig: cfg,
     posts: user?.posts || [],
     _count: user?._count || {},
   };
@@ -41,62 +163,98 @@ function normalisePortfolio(user) {
 
 function PortfolioCard({ user, onOpen }) {
   const [imgFailed, setImgFailed] = useState(false);
-  const cover = user.posts?.[0]?.images?.[0] || user.profile?.photos?.[0];
-  const roleLabel = ROLE_LABELS[user.role] || "Professional";
-  const initial = user.name?.trim()?.[0]?.toUpperCase() || "?";
+  const [isFavorite, setIsFavorite] = useState(false);
+  const cfg = user.roleConfig;
 
   return (
-    <button
-      type="button"
+    <div
       onClick={onOpen}
-      className="group flex flex-col text-left rounded-2xl border border-[#ece5d8] bg-white p-3 shadow-[0_1px_2px_rgba(28,23,18,0.04)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_16px_32px_-12px_rgba(28,23,18,0.18)] hover:border-[#e0d3b8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b8823a] focus-visible:ring-offset-2"
+      className="group flex flex-col justify-between text-left rounded-2xl border border-gray-200/90 bg-white p-3 shadow-xs hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer overflow-hidden"
     >
-      <div className="relative w-full aspect-[4/3.2] rounded-xl overflow-hidden bg-[#f7f2ea]">
-        {cover && !imgFailed ? (
-          <img
-            src={cover}
-            alt={`${user.name}'s work`}
-            onError={() => setImgFailed(true)}
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-          />
-        ) : (
-          <div className="relative w-full h-full flex items-center justify-center bg-gradient-to-br from-[#f1e9dc] via-[#f7f2ea] to-[#f1e9dc] overflow-hidden">
-            <div className="absolute inset-0 opacity-40 bg-[radial-gradient(circle_at_30%_20%,rgba(184,130,58,0.15),transparent_55%)]" />
-            <span className="font-serif text-5xl text-[#b8823a]/70">{initial}</span>
-            <span className="absolute bottom-3 right-3.5 text-[11px] font-medium text-[#b8823a]/60 tracking-wide">
-              No photos yet
+      {/* ── Image Area ── */}
+      <div className="relative w-full aspect-[16/11] rounded-xl overflow-hidden bg-gray-100">
+        <img
+          src={!imgFailed && user.cover ? user.cover : cfg.defaultCover}
+          alt={`${user.name}'s work`}
+          onError={() => setImgFailed(true)}
+          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+        />
+
+        {/* Role Badge (Top-Left) */}
+        <span
+          className={`absolute top-2.5 left-2.5 text-[11px] font-semibold px-2.5 py-1 rounded-md shadow-xs backdrop-blur-xs ${cfg.badgeBg}`}
+        >
+          {ROLE_LABELS[user.role] || "Professional"}
+        </span>
+
+  
+      </div>
+
+      {/* ── Details Area ── */}
+      <div className="pt-3 px-1 pb-1 flex-1 flex flex-col justify-between space-y-2.5">
+        <div>
+          {/* Name */}
+          <h3 className="text-[16px] font-bold text-gray-900 truncate tracking-tight">
+            {user.name}
+          </h3>
+
+          {/* Location */}
+          <p className="flex items-center gap-1 mt-1 text-xs text-gray-500 truncate">
+            <MapPin size={13} className="text-gray-400 shrink-0" />
+            <span className="truncate">{user.location}</span>
+          </p>
+        </div>
+
+        {/* Category Badge & Specialization with Side Headings */}
+        <div className="space-y-1 text-xs">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-[11px] font-bold text-gray-500 shrink-0">Category:</span>
+            <span
+              className={`px-2 py-0.5 rounded-md text-[11px] font-semibold border ${cfg.catBg} truncate max-w-[155px]`}
+            >
+              {user.category}
             </span>
           </div>
-        )}
-        <span className="absolute top-3 left-3 bg-white/95 backdrop-blur text-[#1c1712] text-[11px] font-semibold px-2.5 py-1.5 rounded-full shadow-sm">
-          {roleLabel}
-        </span>
-      </div>
-      <div className="pt-3 px-1 pb-1">
-        <div className="flex items-center justify-between gap-2">
-          <h3 className="text-[15px] font-semibold text-[#1c1712] truncate">{user.name}</h3>
-          <ArrowUpRight
-            size={16}
-            className="text-[#8a8479] flex-shrink-0 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-[#b8823a]"
-          />
+          {user.specialization && (
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-[11px] font-bold text-gray-500 shrink-0">Specialization:</span>
+              <span className="text-xs text-gray-700 truncate font-medium">
+                {user.specialization}
+              </span>
+            </div>
+          )}
         </div>
-        {user.city && (
-          <p className="flex items-center gap-1.5 mt-1 text-[13px] text-[#8a8479]">
-            <MapPin size={13} /> {user.city}
-          </p>
-        )}
+
+        {/* Footer: Experience, Rating, Action Arrow */}
+        <div className="border-t border-gray-100 pt-2.5 mt-auto flex items-center justify-between text-xs text-gray-600">
+          <span className="font-medium text-gray-700">
+            {user.experience} Yrs Experience
+          </span>
+
+          <span className="flex items-center gap-1 font-medium text-gray-800">
+            <Star size={13} className="fill-amber-400 text-amber-400" />
+            <span>{user.rating.toFixed(1)}</span>
+            <span className="text-gray-400">({user.totalReviews} reviews)</span>
+          </span>
+
+          <div className="w-7 h-7 rounded-lg border border-gray-200 flex items-center justify-center text-gray-500 group-hover:border-[#b8823a] group-hover:text-[#b8823a] group-hover:bg-[#fbf4e8] transition-all">
+            <ArrowRight size={14} />
+          </div>
+        </div>
       </div>
-    </button>
+    </div>
   );
 }
 
 function CardSkeleton() {
   return (
-    <div className="flex flex-col rounded-2xl border border-[#ece5d8] bg-white p-3" aria-hidden="true">
-      <div className="w-full aspect-[4/3.2] rounded-xl bg-gradient-to-r from-[#f7f2ea] via-[#f1e9dc] to-[#f7f2ea] bg-[length:200%_100%] animate-pulse" />
-      <div className="pt-3 px-1 space-y-2">
-        <div className="h-3 w-2/3 rounded bg-[#f7f2ea]" />
-        <div className="h-3 w-1/3 rounded bg-[#f7f2ea]" />
+    <div className="flex flex-col rounded-2xl border border-gray-200 bg-white p-3 space-y-3 animate-pulse">
+      <div className="w-full aspect-[16/11] rounded-xl bg-gray-100" />
+      <div className="space-y-2 px-1">
+        <div className="h-4 w-2/3 rounded bg-gray-100" />
+        <div className="h-3 w-1/2 rounded bg-gray-100" />
+        <div className="h-5 w-3/4 rounded bg-gray-100 mt-2" />
+        <div className="h-4 w-full rounded bg-gray-100 pt-3 border-t border-gray-50" />
       </div>
     </div>
   );
@@ -105,34 +263,74 @@ function CardSkeleton() {
 export default function PortfolioDirectory() {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
-  const [roleFilter, setRoleFilter] = useState(null);
+  const [selectedRole, setSelectedRole] = useState("ALL");
   const [sortBy, setSortBy] = useState("latest");
   const [page, setPage] = useState(1);
 
-  const { data, isLoading, isFetching } = useGetAllPortfoliosQuery({ page: 1, limit: 100 });
-  const apiUsers = data?.data?.data || [];
+  // Fetch real portfolio data from backend API
+  const { data, isLoading, isFetching } = useGetAllPortfoliosQuery({
+    page: 1,
+    limit: 100,
+  });
+
+  const apiUsers = Array.isArray(data?.data?.data)
+    ? data.data.data
+    : Array.isArray(data?.data?.users)
+    ? data.data.users
+    : Array.isArray(data?.data)
+    ? data.data
+    : Array.isArray(data)
+    ? data
+    : [];
+
   const users = useMemo(() => apiUsers.map(normalisePortfolio), [apiUsers]);
 
+  // Filter & Sort
   const filtered = useMemo(() => {
     let list = users;
-    if (roleFilter) list = list.filter((u) => u.role === roleFilter);
+
+    // Role filter
+    if (selectedRole !== "ALL") {
+      list = list.filter((u) => Number(u.role) === Number(selectedRole));
+    }
+
+    // Search filter
     if (search.trim()) {
       const q = search.toLowerCase();
-      list = list.filter((u) =>
-        `${u.name} ${ROLE_LABELS[u.role] || ""} ${u.city || ""}`.toLowerCase().includes(q)
+      list = list.filter(
+        (u) =>
+          u.name?.toLowerCase().includes(q) ||
+          u.category?.toLowerCase().includes(q) ||
+          u.specialization?.toLowerCase().includes(q) ||
+          u.city?.toLowerCase().includes(q) ||
+          u.state?.toLowerCase().includes(q) ||
+          u.location?.toLowerCase().includes(q)
       );
     }
-    if (sortBy === "name") {
+
+    // Sort filter
+    if (sortBy === "rating") {
+      list = [...list].sort((a, b) => b.rating - a.rating);
+    } else if (sortBy === "experience") {
+      list = [...list].sort((a, b) => b.experience - a.experience);
+    } else if (sortBy === "name") {
       list = [...list].sort((a, b) => a.name.localeCompare(b.name));
     } else {
-      list = [...list].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      list = [...list].sort(
+        (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+      );
     }
-    return list;
-  }, [users, roleFilter, search, sortBy]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+    return list;
+  }, [users, selectedRole, search, sortBy]);
+
+  const totalRecords = filtered.length;
+  const totalPages = Math.max(1, Math.ceil(totalRecords / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
-  const pageItems = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const pageItems = filtered.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE
+  );
 
   const goToPage = (p) => {
     if (p < 1 || p > totalPages) return;
@@ -143,91 +341,148 @@ export default function PortfolioDirectory() {
   const pageNumbers = useMemo(() => {
     const nums = [];
     for (let i = 1; i <= totalPages; i++) {
-      if (i === 1 || i === totalPages || Math.abs(i - currentPage) <= 1) nums.push(i);
+      if (i === 1 || i === totalPages || Math.abs(i - currentPage) <= 1)
+        nums.push(i);
       else if (nums[nums.length - 1] !== "...") nums.push("...");
     }
     return nums;
   }, [totalPages, currentPage]);
 
+  const startIndex = totalRecords === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
+  const endIndex = Math.min(currentPage * PAGE_SIZE, totalRecords);
+
   return (
-    <main className="min-h-screen bg-white text-[#1c1712] font-sans">
-      <section className="max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 pb-20">
-        <div className="flex flex-wrap items-end justify-between gap-5 mb-6">
+    <div className="min-h-screen bg-[#faf8f5] text-[#1c1712] font-sans">
+      {/* ── Custom Header matching Reference Image ── */}
+      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-gray-200/75 px-4 sm:px-8 lg:px-12 py-3.5 flex items-center justify-between">
+        {/* Brand Logo */}
+        <Link to="/" className="flex items-center gap-2.5">
+          <div className="flex items-center gap-1.5 text-[#b8823a]">
+            <Building2 size={24} className="stroke-[2.2]" />
+            <div className="flex flex-col leading-tight">
+              <span className="font-extrabold text-base tracking-tight text-[#1c1712]">
+                NOD <span className="text-[#b8823a]">PROFESSIONALS</span>
+              </span>
+            </div>
+          </div>
+        </Link>
+
+        {/* Center Nav Links */}
+        <nav className="hidden md:flex items-center gap-7 text-[13.5px] font-medium text-gray-600">
+          <Link to="/" className="hover:text-[#b8823a] transition-colors">
+            Home
+          </Link>
+          <Link to="/designs" className="hover:text-[#b8823a] transition-colors">
+            Projects
+          </Link>
+          <Link
+            to="/portfolios"
+            className="text-[#b8823a] font-semibold relative py-1 after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-full after:h-[2px] after:bg-[#b8823a] after:rounded-full"
+          >
+            Professionals
+          </Link>
+          <Link
+            to="/supplier-products"
+            className="hover:text-[#b8823a] transition-colors"
+          >
+            Products
+          </Link>
+       
+          <Link to="/about" className="hover:text-[#b8823a] transition-colors">
+            About Us
+          </Link>
+        </nav>
+
+   
+      </header>
+
+      {/* ── Main Container ── */}
+      <main className="max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 pb-20">
+        {/* ── Section Title & Search Bar Row ── */}
+        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-7">
           <div>
-            <p className="text-[11px] font-bold tracking-[0.14em] uppercase text-[#b8823a] mb-2">
-              Nod Professionals
+            <p className="text-[11px] font-bold tracking-[0.14em] uppercase text-[#b8823a] mb-1.5">
+              NOD PROFESSIONALS
             </p>
-            <h1 className="font-serif font-bold text-[26px] sm:text-[32px] lg:text-[36px] leading-[1.15] mb-2 text-[#1c1712]">
+            <h1 className="font-extrabold text-[28px] sm:text-[34px] lg:text-[38px] leading-tight text-[#111827] tracking-tight">
               Explore portfolios
             </h1>
-            <p className="text-sm text-[#55504a]">
+            <p className="text-sm text-gray-500 mt-1">
               Browse completed interiors, architecture, and construction work.
             </p>
           </div>
-          <label className="flex items-center gap-2.5 bg-white border border-[#e8e2d8] rounded-full px-4 py-2.5 min-w-[260px] w-full sm:w-auto text-[#8a8479] focus-within:border-[#b8823a] transition-colors">
-            <Search size={16} />
+
+          {/* Search Box */}
+          <div className="relative w-full lg:w-[380px]">
+            <Search
+              size={17}
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"
+            />
             <input
+              type="text"
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value);
                 setPage(1);
               }}
-              placeholder="Search portfolios"
-              className="border-none outline-none text-[13.5px] w-full text-[#1c1712] bg-transparent placeholder:text-[#8a8479]"
+              placeholder="Search portfolios by name, category, city..."
+              className="w-full bg-white border border-gray-200 rounded-full pl-10 pr-4 py-2.5 text-[13.5px] text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-[#b8823a] focus:ring-1 focus:ring-[#b8823a] shadow-xs transition"
             />
-          </label>
+          </div>
         </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-3 mb-7">
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                setRoleFilter(null);
-                setPage(1);
-              }}
-              className={`inline-flex items-center gap-1 px-3.5 py-2 rounded-full border text-[13px] font-medium transition-colors ${
-                roleFilter === null
-                  ? "bg-[#f4e6cd] border-[#b8823a] text-[#9c6c2c]"
-                  : "bg-[#f1e9dc] border-[#f1e9dc] text-[#1c1712] hover:border-[#b8823a]"
-              }`}
-            >
-              All Roles <ChevronDown size={13} />
-            </button>
-            {FILTER_ROLES.map((r) => (
-              <button
-                key={r.id}
-                type="button"
-                onClick={() => {
-                  setRoleFilter(r.id);
-                  setPage(1);
-                }}
-                className={`px-3.5 py-2 rounded-full border text-[13px] font-medium transition-colors ${
-                  roleFilter === r.id
-                    ? "bg-[#f4e6cd] border-[#b8823a] text-[#9c6c2c]"
-                    : "bg-white border-[#e8e2d8] text-[#1c1712] hover:border-[#b8823a]"
-                }`}
-              >
-                {r.label}
-              </button>
-            ))}
+        {/* ── Filter Pills & Sort Bar ── */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-7">
+          {/* Role Filter Pills */}
+          <div className="flex flex-wrap items-center gap-2">
+            {FILTER_ROLES.map((r) => {
+              const isSelected = selectedRole === r.id;
+              return (
+                <button
+                  key={r.id}
+                  type="button"
+                  onClick={() => {
+                    setSelectedRole(r.id);
+                    setPage(1);
+                  }}
+                  className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full border text-[13px] font-medium transition-all ${
+                    isSelected
+                      ? "bg-[#fef9ee] border-[#eed7a1] text-[#9c6c2c] shadow-2xs font-semibold"
+                      : "bg-white border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300"
+                  }`}
+                >
+                  {r.label}
+                  {r.id === "ALL" && <ChevronDown size={14} />}
+                </button>
+              );
+            })}
           </div>
 
-          <label className="flex items-center gap-2 text-[13px] text-[#55504a]">
+          {/* Sort Dropdown */}
+          <div className="flex items-center gap-2 text-sm text-gray-500 shrink-0">
             <span>Sort by:</span>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="border border-[#e8e2d8] rounded-lg px-2.5 py-1.5 text-[13px] bg-white text-[#1c1712]"
-            >
-              <option value="latest">Latest</option>
-              <option value="name">Name (A–Z)</option>
-            </select>
-          </label>
+            <div className="relative">
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="appearance-none bg-white border border-gray-200 rounded-lg pl-3 pr-8 py-1.5 text-[13px] font-medium text-gray-800 focus:outline-none focus:border-[#b8823a] shadow-2xs cursor-pointer"
+              >
+                <option value="latest">Latest</option>
+                <option value="rating">Highest Rated</option>
+                <option value="experience">Most Experienced</option>
+                <option value="name">Name (A–Z)</option>
+              </select>
+              <ChevronDown
+                size={14}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+              />
+            </div>
+          </div>
         </div>
 
+        {/* ── Portfolio Grid ── */}
         {isLoading ? (
-          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5 lg:gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6">
             {Array.from({ length: 8 }).map((_, i) => (
               <CardSkeleton key={i} />
             ))}
@@ -235,7 +490,7 @@ export default function PortfolioDirectory() {
         ) : pageItems.length ? (
           <>
             <div
-              className={`grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5 lg:gap-6 transition-opacity ${
+              className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6 transition-opacity ${
                 isFetching ? "opacity-60" : "opacity-100"
               }`}
             >
@@ -243,57 +498,91 @@ export default function PortfolioDirectory() {
                 <PortfolioCard
                   key={user.id}
                   user={user}
-                  onOpen={() => navigate(`/portfolio/${user.id}`, { state: { user } })}
+                  onOpen={() =>
+                    navigate(`/portfolio/${user.id}`, { state: { user } })
+                  }
                 />
               ))}
             </div>
 
-            {totalPages > 1 && (
-              <nav className="flex justify-center items-center flex-wrap gap-2 mt-11" aria-label="Pagination">
-                <button
-                  type="button"
-                  onClick={() => goToPage(currentPage - 1)}
-                  disabled={currentPage === 1}
-                  className="w-9 h-9 rounded-lg border border-[#e8e2d8] bg-white flex items-center justify-center text-[#1c1712] disabled:opacity-35 disabled:cursor-not-allowed"
+            {/* ── Bottom Pagination & Counter ── */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-12 pt-6 border-t border-gray-200/80">
+              {/* Spacer for centering */}
+              <div className="hidden sm:block w-32" />
+
+              {/* Pagination Numbers */}
+              {totalPages > 1 && (
+                <nav
+                  className="flex items-center gap-1.5"
+                  aria-label="Pagination"
                 >
-                  <ChevronLeft size={16} />
-                </button>
-                {pageNumbers.map((n, i) =>
-                  n === "..." ? (
-                    <span key={`dots-${i}`} className="text-[#8a8479] px-1">
-                      …
-                    </span>
-                  ) : (
-                    <button
-                      key={n}
-                      type="button"
-                      onClick={() => goToPage(n)}
-                      className={`w-9 h-9 rounded-lg border text-sm font-medium flex items-center justify-center ${
-                        n === currentPage
-                          ? "bg-[#f4e6cd] border-[#b8823a] text-[#9c6c2c] font-bold"
-                          : "bg-white border-[#e8e2d8] text-[#1c1712]"
-                      }`}
-                    >
-                      {n}
-                    </button>
-                  )
-                )}
-                <button
-                  type="button"
-                  onClick={() => goToPage(currentPage + 1)}
-                  disabled={currentPage === totalPages}
-                  className="w-9 h-9 rounded-lg border border-[#e8e2d8] bg-white flex items-center justify-center text-[#1c1712] disabled:opacity-35 disabled:cursor-not-allowed"
-                >
-                  <ChevronRight size={16} />
-                </button>
-              </nav>
-            )}
+                  <button
+                    type="button"
+                    onClick={() => goToPage(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className="w-8 h-8 rounded-lg border border-gray-200 bg-white flex items-center justify-center text-gray-600 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition shadow-2xs"
+                  >
+                    <ChevronLeft size={15} />
+                  </button>
+
+                  {pageNumbers.map((n, i) =>
+                    n === "..." ? (
+                      <span key={`dots-${i}`} className="text-gray-400 px-1 text-xs">
+                        …
+                      </span>
+                    ) : (
+                      <button
+                        key={n}
+                        type="button"
+                        onClick={() => goToPage(n)}
+                        className={`w-8 h-8 rounded-lg border text-xs font-semibold flex items-center justify-center transition shadow-2xs ${
+                          n === currentPage
+                            ? "bg-[#fef9ee] border-[#eed7a1] text-[#9c6c2c]"
+                            : "bg-white border-transparent hover:border-gray-200 text-gray-700 hover:bg-gray-50"
+                        }`}
+                      >
+                        {n}
+                      </button>
+                    )
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => goToPage(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className="w-8 h-8 rounded-lg border border-gray-200 bg-white flex items-center justify-center text-gray-600 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition shadow-2xs"
+                  >
+                    <ChevronRight size={15} />
+                  </button>
+                </nav>
+              )}
+
+              {/* Counter Text */}
+              <div className="text-xs text-gray-500 font-medium">
+                Showing {startIndex} – {endIndex} of {totalRecords}
+              </div>
+            </div>
           </>
         ) : (
-          <div className="py-16 text-center text-[#8a8479]">No portfolios match "{search}".</div>
+          <div className="py-20 text-center bg-white rounded-2xl border border-gray-200/80 p-8 shadow-xs">
+            <p className="text-base font-semibold text-gray-800">
+              No portfolios match your filters
+            </p>
+            <p className="text-xs text-gray-500 mt-1">
+              Try adjusting your search terms or selecting a different role.
+            </p>
+            <button
+              onClick={() => {
+                setSearch("");
+                setSelectedRole("ALL");
+              }}
+              className="mt-4 px-4 py-2 text-xs font-semibold text-[#b8823a] bg-[#fef9ee] border border-[#eed7a1] rounded-full hover:bg-[#fbf4e8] transition"
+            >
+              Reset Filters
+            </button>
+          </div>
         )}
-      </section>
-    </main>
+      </main>
+    </div>
   );
 }
-

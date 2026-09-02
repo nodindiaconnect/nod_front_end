@@ -536,7 +536,7 @@ export default function LoginForm({ onSwitchToSignUp }) {
           <div className="h-px flex-1" style={{ background: LINE }} />
         </div>
 
-        <button
+        {/* <button
           type="button"
           className="w-full flex items-center justify-center gap-2 py-3.5 text-sm border"
           style={{ borderColor: LINE, color: INK }}
@@ -551,7 +551,7 @@ export default function LoginForm({ onSwitchToSignUp }) {
             </g>
           </svg>
           Continue with Google
-        </button>
+        </button> */}
 
         <div className="text-center mt-6 text-sm" style={{ color: INK_SOFT }}>
           New to NOD?{" "}

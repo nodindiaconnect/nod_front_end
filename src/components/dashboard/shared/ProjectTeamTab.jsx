@@ -13,6 +13,7 @@ import {
   Shield,
   Briefcase,
   UserPlus,
+  Star,
 } from "lucide-react";
 
 const ROLE_LABELS = {
@@ -28,9 +29,30 @@ export default function ProjectTeamTab({
   onOpenChat,
   onOpenTeamChat,
   onViewBidsForRole,
+  onOpenReview,
 }) {
   const client = project?.client || {};
   const requiredServices = project?.servicesRequired || [];
+
+  const getAvatarUrl = (u) => {
+    if (!u) return null;
+    if (typeof u.profileImageUrl === "string" && u.profileImageUrl.trim()) {
+      return u.profileImageUrl;
+    }
+    if (
+      typeof u.profile === "string" &&
+      (u.profile.startsWith("http") || u.profile.startsWith("/uploads") || u.profile.startsWith("data:"))
+    ) {
+      return u.profile;
+    }
+    if (Array.isArray(u.photos) && u.photos.length > 0) {
+      const first = u.photos[0];
+      return typeof first === "string" ? first : first?.url || null;
+    }
+    return null;
+  };
+
+  const clientAvatar = getAvatarUrl(client);
 
   if (isLoading) {
     return (
@@ -97,8 +119,20 @@ export default function ProjectTeamTab({
             </div>
 
             <div className="flex items-center gap-3.5 mb-4">
-              <div className="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-lg border border-border">
-                {client.name ? client.name.charAt(0).toUpperCase() : "C"}
+              <div className="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-lg border border-border overflow-hidden shrink-0">
+                {clientAvatar ? (
+                  <img
+                    src={clientAvatar}
+                    alt={client.name || "Client"}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.currentTarget.style.display = "none";
+                    }}
+                  />
+                ) : null}
+                <span className={clientAvatar ? "hidden" : "flex items-center justify-center"}>
+                  {client.name ? client.name.charAt(0).toUpperCase() : "C"}
+                </span>
               </div>
               <div>
                 <h4 className="font-bold text-heading text-base">
@@ -123,13 +157,32 @@ export default function ProjectTeamTab({
             </div>
           </div>
 
-          <div className="pt-4">
+          <div className="pt-4 flex gap-2">
             <button
               onClick={() => onOpenChat(client.id, client.name)}
-              className="w-full py-2 px-3 rounded text-xs font-medium border border-border bg-white hover:bg-background-secondary text-heading flex items-center justify-center gap-1.5 transition"
+              className="flex-1 py-2 px-3 rounded text-xs font-medium border border-border bg-white hover:bg-background-secondary text-heading flex items-center justify-center gap-1.5 transition"
             >
               <MessageSquare size={14} /> Message Owner
             </button>
+            {onOpenReview && (
+              <button
+                onClick={() =>
+                  onOpenReview({
+                    projectId: project?.id,
+                    projectTitle: project?.title,
+                    projectCategory: project?.category,
+                    revieweeId: client.id,
+                    revieweeName: client.name || "Owner",
+                    revieweeRole: "CLIENT",
+                    revieweeProfile: client.profile,
+                  })
+                }
+                className="px-3 py-2 rounded text-xs font-medium border border-[var(--gold)] text-heading bg-[var(--gold)]/10 hover:bg-[var(--gold)]/20 transition flex items-center justify-center gap-1"
+                title="Review Owner"
+              >
+                <Star size={13} className="fill-[var(--gold)] text-[var(--gold)]" /> Review
+              </button>
+            )}
           </div>
         </div>
 
@@ -143,6 +196,8 @@ export default function ProjectTeamTab({
 
           if (member) {
             const user = member.user || {};
+            const specialistAvatar = getAvatarUrl(user);
+
             return (
               <div
                 key={member.id || serviceType}
@@ -162,16 +217,20 @@ export default function ProjectTeamTab({
                   </div>
 
                   <div className="flex items-center gap-3.5 mb-4">
-                    <div className="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-lg border border-border overflow-hidden">
-                      {user.profile ? (
+                    <div className="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-lg border border-border overflow-hidden shrink-0">
+                      {specialistAvatar ? (
                         <img
-                          src={user.profile}
-                          alt={user.name}
+                          src={specialistAvatar}
+                          alt={user.name || "Professional"}
                           className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.style.display = "none";
+                          }}
                         />
-                      ) : (
-                        <span>{user.name ? user.name.charAt(0).toUpperCase() : "P"}</span>
-                      )}
+                      ) : null}
+                      <span className={specialistAvatar ? "hidden" : "flex items-center justify-center"}>
+                        {user.name ? user.name.charAt(0).toUpperCase() : "P"}
+                      </span>
                     </div>
                     <div>
                       <h4 className="font-bold text-heading text-base">
@@ -217,6 +276,26 @@ export default function ProjectTeamTab({
                   >
                     <MessageSquare size={14} /> Direct Chat
                   </button>
+
+                  {onOpenReview && (
+                    <button
+                      onClick={() =>
+                        onOpenReview({
+                          projectId: project?.id,
+                          projectTitle: project?.title,
+                          projectCategory: project?.category,
+                          revieweeId: user.id,
+                          revieweeName: user.name || "Specialist",
+                          revieweeRole: member.role,
+                          revieweeProfile: user.profile,
+                        })
+                      }
+                      className="px-3 py-2 rounded text-xs font-semibold border border-[var(--gold)] text-heading bg-[var(--gold)]/10 hover:bg-[var(--gold)]/20 transition flex items-center justify-center gap-1"
+                      title={`Review ${user.name || "Specialist"}`}
+                    >
+                      <Star size={13} className="fill-amber-400 text-amber-500" /> Review
+                    </button>
+                  )}
                 </div>
               </div>
             );

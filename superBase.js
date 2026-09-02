@@ -20,19 +20,32 @@ export async function uploadFile(file, bucket = "products", folder = "") {
     const uniqueName = `${crypto.randomUUID()}.${fileExt}`;
     const path = folder ? `${folder}/${uniqueName}` : uniqueName;
 
-    const { error: uploadError } = await supabase.storage
-        .from(bucket)
+    let targetBucket = bucket;
+    let { error: uploadError } = await supabase.storage
+        .from(targetBucket)
         .upload(path, file, {
             cacheControl: "3600",
             upsert: false,
         });
 
     if (uploadError) {
-        throw new Error(`Upload failed: ${uploadError.message}`);
+        // Fallback to "designers" or "products" bucket if specific bucket is unavailable
+        const fallbackBucket = targetBucket === "products" ? "designers" : "products";
+        const { error: fallbackError } = await supabase.storage
+            .from(fallbackBucket)
+            .upload(path, file, {
+                cacheControl: "3600",
+                upsert: false,
+            });
+
+        if (fallbackError) {
+            throw new Error(`Upload failed: ${uploadError.message}`);
+        }
+        targetBucket = fallbackBucket;
     }
 
     const { data: publicUrlData } = supabase.storage
-        .from(bucket)
+        .from(targetBucket)
         .getPublicUrl(path);
 
     return { path, publicUrl: publicUrlData.publicUrl };

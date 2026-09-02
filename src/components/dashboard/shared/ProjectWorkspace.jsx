@@ -10,6 +10,7 @@ import {
   AlertCircle,
   FolderKanban,
   FileText,
+  CreditCard,
   Users,
   MessageSquare,
   Activity,
@@ -25,6 +26,8 @@ import {
   Play,
   RotateCcw,
   Sparkles,
+  Star,
+  Pencil,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import BidsTab from "./BidsTab";
@@ -32,6 +35,9 @@ import ProjectTeamTab from "./ProjectTeamTab";
 import ChatWorkspace from "./ChatWorkspace";
 import ReviewCard from "./ReviewCard";
 import SubmitReviewModal from "./SubmitReviewModal";
+import MilestonesTracker from "./MilestonesTracker";
+import EditProjectModal from "../../dashboardPages/client/EditProjectModal";
+import ProjectDetailsModal from "../../../global/Projectdetailsmodal";
 import {
   useGetProjectByIdQuery,
   useGetProjectTeamQuery,
@@ -39,8 +45,11 @@ import {
   useTransitionProjectStatusMutation,
 } from "../../dashboardPages/client/Dashboard/overpageApiSlice";
 import { useGetProjectReviewsQuery } from "../../../ApiSliceComponent/reviewApiSlice";
+import {
+  useGetProjectBidsQuery,
+  useGetProjectPaymentSummaryQuery,
+} from "../../../ApiSliceComponent/biddingApiSlice";
 import { getCurrentUser } from "../../../utils/auth";
-
 
 const STATUS_FLOW = [
   { key: "WAITING_FOR_QUOTATIONS", label: "Waiting Quotes" },
@@ -62,7 +71,12 @@ const STATUS_INDEX_MAP = {
 };
 
 const formatEnumLabel = (v) =>
-  !v ? "" : v.split("_").map((w) => w[0] + w.slice(1).toLowerCase()).join(" ");
+  !v
+    ? ""
+    : v
+        .split("_")
+        .map((w) => w[0] + w.slice(1).toLowerCase())
+        .join(" ");
 
 export default function ProjectWorkspace({
   projectId,
@@ -70,10 +84,10 @@ export default function ProjectWorkspace({
   onBack,
 }) {
   const currentUser = getCurrentUser() || {};
-  const isClient = currentUser.role === 1;
-
   const [activeTab, setActiveTab] = useState(initialTab);
   const [chatDirectRecipient, setChatDirectRecipient] = useState(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [reviewTarget, setReviewTarget] = useState(null);
 
@@ -83,6 +97,16 @@ export default function ProjectWorkspace({
     isLoading: loadingProject,
     refetch: refetchProject,
   } = useGetProjectByIdQuery(projectId, { skip: !projectId });
+
+  const project = projectRes?.data || null;
+
+  const isClient =
+    currentUser.role === 1 ||
+    currentUser.role === "1" ||
+    currentUser.role === "CLIENT" ||
+    currentUser.accountType === "CLIENT" ||
+    String(project?.clientId) === String(currentUser?.id) ||
+    !currentUser?.role;
 
   const {
     data: teamRes,
@@ -98,6 +122,15 @@ export default function ProjectWorkspace({
 
   const projectReviews = reviewsRes?.data || [];
 
+  const { data: bidsRes, refetch: refetchBids } = useGetProjectBidsQuery(
+    { projectId },
+    { skip: !projectId || !isClient }
+  );
+  const totalBidsCount = (bidsRes?.data?.all || []).length;
+
+  const { data: paymentSummaryRes, refetch: refetchPaymentSummary } =
+    useGetProjectPaymentSummaryQuery(projectId, { skip: !projectId });
+  const paymentSummary = paymentSummaryRes?.data || null;
 
   // Mutations
   const [updateAvailability, { isLoading: isUpdatingAvailability }] =
@@ -105,22 +138,27 @@ export default function ProjectWorkspace({
   const [transitionStatus, { isLoading: isTransitioningStatus }] =
     useTransitionProjectStatusMutation();
 
-  const project = projectRes?.data || null;
   const teamMembers = teamRes?.data || [];
 
   const handleAvailabilityToggle = async () => {
     if (!project) return;
-    const nextStatus = project.availabilityStatus === "OPEN" ? "CLOSED" : "OPEN";
+    const nextStatus =
+      project.availabilityStatus === "OPEN" ? "CLOSED" : "OPEN";
     try {
-      await updateAvailability({ projectId: project.id, status: nextStatus }).unwrap();
+      await updateAvailability({
+        projectId: project.id,
+        status: nextStatus,
+      }).unwrap();
       toast.success(
         nextStatus === "OPEN"
           ? "Project published for bidding"
-          : "Project bidding closed"
+          : "Project bidding closed",
       );
       refetchProject();
     } catch (err) {
-      toast.error(err?.data?.message || "Failed to update project availability");
+      toast.error(
+        err?.data?.message || "Failed to update project availability",
+      );
     }
   };
 
@@ -131,7 +169,9 @@ export default function ProjectWorkspace({
         projectId: project.id,
         status: targetStatus,
       }).unwrap();
-      toast.success(`Project status updated to ${formatEnumLabel(targetStatus)}`);
+      toast.success(
+        `Project status updated to ${formatEnumLabel(targetStatus)}`,
+      );
       refetchProject();
       refetchTeam();
     } catch (err) {
@@ -165,7 +205,8 @@ export default function ProjectWorkspace({
         <Briefcase size={44} className="mx-auto text-muted opacity-40 mb-3" />
         <h3 className="text-lg font-bold text-heading">Project Not Found</h3>
         <p className="text-xs text-muted mt-1">
-          The requested project workspace could not be located or has been archived.
+          The requested project workspace could not be located or has been
+          archived.
         </p>
         <button
           onClick={onBack}
@@ -175,6 +216,64 @@ export default function ProjectWorkspace({
         </button>
       </div>
     );
+  }
+
+  // Current user info
+  const currentUserId = currentUser.id || currentUser.userId;
+
+  // Build eligible targets for this specific project
+  const projectEligibleTargets = [];
+  const reviewedUserIds = new Set(
+    projectReviews
+      .filter((r) => r.reviewerId === currentUserId)
+      .map((r) => r.revieweeId),
+  );
+
+  if (isClient) {
+    teamMembers.forEach((tm) => {
+      if (tm.userId !== currentUserId && !reviewedUserIds.has(tm.userId)) {
+        projectEligibleTargets.push({
+          projectId: project.id,
+          projectTitle: project.title,
+          projectCategory: project.category,
+          revieweeId: tm.userId,
+          revieweeName: tm.user?.name || "Specialist",
+          revieweeRole: tm.role,
+          revieweeProfile: tm.user?.profile,
+        });
+      }
+    });
+  } else {
+    // Current user is a specialist: can review client
+    if (
+      project.clientId &&
+      project.clientId !== currentUserId &&
+      !reviewedUserIds.has(project.clientId)
+    ) {
+      projectEligibleTargets.push({
+        projectId: project.id,
+        projectTitle: project.title,
+        projectCategory: project.category,
+        revieweeId: project.clientId,
+        revieweeName: project.client?.name || "Project Owner",
+        revieweeRole: "CLIENT",
+        revieweeProfile: project.client?.profile,
+      });
+    }
+    // Also can review fellow specialists on team
+    teamMembers.forEach((tm) => {
+      if (tm.userId !== currentUserId && !reviewedUserIds.has(tm.userId)) {
+        projectEligibleTargets.push({
+          projectId: project.id,
+          projectTitle: project.title,
+          projectCategory: project.category,
+          revieweeId: tm.userId,
+          revieweeName: tm.user?.name || "Specialist",
+          revieweeRole: tm.role,
+          revieweeProfile: tm.user?.profile,
+        });
+      }
+    });
   }
 
   const currentStatusIndex = STATUS_INDEX_MAP[project.status] ?? 0;
@@ -191,6 +290,24 @@ export default function ProjectWorkspace({
         </button>
 
         <div className="flex items-center gap-2">
+          {/* Project Details / Specs Button */}
+          <button
+            onClick={() => setIsDetailsModalOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-sm text-xs font-semibold bg-white border border-border text-heading hover:bg-slate-50 transition shadow-xs cursor-pointer"
+          >
+            <Briefcase size={13} /> Project Details
+          </button>
+
+          {/* Edit Project Button for Client */}
+          {isClient && (
+            <button
+              onClick={() => setIsEditModalOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-sm text-xs font-semibold bg-white border border-border text-heading hover:bg-slate-50 transition shadow-xs cursor-pointer"
+            >
+              <Pencil size={13} /> Edit Project
+            </button>
+          )}
+
           {/* Availability Button for Client */}
           {isClient && (
             <button
@@ -268,26 +385,47 @@ export default function ProjectWorkspace({
             </p>
           </div>
 
-          {/* Quick Metrics Badge */}
-          <div className="flex flex-wrap lg:flex-col items-start lg:items-end gap-3 flex-shrink-0 bg-white/70 backdrop-blur-sm p-4 rounded-md border border-border/80">
-            <div>
-              <div className="text-[11px] uppercase tracking-wider text-muted font-bold lg:text-right">
-                Estimated Budget
+          {/* Quick Financial Metrics Badge & Pay Now CTA */}
+          <div className="flex flex-col lg:items-end gap-2">
+            {paymentSummary && paymentSummary.totalProjectValue > 0 ? (
+              <div className="space-y-1 lg:text-right">
+                <div className="text-[10px] uppercase tracking-wider text-muted font-bold">
+                  Awarded Contract Value
+                </div>
+                <div className="text-base font-extrabold text-heading">
+                  ₹{paymentSummary.totalProjectValue.toLocaleString("en-IN")}
+                </div>
+                <div className="text-[11px] font-semibold text-muted">
+                  <span className="text-emerald-700">
+                    Paid: ₹{paymentSummary.totalPaid.toLocaleString("en-IN")}
+                  </span>{" "}
+                  •{" "}
+                  <span className="text-amber-800">
+                    Due: ₹{paymentSummary.remainingAmount.toLocaleString("en-IN")}
+                  </span>
+                </div>
               </div>
-              <div
-                className="text-xl font-bold text-heading lg:text-right"
-                style={{ fontFamily: "var(--font-heading)" }}
-              >
-                ₹{project.budgetMin?.toLocaleString("en-IN")} – ₹{project.budgetMax?.toLocaleString("en-IN")}
-              </div>
-            </div>
+            ) : (
+              <div>
+                <div className="text-[11px] uppercase tracking-wider text-muted font-medium lg:text-right">
+                  Estimated Budget
+                </div>
 
-            <div className="text-xs text-muted lg:text-right flex items-center gap-1">
-              <Calendar size={13} />
-              <span>
-                {new Date(project.startDate).toLocaleDateString()} to {new Date(project.completionDate).toLocaleDateString()}
-              </span>
-            </div>
+                <div className="text-base font-medium text-heading lg:text-right">
+                  ₹{project.budgetMin?.toLocaleString("en-IN")} – ₹
+                  {project.budgetMax?.toLocaleString("en-IN")}
+                </div>
+              </div>
+            )}
+
+            {isClient && paymentSummary?.currentDueAmount > 0 && (
+              <button
+                onClick={() => setActiveTab("milestones")}
+                className="mt-1 px-4 py-1.5 bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white font-bold text-xs rounded-lg shadow-xs flex items-center gap-1.5 transition cursor-pointer self-start lg:self-auto"
+              >
+                <CreditCard size={14} /> Pay Due (₹{paymentSummary.currentDueAmount.toLocaleString("en-IN")})
+              </button>
+            )}
           </div>
         </div>
 
@@ -299,14 +437,17 @@ export default function ProjectWorkspace({
               const isCurrent = idx === currentStatusIndex;
 
               return (
-                <div key={step.key} className="flex flex-col items-center text-center">
+                <div
+                  key={step.key}
+                  className="flex flex-col items-center text-center"
+                >
                   <div
                     className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold mb-1.5 transition-all ${
                       isPast
                         ? "bg-[var(--success)] text-white shadow-xs"
                         : isCurrent
-                        ? "bg-[var(--primary)] text-white ring-4 ring-[var(--primary)]/20 shadow-sm"
-                        : "bg-black/10 text-muted"
+                          ? "bg-[var(--primary)] text-white ring-4 ring-[var(--primary)]/20 shadow-sm"
+                          : "bg-black/10 text-muted"
                     }`}
                   >
                     {isPast ? <CheckCircle2 size={15} /> : idx + 1}
@@ -316,8 +457,8 @@ export default function ProjectWorkspace({
                       isCurrent
                         ? "text-[var(--primary)] font-bold"
                         : isPast
-                        ? "text-heading"
-                        : "text-muted"
+                          ? "text-heading"
+                          : "text-muted"
                     }`}
                   >
                     {step.label}
@@ -327,12 +468,38 @@ export default function ProjectWorkspace({
             })}
           </div>
         </div>
+
+        {/* Proposals Received Alert Banner for Client */}
+        {isClient && (project?.status === "PROPOSALS_RECEIVED" || totalBidsCount > 0) && (
+          <div className="mt-4 p-3.5 bg-gradient-to-r from-amber-500/15 via-amber-500/10 to-transparent border border-amber-400/40 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3 text-xs text-heading">
+              <div className="w-8 h-8 rounded-lg bg-[var(--gold)]/20 text-black flex items-center justify-center flex-shrink-0 font-bold">
+                <Sparkles size={16} className="text-amber-800" />
+              </div>
+              <div>
+                <span className="font-bold text-heading text-sm">
+                  {totalBidsCount > 0 ? `${totalBidsCount} Quotation${totalBidsCount > 1 ? "s" : ""} Received` : "Quotations Received"}
+                </span>
+                <span className="text-muted block text-xs mt-0.5">
+                  Review specialist proposals, compare quotes, and click 'Accept & Hire' to lock in your team.
+                </span>
+              </div>
+            </div>
+            <button
+              onClick={() => setActiveTab("bids")}
+              className="px-4 py-2 bg-[var(--primary)] text-white text-xs font-bold rounded-lg hover:bg-[var(--primary-hover)] transition cursor-pointer shadow-xs whitespace-nowrap self-start sm:self-auto flex items-center gap-1.5"
+            >
+              Review & Accept Proposals <ChevronRight size={13} />
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Main Workspace Navigation Tabs */}
       <div className="border-b border-border flex items-center gap-1 overflow-x-auto">
         {[
           { key: "overview", label: "Overview", icon: FileText },
+          { key: "milestones", label: "Milestones & Escrow", icon: CreditCard },
           { key: "bids", label: "Proposals / Bids", icon: FolderKanban },
           { key: "team", label: "Project Team", icon: Users },
           { key: "chat", label: "Project Chat", icon: MessageSquare },
@@ -356,6 +523,11 @@ export default function ProjectWorkspace({
             >
               <Icon size={16} />
               <span>{tab.label}</span>
+              {tab.key === "bids" && totalBidsCount > 0 && (
+                <span className="w-4 h-4 rounded-full bg-[var(--gold)] text-black text-[10px] flex items-center justify-center font-bold">
+                  {totalBidsCount}
+                </span>
+              )}
               {tab.key === "team" && teamMembers.length > 0 && (
                 <span className="w-4 h-4 rounded-full bg-[var(--primary)] text-white text-[10px] flex items-center justify-center">
                   {teamMembers.length}
@@ -373,206 +545,381 @@ export default function ProjectWorkspace({
 
       {/* Tab Contents */}
       <div>
-        {/* OVERVIEW TAB */}
-        {activeTab === "overview" && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Left 2 Cols: Detailed Specs */}
-            <div className="lg:col-span-2 space-y-6">
-              {/* Project Description */}
-              <div className="bg-white rounded-lg p-6 border border-border shadow-xs">
+        {/* MILESTONES & ESCROW TAB */}
+        {activeTab === "milestones" && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between bg-white p-4 rounded-lg border border-border">
+              <div>
                 <h3
-                  className="text-base font-bold text-heading uppercase tracking-wider mb-3"
+                  className="text-base font-bold text-heading"
                   style={{ fontFamily: "var(--font-heading)" }}
                 >
-                  Project Scope & Description
+                  Milestone Contracts & Escrow Releases
                 </h3>
-                <p className="text-sm text-text leading-relaxed whitespace-pre-line">
-                  {project.description}
+                <p className="text-xs text-muted">
+                  Deliverable tracking and milestone payment release per
+                  professional role.
                 </p>
+              </div>
+            </div>
+            <MilestonesTracker
+              projectId={project.id}
+              isClient={isClient}
+              currentUserId={currentUserId}
+              onOpenReviewModal={(award) => {
+                setReviewTarget(projectEligibleTargets[0] || null);
+                setIsReviewModalOpen(true);
+              }}
+            />
+          </div>
+        )}
 
-                {project.additionalNotes && (
-                  <div className="mt-4 p-3.5 bg-[var(--background-secondary)] rounded-md border border-border text-xs text-muted">
-                    <span className="font-semibold text-heading block mb-1">Additional Notes:</span>
-                    {project.additionalNotes}
+        {/* OVERVIEW TAB */}
+        {activeTab === "overview" && (
+          <div className="space-y-6">
+            {/* Horizontal Multi-Phase Stepper Tracker */}
+            <div className="p-5 bg-white border border-border rounded-lg shadow-xs space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-bold text-heading flex items-center gap-2 uppercase tracking-wider">
+                    <Layers size={16} className="text-[var(--primary)]" />
+                    Multi-Phase Execution Pipeline (
+                    {project.scope
+                      ? project.scope.replace(/_/g, " ")
+                      : "Full Project"}
+                    )
+                  </h3>
+                  <p className="text-xs text-muted mt-0.5">
+                    Execution proceeds sequentially across specialist
+                    disciplines with independent milestone escrows.
+                  </p>
+                </div>
+                <button
+                  onClick={() => setActiveTab("milestones")}
+                  className="text-xs font-bold text-[var(--primary)] hover:underline flex items-center gap-1"
+                >
+                  View Escrow Milestones <ChevronRight size={14} />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2">
+                {[
+                  {
+                    phaseKey: "PLANNING",
+                    title: "Phase 1: Architecture & Planning",
+                    roleName: "Architect",
+                    roleKey: "ARCHITECT",
+                    desc: "Blueprint, structural analysis, site approvals",
+                  },
+                  {
+                    phaseKey: "CONSTRUCTION",
+                    title: "Phase 2: Construction & Civil Build",
+                    roleName: "Contractor",
+                    roleKey: "CONTRACTOR",
+                    desc: "Masonry, MEP, foundational execution",
+                  },
+                  {
+                    phaseKey: "INTERIORS",
+                    title: "Phase 3: Interior Design & Fitout",
+                    roleName: "Interior Designer",
+                    roleKey: "INTERIOR_DESIGNER",
+                    desc: "Joinery, decor, lighting, client handover",
+                  },
+                ].map((phase, idx) => {
+                  const assignedMember = teamMembers.find(
+                    (m) => m.role === phase.roleKey,
+                  );
+                  const isCurrent = project.currentPhase === phase.phaseKey;
+
+                  return (
+                    <div
+                      key={phase.phaseKey}
+                      className={`p-4 rounded-lg border-2 transition-all flex flex-col justify-between gap-3 ${
+                        isCurrent
+                          ? "border-[var(--primary)] bg-[var(--primary)]/5 shadow-xs"
+                          : assignedMember
+                            ? "border-emerald-300 bg-emerald-50/30"
+                            : "border-slate-200 bg-slate-50/50"
+                      }`}
+                    >
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-black/5 text-heading">
+                            {phase.title.split(":")[0]}
+                          </span>
+                          {assignedMember ? (
+                            <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full">
+                              Awarded
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-bold text-muted bg-slate-200 px-2 py-0.5 rounded-full">
+                              Open for Bids
+                            </span>
+                          )}
+                        </div>
+                        <h4 className="text-xs font-bold text-heading pt-1">
+                          {phase.title.split(":")[1]}
+                        </h4>
+                        <p className="text-[11px] text-muted leading-tight">
+                          {phase.desc}
+                        </p>
+                      </div>
+
+                      <div className="pt-2 border-t border-border/60 flex items-center justify-between text-xs">
+                        <span className="text-muted text-[11px]">
+                          Specialist:
+                        </span>
+                        <span className="font-bold text-heading">
+                          {assignedMember?.user?.name ||
+                            `Hire ${phase.roleName}`}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Left 2 Cols: Detailed Specs */}
+              <div className="lg:col-span-2 space-y-6">
+                {/* Project Description */}
+                <div className="bg-white rounded-lg p-6 border border-border shadow-xs">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3
+                      className="text-base font-bold text-heading uppercase tracking-wider"
+                      style={{ fontFamily: "var(--font-heading)" }}
+                    >
+                      Project Scope & Description
+                    </h3>
+                    <button
+                      onClick={() => setIsDetailsModalOpen(true)}
+                      className="text-xs font-bold text-[var(--primary)] hover:underline flex items-center gap-1 cursor-pointer"
+                    >
+                      View Full Specs <ChevronRight size={13} />
+                    </button>
+                  </div>
+                  <p className="text-sm text-text leading-relaxed whitespace-pre-line">
+                    {project.description}
+                  </p>
+
+                  {project.additionalNotes && (
+                    <div className="mt-4 p-3.5 bg-[var(--background-secondary)] rounded-md border border-border text-xs text-muted">
+                      <span className="font-semibold text-heading block mb-1">
+                        Additional Notes:
+                      </span>
+                      {project.additionalNotes}
+                    </div>
+                  )}
+                </div>
+
+                {/* Property Details Grid */}
+                <div className="bg-white rounded-lg p-6 border border-border shadow-xs space-y-4">
+                  <h3
+                    className="text-base font-bold text-heading uppercase tracking-wider mb-3"
+                    style={{ fontFamily: "var(--font-heading)" }}
+                  >
+                    Property & Requirement Details
+                  </h3>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-xs">
+                    <div className="p-3 bg-[var(--background-secondary)]/60 rounded border border-border/50">
+                      <span className="text-muted block uppercase text-[10px] font-bold">
+                        Property Size
+                      </span>
+                      <span className="text-sm font-bold text-heading">
+                        {project.propertySize} sq.ft
+                      </span>
+                    </div>
+
+                    <div className="p-3 bg-[var(--background-secondary)]/60 rounded border border-border/50">
+                      <span className="text-muted block uppercase text-[10px] font-bold">
+                        Floors
+                      </span>
+                      <span className="text-sm font-bold text-heading">
+                        {project.numberOfFloors ?? "—"}
+                      </span>
+                    </div>
+
+                    <div className="p-3 bg-[var(--background-secondary)]/60 rounded border border-border/50">
+                      <span className="text-muted block uppercase text-[10px] font-bold">
+                        Bedrooms / Baths
+                      </span>
+                      <span className="text-sm font-bold text-heading">
+                        {project.numberOfBedrooms ?? 0} Beds /{" "}
+                        {project.numberOfBathrooms ?? 0} Baths
+                      </span>
+                    </div>
+
+                    <div className="p-3 bg-[var(--background-secondary)]/60 rounded border border-border/50">
+                      <span className="text-muted block uppercase text-[10px] font-bold">
+                        Design Style
+                      </span>
+                      <span className="text-sm font-bold text-heading">
+                        {(project.designStyle || [])
+                          .map(formatEnumLabel)
+                          .join(", ") || "Flexible"}
+                      </span>
+                    </div>
+
+                    <div className="p-3 bg-[var(--background-secondary)]/60 rounded border border-border/50">
+                      <span className="text-muted block uppercase text-[10px] font-bold">
+                        Space Requirements
+                      </span>
+                      <span className="text-sm font-bold text-heading">
+                        {(project.spaceRequirements || [])
+                          .map(formatEnumLabel)
+                          .join(", ") || "Standard"}
+                      </span>
+                    </div>
+
+                    <div className="p-3 bg-[var(--background-secondary)]/60 rounded border border-border/50">
+                      <span className="text-muted block uppercase text-[10px] font-bold">
+                        Involvement Mode
+                      </span>
+                      <span className="text-sm font-bold text-heading">
+                        {formatEnumLabel(project.clientInvolvement) ||
+                          "Standard Check-ins"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Attachments Gallery */}
+                {project.attachments && project.attachments.length > 0 && (
+                  <div className="bg-white rounded-lg p-6 border border-border shadow-xs space-y-4">
+                    <h3
+                      className="text-base font-bold text-heading uppercase tracking-wider mb-2"
+                      style={{ fontFamily: "var(--font-heading)" }}
+                    >
+                      Floor Plans & Reference Attachments
+                    </h3>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      {project.attachments.map((att, idx) => (
+                        <a
+                          key={att.id || idx}
+                          href={att.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="group relative rounded-md overflow-hidden border border-border bg-[var(--background-secondary)] aspect-video flex flex-col items-center justify-center p-2 text-center hover:border-[var(--primary)] transition"
+                        >
+                          <img
+                            src={att.url}
+                            alt={att.type}
+                            className="w-full h-full object-cover rounded"
+                            onError={(e) => {
+                              e.target.style.display = "none";
+                            }}
+                          />
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs font-semibold transition">
+                            <ExternalLink size={16} />
+                          </div>
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-muted mt-1 truncate max-w-full">
+                            {formatEnumLabel(att.type)}
+                          </span>
+                        </a>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
 
-              {/* Property Details Grid */}
-              <div className="bg-white rounded-lg p-6 border border-border shadow-xs space-y-4">
-                <h3
-                  className="text-base font-bold text-heading uppercase tracking-wider mb-3"
-                  style={{ fontFamily: "var(--font-heading)" }}
-                >
-                  Property & Requirement Details
-                </h3>
-
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-xs">
-                  <div className="p-3 bg-[var(--background-secondary)]/60 rounded border border-border/50">
-                    <span className="text-muted block uppercase text-[10px] font-bold">Property Size</span>
-                    <span className="text-sm font-bold text-heading">{project.propertySize} sq.ft</span>
-                  </div>
-
-                  <div className="p-3 bg-[var(--background-secondary)]/60 rounded border border-border/50">
-                    <span className="text-muted block uppercase text-[10px] font-bold">Floors</span>
-                    <span className="text-sm font-bold text-heading">{project.numberOfFloors ?? "—"}</span>
-                  </div>
-
-                  <div className="p-3 bg-[var(--background-secondary)]/60 rounded border border-border/50">
-                    <span className="text-muted block uppercase text-[10px] font-bold">Bedrooms / Baths</span>
-                    <span className="text-sm font-bold text-heading">
-                      {project.numberOfBedrooms ?? 0} Beds / {project.numberOfBathrooms ?? 0} Baths
-                    </span>
-                  </div>
-
-                  <div className="p-3 bg-[var(--background-secondary)]/60 rounded border border-border/50">
-                    <span className="text-muted block uppercase text-[10px] font-bold">Design Style</span>
-                    <span className="text-sm font-bold text-heading">
-                      {(project.designStyle || []).map(formatEnumLabel).join(", ") || "Flexible"}
-                    </span>
-                  </div>
-
-                  <div className="p-3 bg-[var(--background-secondary)]/60 rounded border border-border/50">
-                    <span className="text-muted block uppercase text-[10px] font-bold">Space Requirements</span>
-                    <span className="text-sm font-bold text-heading">
-                      {(project.spaceRequirements || []).map(formatEnumLabel).join(", ") || "Standard"}
-                    </span>
-                  </div>
-
-                  <div className="p-3 bg-[var(--background-secondary)]/60 rounded border border-border/50">
-                    <span className="text-muted block uppercase text-[10px] font-bold">Involvement Mode</span>
-                    <span className="text-sm font-bold text-heading">
-                      {formatEnumLabel(project.clientInvolvement) || "Standard Check-ins"}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Attachments Gallery */}
-              {project.attachments && project.attachments.length > 0 && (
+              {/* Right Column: Required Services & Quick Actions */}
+              <div className="space-y-6">
+                {/* Required Professionals Checklist */}
                 <div className="bg-white rounded-lg p-6 border border-border shadow-xs space-y-4">
                   <h3
-                    className="text-base font-bold text-heading uppercase tracking-wider mb-2"
+                    className="text-base font-bold text-heading uppercase tracking-wider"
                     style={{ fontFamily: "var(--font-heading)" }}
                   >
-                    Floor Plans & Reference Attachments
+                    Required Specialists
                   </h3>
 
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    {project.attachments.map((att, idx) => (
-                      <a
-                        key={att.id || idx}
-                        href={att.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="group relative rounded-md overflow-hidden border border-border bg-[var(--background-secondary)] aspect-video flex flex-col items-center justify-center p-2 text-center hover:border-[var(--primary)] transition"
-                      >
-                        <img
-                          src={att.url}
-                          alt={att.type}
-                          className="w-full h-full object-cover rounded"
-                          onError={(e) => {
-                            e.target.style.display = "none";
-                          }}
-                        />
-                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs font-semibold transition">
-                          <ExternalLink size={16} />
-                        </div>
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-muted mt-1 truncate max-w-full">
-                          {formatEnumLabel(att.type)}
-                        </span>
-                      </a>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
+                  <div className="space-y-2.5">
+                    {(project.servicesRequired || []).map((service) => {
+                      const isFilled = teamMembers.some(
+                        (m) => m.role === service && m.status === "ACTIVE",
+                      );
 
-            {/* Right Column: Required Services & Quick Actions */}
-            <div className="space-y-6">
-              {/* Required Professionals Checklist */}
-              <div className="bg-white rounded-lg p-6 border border-border shadow-xs space-y-4">
-                <h3
-                  className="text-base font-bold text-heading uppercase tracking-wider"
-                  style={{ fontFamily: "var(--font-heading)" }}
-                >
-                  Required Specialists
-                </h3>
-
-                <div className="space-y-2.5">
-                  {(project.servicesRequired || []).map((service) => {
-                    const isFilled = teamMembers.some(
-                      (m) => m.role === service && m.status === "ACTIVE"
-                    );
-
-                    return (
-                      <div
-                        key={service}
-                        className={`p-3.5 rounded-md border flex items-center justify-between text-xs transition ${
-                          isFilled
-                            ? "border-[var(--success)] bg-[var(--success)]/5"
-                            : "border-border bg-[var(--background-secondary)]/50"
-                        }`}
-                      >
-                        <div className="flex items-center gap-2">
-                          {isFilled ? (
-                            <CheckCircle2 size={16} className="text-[var(--success)]" />
-                          ) : (
-                            <Clock size={16} className="text-[var(--warning)]" />
-                          )}
-                          <span className="font-bold text-heading">
-                            {formatEnumLabel(service)}
-                          </span>
-                        </div>
-
-                        <span
-                          className={`text-[10px] px-2 py-0.5 rounded font-bold uppercase tracking-wider ${
+                      return (
+                        <div
+                          key={service}
+                          className={`p-3.5 rounded-md border flex items-center justify-between text-xs transition ${
                             isFilled
-                              ? "bg-[var(--success)] text-white"
-                              : "bg-[var(--warning)]/20 text-amber-800"
+                              ? "border-[var(--success)] bg-[var(--success)]/5"
+                              : "border-border bg-[var(--background-secondary)]/50"
                           }`}
                         >
-                          {isFilled ? "Hired" : "Seeking"}
-                        </span>
-                      </div>
-                    );
-                  })}
+                          <div className="flex items-center gap-2">
+                            {isFilled ? (
+                              <CheckCircle2
+                                size={16}
+                                className="text-[var(--success)]"
+                              />
+                            ) : (
+                              <Clock
+                                size={16}
+                                className="text-[var(--warning)]"
+                              />
+                            )}
+                            <span className="font-bold text-heading">
+                              {formatEnumLabel(service)}
+                            </span>
+                          </div>
+
+                          <span
+                            className={`text-[10px] px-2 py-0.5 rounded font-bold uppercase tracking-wider ${
+                              isFilled
+                                ? "bg-[var(--success)] text-white"
+                                : "bg-[var(--warning)]/20 text-amber-800"
+                            }`}
+                          >
+                            {isFilled ? "Hired" : "Seeking"}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
 
-              {/* Client & Communication Details */}
-              <div className="bg-white rounded-lg p-6 border border-border shadow-xs space-y-3 text-xs">
-                <h3
-                  className="text-base font-bold text-heading uppercase tracking-wider"
-                  style={{ fontFamily: "var(--font-heading)" }}
-                >
-                  Timeline & Communication
-                </h3>
+                {/* Client & Communication Details */}
+                <div className="bg-white rounded-lg p-6 border border-border shadow-xs space-y-3 text-xs">
+                  <h3
+                    className="text-base font-bold text-heading uppercase tracking-wider"
+                    style={{ fontFamily: "var(--font-heading)" }}
+                  >
+                    Timeline & Communication
+                  </h3>
 
-                <div className="space-y-2 text-muted">
-                  <div className="flex justify-between py-1 border-b border-border/60">
-                    <span>Target Start:</span>
-                    <span className="font-semibold text-heading">
-                      {new Date(project.startDate).toLocaleDateString()}
-                    </span>
-                  </div>
-                  <div className="flex justify-between py-1 border-b border-border/60">
-                    <span>Target Completion:</span>
-                    <span className="font-semibold text-heading">
-                      {new Date(project.completionDate).toLocaleDateString()}
-                    </span>
-                  </div>
-                  <div className="flex justify-between py-1 border-b border-border/60">
-                    <span>Working Hours:</span>
-                    <span className="font-semibold text-heading">
-                      {project.preferredWorkingHours || "Standard Business Hours"}
-                    </span>
-                  </div>
-                  <div className="flex justify-between py-1">
-                    <span>Site Visit:</span>
-                    <span className="font-semibold text-heading">
-                      {project.siteVisitRequired ? "Required" : "Not Mandatory"}
-                    </span>
+                  <div className="space-y-2 text-muted">
+                    <div className="flex justify-between py-1 border-b border-border/60">
+                      <span>Target Start:</span>
+                      <span className="font-semibold text-heading">
+                        {new Date(project.startDate).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <div className="flex justify-between py-1 border-b border-border/60">
+                      <span>Target Completion:</span>
+                      <span className="font-semibold text-heading">
+                        {new Date(project.completionDate).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <div className="flex justify-between py-1 border-b border-border/60">
+                      <span>Working Hours:</span>
+                      <span className="font-semibold text-heading">
+                        {project.preferredWorkingHours ||
+                          "Standard Business Hours"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between py-1">
+                      <span>Site Visit:</span>
+                      <span className="font-semibold text-heading">
+                        {project.siteVisitRequired
+                          ? "Required"
+                          : "Not Mandatory"}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -608,6 +955,10 @@ export default function ProjectWorkspace({
               setActiveTab("chat");
             }}
             onViewBidsForRole={handleViewBidsForRole}
+            onOpenReview={(target) => {
+              setReviewTarget(target);
+              setIsReviewModalOpen(true);
+            }}
           />
         )}
 
@@ -634,42 +985,55 @@ export default function ProjectWorkspace({
                   Project Feedback & Reviews
                 </h3>
                 <p className="text-xs text-muted">
-                  Verified reviews submitted by clients and team specialists for this project.
+                  Verified reviews submitted by clients and team specialists for
+                  this project.
                 </p>
               </div>
 
               <button
                 onClick={() => {
-                  setReviewTarget({
-                    projectId: project.id,
-                    projectTitle: project.title,
-                    revieweeId: isClient ? teamMembers[0]?.userId : project.clientId,
-                    revieweeName: isClient ? teamMembers[0]?.user?.name : project.client?.name,
-                    revieweeRole: isClient ? teamMembers[0]?.role : "CLIENT",
-                  });
+                  setReviewTarget(projectEligibleTargets[0] || null);
                   setIsReviewModalOpen(true);
                 }}
-                className="flex items-center gap-1.5 px-4 py-2 rounded text-xs font-semibold text-white transition shadow-xs"
+                disabled={projectEligibleTargets.length === 0}
+                className="flex items-center gap-1.5 px-4 py-2 rounded text-xs font-semibold text-white transition shadow-xs disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{ backgroundColor: "var(--primary)" }}
               >
-                <Star size={13} className="fill-white" /> Leave Review
+                <Star size={13} className="fill-white" />
+                {projectEligibleTargets.length > 0
+                  ? `Leave Review (${projectEligibleTargets.length} eligible)`
+                  : "All Reviewed"}
               </button>
             </div>
 
             {loadingReviews ? (
-              <div className="p-8 text-center text-xs text-muted">Loading project reviews...</div>
+              <div className="p-8 text-center text-xs text-muted">
+                Loading project reviews...
+              </div>
             ) : projectReviews.length === 0 ? (
               <div className="text-center py-12 bg-white rounded-lg border border-border p-6">
-                <Star size={36} className="mx-auto text-muted opacity-30 mb-2" />
-                <h4 className="text-sm font-bold text-heading">No Reviews Submitted Yet</h4>
+                <Star
+                  size={36}
+                  className="mx-auto text-muted opacity-30 mb-2"
+                />
+                <h4 className="text-sm font-bold text-heading">
+                  No Reviews Submitted Yet
+                </h4>
                 <p className="text-xs text-muted mt-1 max-w-xs mx-auto">
-                  Once milestones are delivered, submit a review to recognize the quality and performance of your collaborators.
+                  Once milestones are delivered, submit a review to recognize
+                  the quality and performance of your collaborators.
                 </p>
               </div>
             ) : (
               <div className="space-y-4">
                 {projectReviews.map((rev) => (
-                  <ReviewCard key={rev.id} review={rev} isRecipientView={false} />
+                  <ReviewCard
+                    key={rev.id}
+                    review={rev}
+                    isRecipientView={false}
+                    onReviewUpdated={() => refetchReviews()}
+                    onReviewDeleted={() => refetchReviews()}
+                  />
                 ))}
               </div>
             )}
@@ -681,6 +1045,7 @@ export default function ProjectWorkspace({
       {isReviewModalOpen && (
         <SubmitReviewModal
           target={reviewTarget}
+          eligibleList={projectEligibleTargets}
           onClose={() => {
             setIsReviewModalOpen(false);
             setReviewTarget(null);
@@ -690,7 +1055,27 @@ export default function ProjectWorkspace({
           }}
         />
       )}
+
+      {/* Edit Project Modal */}
+      {isEditModalOpen && project && (
+        <EditProjectModal
+          project={project}
+          isOpen={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+          onUpdated={() => {
+            refetchProject();
+            refetchTeam();
+          }}
+        />
+      )}
+
+      {/* Project Details Modal */}
+      {isDetailsModalOpen && project && (
+        <ProjectDetailsModal
+          project={project}
+          onClose={() => setIsDetailsModalOpen(false)}
+        />
+      )}
     </div>
   );
 }
-

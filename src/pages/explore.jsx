@@ -216,16 +216,24 @@ export default function PortfoliosByRolePage() {
     ? allDesignersQuery.error || allArchitectsQuery.error || allContractorsQuery.error
     : singleQuery.error;
 
+  const getArrayFromQuery = (qData) => {
+    if (Array.isArray(qData?.data?.users)) return qData.data.users;
+    if (Array.isArray(qData?.data?.data)) return qData.data.data;
+    if (Array.isArray(qData?.data)) return qData.data;
+    if (Array.isArray(qData)) return qData;
+    return [];
+  };
+
   const users = useMemo(() => {
     if (isAll) {
       const merged = [
-        ...(allDesignersQuery.data?.data?.users || []),
-        ...(allArchitectsQuery.data?.data?.users || []),
-        ...(allContractorsQuery.data?.data?.users || []),
+        ...getArrayFromQuery(allDesignersQuery.data),
+        ...getArrayFromQuery(allArchitectsQuery.data),
+        ...getArrayFromQuery(allContractorsQuery.data),
       ];
       return merged.map(normalisePortfolio);
     }
-    return (singleQuery.data?.data?.users || []).map(normalisePortfolio);
+    return getArrayFromQuery(singleQuery.data).map(normalisePortfolio);
   }, [
     isAll,
     allDesignersQuery.data,
@@ -233,6 +241,7 @@ export default function PortfoliosByRolePage() {
     allContractorsQuery.data,
     singleQuery.data,
   ]);
+
 
   // Reset accumulated list whenever the view changes; append on "Load more".
   useEffect(() => {

@@ -1,124 +1,195 @@
 import React from "react";
-import { Star, Award, MessageCircle, Clock, Wallet } from "lucide-react";
+import { Star, ShieldCheck, MessageCircle, Clock, Wallet } from "lucide-react";
 
-export default function ReviewsBreakdown({
-  summary,
-  activeFilter = null,
-  onSelectFilter = () => {},
-}) {
-  const {
-    averageRating = 0,
-    totalReviews = 0,
-    distribution = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 },
-    distributionPercentages = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 },
-    categories = { quality: 0, communication: 0, timeliness: 0, budget: 0 },
-  } = summary || {};
+const STAT_CARDS = [
+  {
+    key: "quality",
+    label: "Quality",
+    Icon: ShieldCheck,
+    color: "#16a34a",
+    bg: "#eafaf0",
+  },
+  {
+    key: "communication",
+    label: "Communication",
+    Icon: MessageCircle,
+    color: "#2563eb",
+    bg: "#eaf1ff",
+  },
+  {
+    key: "timeliness",
+    label: "Timeliness",
+    Icon: Clock,
+    color: "#f97316",
+    bg: "#fff3e8",
+  },
+  {
+    key: "budget",
+    label: "Budget",
+    Icon: Wallet,
+    color: "#7c3aed",
+    bg: "#f2eafe",
+  },
+];
+
+const ratingWord = (value) => {
+  if (value >= 4.5) return "Excellent";
+  if (value >= 4) return "Great";
+  if (value >= 3) return "Good";
+  if (value >= 2) return "Fair";
+  return "Needs Work";
+};
+
+function StarRow({ overall }) {
+  const full = Math.floor(overall);
+  const hasHalf = overall - full >= 0.25 && overall - full < 0.75;
+  const roundedUp = overall - full >= 0.75;
 
   return (
-    <div className="bg-white rounded-lg border border-border p-6 shadow-xs grid grid-cols-1 lg:grid-cols-3 gap-6 items-center">
-      {/* Col 1: Big Rating Score */}
-      <div className="flex flex-col items-center justify-center text-center lg:border-r border-border lg:pr-6">
+    <div className="flex items-center gap-0.5">
+      {Array.from({ length: 5 }).map((_, i) => {
+        const idx = i + 1;
+        const isFull = idx <= full || (roundedUp && idx === full + 1);
+        const isHalf = !isFull && hasHalf && idx === full + 1;
+        return (
+          <div key={i} className="relative">
+            <Star size={22} className="text-[color:var(--border)]" fill="none" strokeWidth={1.5} style={{ color: "#e5e0d8" }} />
+            {(isFull || isHalf) && (
+              <div
+                className="absolute inset-0 overflow-hidden"
+                style={{ width: isHalf ? "50%" : "100%" }}
+              >
+                <Star size={22} className="text-[#f59e0b]" fill="#f59e0b" strokeWidth={1.5} />
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function DistributionBar({ star, count, maxCount }) {
+  const pct = maxCount > 0 ? Math.max((count / maxCount) * 100, count > 0 ? 4 : 0) : 0;
+  return (
+    <div className="flex items-center gap-3">
+      <div className="flex items-center gap-1 w-7 flex-shrink-0 text-sm font-medium text-heading">
+        <span>{star}</span>
+        <Star size={13} className="text-[#f59e0b]" fill="#f59e0b" />
+      </div>
+      <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ backgroundColor: "#eeebe4" }}>
         <div
-          className="text-5xl sm:text-6xl font-extrabold text-heading"
-          style={{ fontFamily: "var(--font-heading)" }}
-        >
-          {averageRating > 0 ? averageRating.toFixed(1) : "—"}
+          className="h-full rounded-full transition-all duration-300"
+          style={{ width: `${pct}%`, backgroundColor: "#f59e0b" }}
+        />
+      </div>
+      <span className="w-6 text-right text-sm text-muted flex-shrink-0">{count}</span>
+    </div>
+  );
+}
+
+export default function ReviewsBreakdown({ summary = {}, activeFilter, onSelectFilter }) {
+  const overall = Number(summary.averageRating || summary.overallRating || 0);
+  const totalReviews = summary.totalReviews || 0;
+  const distribution = summary.distribution || summary.ratingDistribution || {};
+  const maxCount = Math.max(1, ...[5, 4, 3, 2, 1].map((s) => Number(distribution[s] || 0)));
+
+  const categories = {
+    quality: summary.qualityRating ?? summary.quality ?? null,
+    communication: summary.communicationRating ?? summary.communication ?? null,
+    timeliness: summary.timelinessRating ?? summary.timeliness ?? null,
+    budget: summary.budgetRating ?? summary.budget ?? null,
+  };
+
+  return (
+    <div
+      className="bg-white rounded-2xl border border-border p-5 sm:p-6"
+      style={{ boxShadow: "0 1px 2px rgba(16,24,40,0.04), 0 1px 3px rgba(16,24,40,0.03)" }}
+    >
+      <div className="grid grid-cols-1 lg:grid-cols-[220px_1px_1fr_1px_auto] gap-6 items-center">
+        {/* Overall score */}
+        <div className="flex flex-col items-center lg:items-start text-center lg:text-left">
+          <div
+            className="text-5xl font-bold text-heading leading-none"
+            style={{ fontFamily: "var(--font-heading)" }}
+          >
+            {overall.toFixed(1)}
+          </div>
+          <div className="mt-2">
+            <StarRow overall={overall} />
+          </div>
+          <p className="text-sm text-muted mt-2">Based on {totalReviews} verified reviews</p>
+          <span
+            className="inline-flex items-center gap-1 mt-2 text-[11px] font-semibold px-2.5 py-1 rounded-full"
+            style={{ backgroundColor: "#eafaf0", color: "#16a34a" }}
+          >
+            <ShieldCheck size={12} /> Verified
+          </span>
         </div>
 
-        <div className="flex items-center gap-1 my-2 text-amber-500">
-          {[1, 2, 3, 4, 5].map((star) => (
-            <Star
+        <div className="hidden lg:block w-px h-full bg-border" />
+
+        {/* Distribution bars */}
+        <div className="space-y-2.5 w-full">
+          {[5, 4, 3, 2, 1].map((star) => (
+            <button
               key={star}
-              size={18}
-              className={
-                star <= Math.round(averageRating)
-                  ? "fill-amber-400 text-amber-500"
-                  : "text-gray-300"
-              }
-            />
+              type="button"
+              onClick={() => onSelectFilter?.(activeFilter === star ? null : star)}
+              className={`w-full rounded-lg transition-colors ${
+                activeFilter === star ? "bg-[var(--gold)]/10" : "hover:bg-black/[0.02]"
+              }`}
+            >
+              <DistributionBar
+                star={star}
+                count={Number(distribution[star] || 0)}
+                maxCount={maxCount}
+              />
+            </button>
           ))}
         </div>
 
-        <p className="text-xs text-muted font-medium">
-          Based on <span className="font-bold text-heading">{totalReviews}</span> verified reviews
-        </p>
-      </div>
+        <div className="hidden lg:block w-px h-full bg-border" />
 
-      {/* Col 2: Star Distribution Progress Bars */}
-      <div className="space-y-2 lg:border-r border-border lg:pr-6">
-        {[5, 4, 3, 2, 1].map((star) => {
-          const count = distribution[star] || 0;
-          const pct = distributionPercentages[star] || 0;
-          const isSelected = String(activeFilter) === String(star);
-
-          return (
-            <button
-              key={star}
-              onClick={() => onSelectFilter(isSelected ? null : String(star))}
-              className={`w-full flex items-center gap-2 text-xs transition p-1 rounded-sm ${
-                isSelected ? "bg-[var(--gold)]/15 font-bold" : "hover:bg-[var(--background-secondary)]"
-              }`}
-            >
-              <span className="w-12 text-right text-muted font-semibold flex items-center justify-end gap-1">
-                {star} <Star size={11} className="fill-amber-400 text-amber-500" />
-              </span>
-
-              {/* Progress Track */}
-              <div className="flex-1 h-2.5 bg-[var(--background-secondary)] rounded-full overflow-hidden border border-border/40">
-                <div
-                  className="h-full bg-amber-400 rounded-full transition-all duration-500"
-                  style={{ width: `${pct}%` }}
-                />
+        {/* Category stat cards */}
+        <div className="grid grid-cols-2 gap-3 w-full lg:w-auto">
+          {STAT_CARDS.map(({ key, label, Icon, color, bg }) => {
+            const value = categories[key];
+            return (
+              <div
+                key={key}
+                className="rounded-xl border border-border p-3.5 min-w-[150px]"
+                style={{ backgroundColor: "var(--background-secondary)" }}
+              >
+                <div className="flex items-center gap-1.5 mb-2">
+                  <div
+                    className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
+                    style={{ backgroundColor: bg }}
+                  >
+                    <Icon size={12} style={{ color }} />
+                  </div>
+                  <span className="text-[10.5px] font-bold uppercase tracking-wider text-muted">
+                    {label}
+                  </span>
+                </div>
+                {value ? (
+                  <>
+                    <div className="text-lg font-bold" style={{ color, fontFamily: "var(--font-heading)" }}>
+                      {Number(value).toFixed(1)}/5
+                    </div>
+                    <div className="text-xs text-muted mt-0.5">{ratingWord(Number(value))}</div>
+                  </>
+                ) : (
+                  <>
+                    <div className="text-lg font-bold text-muted" style={{ fontFamily: "var(--font-heading)" }}>
+                      —
+                    </div>
+                    <div className="text-xs text-muted mt-0.5">No data</div>
+                  </>
+                )}
               </div>
-
-              <span className="w-9 text-left text-[11px] text-muted tabular-nums">
-                {count}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Col 3: Sub-category Rating Metrics */}
-      <div className="grid grid-cols-2 gap-3 text-xs">
-        <div className="p-3 rounded-md bg-[var(--background-secondary)]/60 border border-border/60 flex flex-col justify-between">
-          <div className="flex items-center gap-1.5 text-muted mb-1">
-            <Award size={14} className="text-primary" />
-            <span className="font-semibold text-[11px] uppercase tracking-wider">Quality</span>
-          </div>
-          <div className="text-base font-bold text-heading">
-            {categories.quality > 0 ? `★ ${categories.quality.toFixed(1)}` : "—"}
-          </div>
-        </div>
-
-        <div className="p-3 rounded-md bg-[var(--background-secondary)]/60 border border-border/60 flex flex-col justify-between">
-          <div className="flex items-center gap-1.5 text-muted mb-1">
-            <MessageCircle size={14} className="text-emerald-600" />
-            <span className="font-semibold text-[11px] uppercase tracking-wider">Communication</span>
-          </div>
-          <div className="text-base font-bold text-heading">
-            {categories.communication > 0 ? `★ ${categories.communication.toFixed(1)}` : "—"}
-          </div>
-        </div>
-
-        <div className="p-3 rounded-md bg-[var(--background-secondary)]/60 border border-border/60 flex flex-col justify-between">
-          <div className="flex items-center gap-1.5 text-muted mb-1">
-            <Clock size={14} className="text-amber-600" />
-            <span className="font-semibold text-[11px] uppercase tracking-wider">Timeliness</span>
-          </div>
-          <div className="text-base font-bold text-heading">
-            {categories.timeliness > 0 ? `★ ${categories.timeliness.toFixed(1)}` : "—"}
-          </div>
-        </div>
-
-        <div className="p-3 rounded-md bg-[var(--background-secondary)]/60 border border-border/60 flex flex-col justify-between">
-          <div className="flex items-center gap-1.5 text-muted mb-1">
-            <Wallet size={14} className="text-purple-600" />
-            <span className="font-semibold text-[11px] uppercase tracking-wider">Budget</span>
-          </div>
-          <div className="text-base font-bold text-heading">
-            {categories.budget > 0 ? `★ ${categories.budget.toFixed(1)}` : "—"}
-          </div>
+            );
+          })}
         </div>
       </div>
     </div>

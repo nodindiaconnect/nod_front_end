@@ -11,6 +11,7 @@ import {
     useRegisterFinishMutation,
     useResendOtpMutation,
     useLazyCheckUsernameQuery,
+    useGetCategoriesAndSpecializationsQuery,
 } from "../Authentication/authApiSlice"
 import {
     INK, INK_SOFT, GOLD, GOLD_DARK, LINE, SURFACE, ERROR_BG, ERROR_TEXT, OK_TEXT,
@@ -171,7 +172,7 @@ export default function SignUpForm({ onSwitchToLogin }) {
         return () => document.removeEventListener("mousedown", handleClick)
     }, [])
 
-    // ── Mutations ──
+    // ── Mutations & Category API Query ──
     const [registerStart, { isLoading: registerStarting }] = useRegisterStartMutation()
     const [registerVerifyOtp, { isLoading: verifyingOtp }] = useRegisterVerifyOtpMutation()
     const [registerCreateAccount, { isLoading: creatingAccount }] = useRegisterCreateAccountMutation()
@@ -179,17 +180,32 @@ export default function SignUpForm({ onSwitchToLogin }) {
     const [resendOtp, { isLoading: resending }] = useResendOtpMutation()
     const [triggerCheckUsername] = useLazyCheckUsernameQuery()
 
+    // Dynamically fetch categories from backend category API
+    const {
+        data: categoriesResponse,
+        isLoading: isLoadingCategories,
+        isError: isCategoriesError,
+    } = useGetCategoriesAndSpecializationsQuery(undefined, {
+        refetchOnMountOrArgChange: true,
+    })
+
+    const categoriesList = Array.isArray(categoriesResponse?.data)
+        ? categoriesResponse.data
+        : []
+
+    const selectedCategoryObj = categoriesList.find(
+        (c) => c.name === roleFields.category || c.id === roleFields.category
+    )
+    const availableSpecializations = selectedCategoryObj?.specializations || []
+
     const roleConfig = role ? ROLE_FIELDS[role] : null
     // Group the role's dynamic fields into rows of two for a compact
-    // two-column layout. Textareas and selects always get their own full
-    // row (a select needs its own space for the dropdown, a textarea
-    // needs its own height) — only text/number fields get paired up,
-    // taken two at a time in the order they're defined.
+    // two-column layout. Textareas always get their own full row.
     const profileRows = []
     if (roleConfig) {
         let pending = null
         roleConfig.fields.forEach((field) => {
-            const pairable = field.type === "text" || field.type === "number"
+            const pairable = field.type === "text" || field.type === "number" || field.type === "category" || field.type === "specialization"
             if (!pairable) {
                 if (pending) {
                     profileRows.push([pending])
@@ -344,17 +360,20 @@ export default function SignUpForm({ onSwitchToLogin }) {
         setErrorMsg("")
         if (!country.trim()) return setErrorMsg("Please select your country")
         if (!cityName.trim()) return setErrorMsg("Please enter your city")
+
         try {
+            // Save location to backend immediately. Do NOT send roleFields here so Category is not validated on this step.
             const res = await registerCreateAccount({
                 registerSessionToken,
                 country,
                 state: stateName,
                 city: cityName,
                 address: addressLine,
-                roleFields: {},
             }).unwrap()
-            setRegisterSessionToken(res.data.registerSessionToken)
-            setStep((s) => s + 1) // Move to profile or review
+            if (res?.data?.registerSessionToken) {
+                setRegisterSessionToken(res.data.registerSessionToken)
+            }
+            setStep((s) => s + 1) // Move to next step (Profile for Designer, Review for Client)
             toast.success("Location saved")
         } catch (err) {
             setErrorMsg(getErrMsg(err))
@@ -364,6 +383,10 @@ export default function SignUpForm({ onSwitchToLogin }) {
     // ── REGISTER · STEP 3b: Save Profile (registerCreateAccount) ──
     const handleSaveProfile = async () => {
         setErrorMsg("")
+        if (role === "Designer") {
+            if (!roleFields.category) return setErrorMsg("Please select a Category")
+            if (!roleFields.specialization) return setErrorMsg("Please select a Specialization")
+        }
         try {
             const res = await registerCreateAccount({
                 registerSessionToken,
@@ -373,7 +396,9 @@ export default function SignUpForm({ onSwitchToLogin }) {
                 address: addressLine,
                 roleFields,
             }).unwrap()
-            setRegisterSessionToken(res.data.registerSessionToken)
+            if (res?.data?.registerSessionToken) {
+                setRegisterSessionToken(res.data.registerSessionToken)
+            }
             setStep((s) => s + 1) // Move to review
             toast.success("Profile saved")
         } catch (err) {
@@ -725,24 +750,29 @@ export default function SignUpForm({ onSwitchToLogin }) {
                         )}
 
                         {showOtpBox && !emailVerified && (
-                            <div>
-                                <TextInput
-                                    label="ENTER OTP"
-                                    placeholder="6-digit code"
-                                    maxLength={6}
-                                    value={otpValue}
-                                    onChange={(e) => setOtpValue(e.target.value)}
-                                    autoComplete="one-time-code"
-                                />
-                                <button
-                                    type="button"
-                                    onClick={handleVerifyOtpAndProceed}
-                                    disabled={!otpValue || verifyingOtp}
-                                    className="w-full px-4 py-2 text-xs mb-4 border rounded transition-all"
-                                    style={{ borderColor: GOLD, color: GOLD_DARK, background: "rgba(201,138,62,0.05)" }}
-                                >
-                                    {verifyingOtp ? "Verifying..." : "Verify OTP"}
-                                </button>
+                            <div className="mb-4">
+                                <FieldLabel>ENTER OTP</FieldLabel>
+                                <div className="relative">
+                                    <input
+                                        type="text"
+                                        placeholder="6-digit code"
+                                        maxLength={6}
+                                        value={otpValue}
+                                        onChange={(e) => setOtpValue(e.target.value)}
+                                        className="w-full pl-4 pr-28 py-3.5 text-sm outline-none font-mono tracking-wider"
+                                        style={{ border: `1px solid ${LINE}`, color: INK, background: "transparent" }}
+                                        autoComplete="one-time-code"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={handleVerifyOtpAndProceed}
+                                        disabled={!otpValue || verifyingOtp}
+                                        className="absolute right-1.5 top-1/2 -translate-y-1/2 px-3.5 py-2 text-xs font-medium border disabled:opacity-40 whitespace-nowrap transition-all"
+                                        style={{ borderColor: GOLD, color: GOLD_DARK, background: "rgba(201,138,62,0.08)" }}
+                                    >
+                                        {verifyingOtp ? "Verifying..." : "Verify OTP"}
+                                    </button>
+                                </div>
                             </div>
                         )}
 
@@ -856,6 +886,61 @@ export default function SignUpForm({ onSwitchToLogin }) {
                                             {field.options?.map((opt) => (
                                                 <option key={opt} value={opt}>{opt}</option>
                                             ))}
+                                        </SelectInput>
+                                    )}
+                                    {field.type === "category" && (
+                                        <SelectInput
+                                            label={field.label}
+                                            value={roleFields[field.id] || ""}
+                                            disabled={isLoadingCategories}
+                                            onChange={(e) => {
+                                                const catVal = e.target.value;
+                                                setRoleFields((prev) => ({
+                                                    ...prev,
+                                                    category: catVal,
+                                                    specialization: "",
+                                                }));
+                                            }}
+                                        >
+                                            <option value="">
+                                                {isLoadingCategories
+                                                    ? "Loading categories from server..."
+                                                    : isCategoriesError
+                                                    ? "Failed to load categories"
+                                                    : categoriesList.length === 0
+                                                    ? "No categories available"
+                                                    : "Select Category"}
+                                            </option>
+                                            {categoriesList.map((cat) => (
+                                                <option key={cat.id || cat.name} value={cat.name}>
+                                                    {cat.name}
+                                                </option>
+                                            ))}
+                                        </SelectInput>
+                                    )}
+                                    {field.type === "specialization" && (
+                                        <SelectInput
+                                            label={field.label}
+                                            value={roleFields[field.id] || ""}
+                                            disabled={!roleFields.category || availableSpecializations.length === 0}
+                                            onChange={(e) => setRoleField(field.id, e.target.value)}
+                                        >
+                                            <option value="">
+                                                {!roleFields.category
+                                                    ? "Select Category First"
+                                                    : availableSpecializations.length === 0
+                                                    ? "No specializations available"
+                                                    : "Select Specialization"}
+                                            </option>
+                                            {availableSpecializations.map((spec) => {
+                                                const specName = typeof spec === "string" ? spec : spec.name;
+                                                const specId = typeof spec === "object" ? spec.id : specName;
+                                                return (
+                                                    <option key={specId || specName} value={specName}>
+                                                        {specName}
+                                                    </option>
+                                                );
+                                            })}
                                         </SelectInput>
                                     )}
                                 </div>

@@ -11,14 +11,6 @@ export const clientApiSlice = apiSlice.injectEndpoints({
         }),
 
 
-        updateProject: builder.mutation({
-            query: ({ projectId, ...body }) => ({
-                url: `/client/projects/${projectId}`,
-                method: "PUT",
-                body,
-            }),
-            invalidatesTags: ["Project"], // use whatever tag your listProjects/createProject already invalidate/provide
-        }),
         getDashboardStats: builder.query({
             query: () => ({
                 url: "/Client/dashboardStats",
@@ -84,16 +76,17 @@ export const clientApiSlice = apiSlice.injectEndpoints({
             ],
         }),
 
-        // Update project (if your backend supports it)
+        // Update project
         updateProject: builder.mutation({
-            query: ({ projectId, data }) => ({
+            query: ({ projectId, data, ...rest }) => ({
                 url: `/Client/projects/${projectId}`,
                 method: "PUT",
-                body: data,
+                body: data || rest,
             }),
             invalidatesTags: (result, error, { projectId }) => [
                 { type: "Project", id: projectId },
                 "ProjectsList",
+                "DashboardStats",
             ],
         }),
 

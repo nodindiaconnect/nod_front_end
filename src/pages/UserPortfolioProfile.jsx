@@ -15,8 +15,18 @@ import {
   Send,
   Share2,
   UserPlus,
+  Star,
+  Award,
+  MessageSquare,
 } from "lucide-react";
-import { useGetUserPortfolioQuery } from "./supplyproductsapislice";
+import {
+  useGetUserPortfolioQuery,
+  useGetUserPerformanceQuery,
+} from "./supplyproductsapislice";
+import { useGetUserReviewsQuery } from "../ApiSliceComponent/reviewApiSlice";
+import ReviewsBreakdown from "../components/dashboard/shared/ReviewsBreakdown";
+import ReviewCard from "../components/dashboard/shared/ReviewCard";
+import ProfessionalPerformanceSection from "../components/profile/ProfessionalPerformanceSection";
 
 const ROLE_LABELS = {
   1: "Client",
@@ -31,7 +41,7 @@ const ROLE_LABELS = {
 const DEFAULT_COVER_IMAGE =
   "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=1200&q=80&auto=format&fit=crop";
 
-const TABS = ["Projects", "About", "Experience", "Reviews"];
+const TABS = ["Performance", "Projects", "About", "Experience", "Reviews"];
 const BIO_PREVIEW_LENGTH = 160;
 
 function safeParseProfile(profile) {
@@ -59,7 +69,7 @@ export default function UserPortfolioProfile() {
   const { userId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("Projects");
+  const [activeTab, setActiveTab] = useState("Performance");
   const [bioExpanded, setBioExpanded] = useState(false);
   const [failedImages, setFailedImages] = useState({});
 
@@ -70,11 +80,33 @@ export default function UserPortfolioProfile() {
     skip: !!passedUser,
   });
 
+  const { data: performanceRes, isLoading: loadingPerformance } = useGetUserPerformanceQuery(userId, {
+    skip: !userId,
+  });
+
+  const [reviewsPage, setReviewsPage] = useState(1);
+  const [reviewsStarFilter, setReviewsStarFilter] = useState(null);
+
+  const {
+    data: reviewsRes,
+    isLoading: loadingReviews,
+    refetch: refetchReviews,
+  } = useGetUserReviewsQuery(
+    { userId, page: reviewsPage, limit: 10 },
+    { skip: !userId }
+  );
+
+  const userReviews = reviewsRes?.data?.reviews || [];
+  const reviewSummary = reviewsRes?.data?.summary || {};
+  const reviewPagination = reviewsRes?.data?.pagination;
+
   const apiProjects = data?.data || [];
   const apiUser = data?.user;
   const rawUser = passedUser || apiUser;
   const user = useMemo(() => normaliseUser(rawUser), [rawUser]);
   const projects = apiProjects.length ? apiProjects : user?.posts || [];
+  const performanceData = performanceRes?.data || null;
+
 
   if (isLoading && !user) {
     return (
@@ -223,64 +255,37 @@ export default function UserPortfolioProfile() {
                 <span className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-full font-medium">
                   <Layers size={11} /> {roleLabel}
                 </span>
+                {reviewSummary.totalReviews > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("Reviews")}
+                    className="flex items-center gap-1 bg-amber-50 text-amber-900 border border-amber-200/80 px-2.5 py-0.5 rounded-full font-bold cursor-pointer hover:bg-amber-100 transition shadow-xs text-xs"
+                  >
+                    <Star size={11} className="fill-amber-400 text-amber-500" />
+                    <span>{reviewSummary.averageRating?.toFixed(1) || "5.0"}</span>
+                    <span className="text-[10px] font-normal text-amber-700">
+                      ({reviewSummary.totalReviews})
+                    </span>
+                  </button>
+                )}
               </div>
               {bio && (
                 <div className="grid grid-cols-[72px_1fr] gap-6 items-start mb-5">
                   {/* BIO Heading */}
                   <div>
-                    <span className="text-[13px] font-medium tracking-wide text-[#a87332]">
+                    <span className="text-[13px] font-bold tracking-wide text-[var(--gold-hover)]">
                       BIO
                     </span>
                   </div>
 
                   {/* Bio Content */}
-                  <p className="text-[13px] text-[#55504a] leading-6 m-0">
+                  <p className="text-[13px] text-[var(--text)] leading-6 m-0">
                     {bio}
                   </p>
                 </div>
-              )}{" "}
-              {/* <div className="flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  className="inline-flex items-center gap-1.5 text-xs font-semibold px-3.5 py-1.5 rounded-lg bg-[#b8823a] text-white hover:bg-[#9c6c2c]"
-                >
-                  <UserPlus size={13} /> Follow
-                </button>
-                <button
-                  type="button"
-                  className="inline-flex items-center gap-1.5 text-xs font-semibold px-3.5 py-1.5 rounded-lg bg-white border border-[#e8e2d8] text-[#1c1712]"
-                >
-                  <MessageCircle size={13} /> Message
-                </button>
-                <button
-                  type="button"
-                  aria-label="Share profile"
-                  className="inline-flex items-center justify-center p-1.5 rounded-lg bg-white border border-[#e8e2d8] text-[#1c1712]"
-                >
-                  <Share2 size={13} />
-                </button>
-              </div> */}
+              )}
             </div>
           </div>
-
-          {/* Stats — floats over the photo side of the blend */}
-          {/* <div className="static sm:absolute sm:right-5 sm:bottom-4 mx-4 mb-4 sm:m-0 flex justify-between sm:justify-start gap-3 bg-white rounded-xl shadow-lg px-3.5 py-2.5">
-            <div className="flex flex-col items-center gap-0.5">
-              <Briefcase size={14} className="text-[#b8823a]" />
-              <strong className="text-[13px]">{projectCount}</strong>
-              <span className="text-[10px] text-[#8a8479]">Projects</span>
-            </div>
-            <div className="flex flex-col items-center gap-0.5">
-              <UserPlus size={14} className="text-[#b8823a]" />
-              <strong className="text-[13px]">{followerCount}</strong>
-              <span className="text-[10px] text-[#8a8479]">Followers</span>
-            </div>
-            <div className="flex flex-col items-center gap-0.5">
-              <UserPlus size={14} className="text-[#b8823a]" />
-              <strong className="text-[13px]">{followingCount}</strong>
-              <span className="text-[10px] text-[#8a8479]">Following</span>
-            </div>
-          </div> */}
         </section>
 
         {/* Body */}
@@ -288,8 +293,8 @@ export default function UserPortfolioProfile() {
           {/* Sidebar */}
           <aside className="flex flex-col sm:flex-row lg:flex-col gap-5 lg:sticky lg:top-6">
             {aboutRows.length > 0 && (
-              <div className="flex-1 min-w-[260px] bg-white border border-[#e8e2d8] rounded-2xl p-5.5">
-                <h2 className="text-base font-bold pb-3 mb-1 border-b-2 border-[#f4e6cd]">
+              <div className="flex-1 min-w-[260px] bg-white border border-[var(--border)] rounded-2xl p-5.5 shadow-xs">
+                <h2 className="text-base font-bold pb-3 mb-1 border-b-2 border-[var(--gold)]/30 text-[var(--heading)]" style={{ fontFamily: "var(--font-heading)" }}>
                   About
                 </h2>
                 {aboutRows.map((row, i) => {
@@ -298,17 +303,17 @@ export default function UserPortfolioProfile() {
                   return (
                     <div
                       key={row.label}
-                      className={`flex gap-3 py-3.5 ${isLast ? "" : "border-b border-[#e8e2d8]"}`}
+                      className={`flex gap-3 py-3.5 ${isLast ? "" : "border-b border-[var(--border)]"}`}
                     >
                       <Icon
                         size={16}
-                        className="text-[#b8823a] flex-shrink-0 mt-0.5"
+                        className="text-[var(--primary)] flex-shrink-0 mt-0.5"
                       />
                       <div>
-                        <p className="text-[12.5px] text-[#8a8479] mb-0.5">
+                        <p className="text-[12.5px] text-[var(--muted)] mb-0.5">
                           {row.label}
                         </p>
-                        <strong className="text-[14.5px] font-semibold">
+                        <strong className="text-[14.5px] font-semibold text-[var(--heading)]">
                           {row.value}
                         </strong>
                       </div>
@@ -319,15 +324,15 @@ export default function UserPortfolioProfile() {
             )}
 
             {skills.length > 0 && (
-              <div className="flex-1 min-w-[260px] bg-white border border-[#e8e2d8] rounded-2xl p-5.5">
-                <h2 className="text-base font-bold pb-3 mb-3 border-b-2 border-[#f4e6cd]">
+              <div className="flex-1 min-w-[260px] bg-white border border-[var(--border)] rounded-2xl p-5.5 shadow-xs">
+                <h2 className="text-base font-bold pb-3 mb-3 border-b-2 border-[var(--gold)]/30 text-[var(--heading)]" style={{ fontFamily: "var(--font-heading)" }}>
                   Skills
                 </h2>
                 <div className="flex flex-wrap gap-2">
                   {skills.map((s) => (
                     <span
                       key={s}
-                      className="bg-[#f7f2ea] text-[#55504a] text-[13px] font-medium px-3.5 py-1.5 rounded-full"
+                      className="bg-[var(--background-secondary)] text-[var(--heading)] text-[13px] font-medium px-3.5 py-1.5 rounded-full border border-[var(--border)]"
                     >
                       {s}
                     </span>
@@ -339,9 +344,9 @@ export default function UserPortfolioProfile() {
 
           {/* Main */}
           <div className="flex flex-col gap-5">
-            <div className="bg-white border border-[#e8e2d8] rounded-2xl overflow-hidden">
+            <div className="bg-white border border-[var(--border)] rounded-2xl overflow-hidden shadow-xs">
               <div
-                className="flex gap-7 px-6 border-b border-[#e8e2d8] overflow-x-auto"
+                className="flex gap-7 px-6 border-b border-[var(--border)] overflow-x-auto"
                 role="tablist"
               >
                 {TABS.map((tab) => (
@@ -351,33 +356,47 @@ export default function UserPortfolioProfile() {
                     role="tab"
                     aria-selected={activeTab === tab}
                     onClick={() => setActiveTab(tab)}
-                    className={`text-[14.5px] font-semibold py-4.5 whitespace-nowrap border-b-2 -mb-px ${
+                    className={`text-[14.5px] font-semibold py-4.5 whitespace-nowrap border-b-2 -mb-px transition cursor-pointer ${
                       activeTab === tab
-                        ? "text-[#1c1712] border-[#b8823a]"
-                        : "text-[#8a8479] border-transparent"
+                        ? "text-[var(--heading)] border-[var(--primary)]"
+                        : "text-[var(--muted)] border-transparent hover:text-[var(--heading)]"
                     }`}
                   >
-                    {tab === "Projects" ? `Projects (${projectCount})` : tab}
+                    {tab === "Projects"
+                      ? `Projects (${projectCount})`
+                      : tab === "Reviews"
+                      ? `Reviews (${reviewSummary.totalReviews ?? userReviews.length})`
+                      : tab}
                   </button>
                 ))}
               </div>
 
               <div className="p-6 sm:p-8">
+                {activeTab === "Performance" && (
+                  <ProfessionalPerformanceSection
+                    performanceData={performanceData}
+                    role={user.role}
+                    user={user}
+                    portfolioPosts={projects}
+                    reviews={userReviews}
+                  />
+                )}
+
                 {activeTab === "Projects" &&
                   (projects.length === 0 ? (
                     <div className="flex flex-col items-center text-center py-10 px-5">
-                      <div className="w-14 h-14 rounded-full bg-[#f7f2ea] flex items-center justify-center text-[#b8823a] mb-4.5">
+                      <div className="w-14 h-14 rounded-full bg-[var(--background-secondary)] flex items-center justify-center text-[var(--primary)] mb-4.5">
                         <Folder size={28} />
                       </div>
-                      <h3 className="text-[17px] mb-1.5">
+                      <h3 className="text-[17px] font-bold text-[var(--heading)] mb-1.5" style={{ fontFamily: "var(--font-heading)" }}>
                         No projects added yet
                       </h3>
-                      <p className="text-sm text-[#8a8479] mb-5">
+                      <p className="text-sm text-[var(--muted)] mb-5">
                         This professional has not added any portfolio projects.
                       </p>
                       <button
                         type="button"
-                        className="text-sm font-semibold px-5 py-2.5 rounded-[10px] bg-white border border-[#b8823a] text-[#9c6c2c]"
+                        className="text-sm font-semibold px-5 py-2.5 rounded-[10px] bg-white border border-[var(--primary)] text-[var(--primary)] hover:bg-[var(--background-secondary)] transition cursor-pointer"
                       >
                         Be the first to connect
                       </button>
@@ -400,7 +419,7 @@ export default function UserPortfolioProfile() {
                             }
                             className="group text-left"
                           >
-                            <div className="aspect-square rounded-[10px] overflow-hidden bg-[#f7f2ea]">
+                            <div className="aspect-square rounded-[10px] overflow-hidden bg-[var(--background-secondary)] border border-[var(--border)]">
                               {image && !failedImages[project.id] ? (
                                 <img
                                   src={image}
@@ -414,12 +433,12 @@ export default function UserPortfolioProfile() {
                                   className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                                 />
                               ) : (
-                                <div className="w-full h-full flex items-center justify-center text-[#b8823a] font-serif text-2xl">
+                                <div className="w-full h-full flex items-center justify-center text-[var(--primary)] font-serif text-2xl">
                                   {project.title?.[0] || "P"}
                                 </div>
                               )}
                             </div>
-                            <p className="text-[13px] font-medium mt-1.5 truncate">
+                            <p className="text-[13px] font-medium mt-1.5 truncate text-[var(--heading)]">
                               {project.title || "Untitled project"}
                             </p>
                           </button>
@@ -443,9 +462,64 @@ export default function UserPortfolioProfile() {
                 )}
 
                 {activeTab === "Reviews" && (
-                  <p className="text-[14.5px] leading-relaxed text-[#55504a]">
-                    No reviews yet.
-                  </p>
+                  <div className="space-y-6">
+                    {loadingReviews ? (
+                      <div className="py-12 text-center text-xs text-[#8a8479]">
+                        Loading client reviews...
+                      </div>
+                    ) : userReviews.length === 0 ? (
+                      <div className="flex flex-col items-center text-center py-12 px-5 bg-[#faf6ee] rounded-xl border border-[#f0e6d2]">
+                        <Award size={36} className="text-[#b8823a] opacity-50 mb-3" />
+                        <h3 className="text-base font-bold text-[#1c1712] mb-1">
+                          No Client Reviews Yet
+                        </h3>
+                        <p className="text-xs text-[#8a8479] max-w-sm">
+                          This professional hasn't received public client reviews yet. Reviews are verified and published once projects and milestones are delivered.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-6">
+                        <ReviewsBreakdown
+                          summary={reviewSummary}
+                          activeFilter={reviewsStarFilter}
+                          onSelectFilter={setReviewsStarFilter}
+                        />
+
+                        {reviewsStarFilter && (
+                          <div className="flex items-center gap-2 text-xs bg-[#f4e6cd]/40 px-3 py-1.5 rounded-md text-[#1c1712] border border-[#b8823a]/30">
+                            <span>Showing {reviewsStarFilter}-Star Reviews</span>
+                            <button
+                              onClick={() => setReviewsStarFilter(null)}
+                              className="text-[11px] font-bold text-[#b8823a] underline ml-2"
+                            >
+                              Clear Filter
+                            </button>
+                          </div>
+                        )}
+
+                        <div className="space-y-4">
+                          {userReviews
+                            .filter((r) => {
+                              if (
+                                reviewsStarFilter &&
+                                Math.round(r.rating) !== Number(reviewsStarFilter)
+                              )
+                                return false;
+                              return true;
+                            })
+                            .map((rev) => (
+                              <ReviewCard
+                                key={rev.id}
+                                review={rev}
+                                isRecipientView={false}
+                                onReviewUpdated={() => refetchReviews()}
+                                onReviewDeleted={() => refetchReviews()}
+                              />
+                            ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
@@ -468,29 +542,7 @@ export default function UserPortfolioProfile() {
               </div>
             )}
 
-            <div className="flex flex-wrap items-center gap-4.5 bg-[#f7f2ea] rounded-2xl p-5.5 sm:p-6">
-              <div className="w-[46px] h-[46px] rounded-full bg-white flex items-center justify-center text-[#b8823a] flex-shrink-0">
-                <Package size={20} />
-              </div>
-
-              <div className="flex-1 min-w-[200px]">
-                <h3 className="text-[15.5px] mb-1 font-semibold">
-                  Looking for the right materials?
-                </h3>
-                <p className="text-[13.5px] text-[#55504a]">
-                  Connect with {user.name} to discuss products, pricing,
-                  availability, and bulk orders.
-                </p>
-              </div>
-
-              <button
-                type="button"
-                className="w-full sm:w-auto sm:ml-auto inline-flex items-center justify-center gap-2 text-sm font-semibold px-5 py-2.5 rounded-[10px] bg-[#b8823a] text-white hover:bg-[#9c6c2c]"
-              >
-                <MessageCircle size={16} />
-                Contact Supplier
-              </button>
-            </div>
+   
           </div>
         </div>
       </section>

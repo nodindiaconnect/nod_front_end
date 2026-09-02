@@ -14,10 +14,12 @@ import {
 } from "lucide-react";
 import { useGetMyBidsQuery } from "../../../ApiSliceComponent/biddingApiSlice";
 import ProjectWorkspace from "../../dashboard/shared/ProjectWorkspace";
+import ProjectDetailsModal from "../../../global/Projectdetailsmodal";
 import Loader from "../../../global/Loader";
 
 export default function ProfessionalProjectsPage({ roleTitle = "Specialist" }) {
   const [selectedProjectId, setSelectedProjectId] = useState(null);
+  const [viewingProject, setViewingProject] = useState(null);
 
   const { data: bidsData, isLoading, isFetching } = useGetMyBidsQuery({
     status: "ACCEPTED",
@@ -115,8 +117,15 @@ export default function ProfessionalProjectsPage({ roleTitle = "Specialist" }) {
 
                 <div className="p-4 border-t border-border bg-[var(--background-secondary)]/50 flex gap-2">
                   <button
+                    onClick={() => setViewingProject(proj)}
+                    className="py-2.5 px-3.5 rounded text-xs font-semibold border border-border bg-white text-heading hover:bg-slate-50 transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+                  >
+                    <Briefcase size={13} /> Specs
+                  </button>
+
+                  <button
                     onClick={() => setSelectedProjectId(proj.id)}
-                    className="w-full py-2.5 px-3 rounded text-xs font-semibold text-white transition flex items-center justify-center gap-1.5 shadow-xs"
+                    className="flex-1 py-2.5 px-3 rounded text-xs font-semibold text-white transition flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
                     style={{ backgroundColor: "var(--primary)" }}
                     onMouseEnter={(e) =>
                       (e.currentTarget.style.backgroundColor = "var(--primary-hover)")
@@ -132,6 +141,14 @@ export default function ProfessionalProjectsPage({ roleTitle = "Specialist" }) {
             );
           })}
         </div>
+      )}
+
+      {/* Project Details / Specifications Modal */}
+      {viewingProject && (
+        <ProjectDetailsModal
+          project={viewingProject}
+          onClose={() => setViewingProject(null)}
+        />
       )}
     </div>
   );

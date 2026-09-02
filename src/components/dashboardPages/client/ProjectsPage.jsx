@@ -1,6 +1,16 @@
-
-import React, { useState } from "react";
+import React, { useState ,useEffect } from "react";
 import "../../../theme.css";
+
+const injectModalAnimationOnce = (() => {
+    let injected = false;
+    return () => {
+        if (injected || typeof document === "undefined") return;
+        injected = true;
+        const style = document.createElement("style");
+        style.textContent = `@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }`;
+        document.head.appendChild(style);
+    };
+})();
 import { useListProjectsQuery, useUpdateProjectAvailabilityMutation } from "./Dashboard/overpageApiSlice";
 import Table, { ExpandableCell } from "../../../global/Table";
 import Loader from "../../../global/Loader";
@@ -9,412 +19,183 @@ import Pagination from "../../../global/pagination";
 import ProjectWorkspace from "../../dashboard/shared/ProjectWorkspace";
 import {
     Plus, CheckCircle, MapPin, Briefcase, Calendar,
-    FileText, ChevronLeft, ChevronRight, X, Upload, Image as ImageIcon,
+    FileText, X, Upload, Image as ImageIcon,
     Video as VideoIcon, Users, MessageCircle, Tag, Home, Ruler, Layers,
     BedDouble, Bath, Palette, Sofa, Heart, AlertTriangle, UserCheck, Clock,
-    Wallet, Flag, StickyNote, FolderKanban, IndianRupee, Globe, Lock,
-    Sparkles
+    Flag, StickyNote, FolderKanban, IndianRupee, Globe, Lock,
+    ListChecks, Wallet, FolderOpen,
 } from "lucide-react";
 
 
 const STATUS_BADGE = {
     WAITING_FOR_QUOTATIONS: { label: "Waiting Quotations", color: "var(--warning)" },
     PROPOSALS_RECEIVED: { label: "Proposals Received", color: "var(--gold)" },
+    PAYMENT_REQUIRED: { label: "Payment Due", color: "var(--warning)" },
     IN_PROGRESS: { label: "Active", color: "var(--primary)" },
     COMPLETED: { label: "Completed", color: "var(--success)" },
     CANCELLED: { label: "Cancelled", color: "var(--danger)" },
 };
 
-const FILE_FIELDS = [
-    { key: "floorPlan", label: "Floor Plan", attachmentType: "FLOOR_PLAN" },
-    { key: "propertyPhoto", label: "Property Photos", attachmentType: "PROPERTY_PHOTO" },
-    { key: "referenceImage", label: "Reference Images", attachmentType: "REFERENCE_IMAGE" },
-    { key: "video", label: "Video Tour", attachmentType: "VIDEO" },
-];
-
-const STEP_META = {
-    basic: "Basics", location: "Location", property: "Property", design: "Design",
-    space: "Current Space", budget: "Budget", involvement: "Communication", files: "Files & Notes",
-};
-
-const STATUS_STYLE = {
-    WAITING_FOR_QUOTATIONS: "Waiting Quotations",
-    PROPOSALS_RECEIVED: "Proposals Received",
-    IN_PROGRESS: "Active",
-    COMPLETED: "Completed",
-    CANCELLED: "Cancelled",
+const STATUS_PILL_CONFIG = {
+    WAITING_FOR_QUOTATIONS: {
+        label: "WAITING QUOTATIONS",
+        bg: "#FEF6E7",
+        border: "#FCD38D",
+        text: "#B45309",
+        dot: "#D97706",
+    },
+    PROPOSALS_RECEIVED: {
+        label: "PROPOSALS RECEIVED",
+        bg: "#EFF6FF",
+        border: "#BFDBFE",
+        text: "#1D4ED8",
+        dot: "#2563EB",
+    },
+    PAYMENT_REQUIRED: {
+        label: "PAYMENT DUE",
+        bg: "#FFFBEB",
+        border: "#FDE68A",
+        text: "#92400E",
+        dot: "#F59E0B",
+    },
+    IN_PROGRESS: {
+        label: "ACTIVE",
+        bg: "#ECFDF5",
+        border: "#A7F3D0",
+        text: "#047857",
+        dot: "#059669",
+    },
+    COMPLETED: {
+        label: "COMPLETED",
+        bg: "#F0FDF4",
+        border: "#BBF7D0",
+        text: "#15803D",
+        dot: "#16A34A",
+    },
+    CANCELLED: {
+        label: "CANCELLED",
+        bg: "#FEF2F2",
+        border: "#FECACA",
+        text: "#B91C1C",
+        dot: "#DC2626",
+    },
 };
 
 const formatEnumLabel = (v) =>
     !v ? "" : v.split("_").map((w) => w[0] + w.slice(1).toLowerCase()).join(" ");
 
-const isVideoUrl = (url = "") => /\.(mp4|mov|webm|avi|mkv)$/i.test(url);
-
-const getSectionsForStatus = (propertyStatus) => {
-    const base = ["basic", "location", "property", "design"];
-    if (propertyStatus !== "NEW_CONSTRUCTION") base.push("space");
-    base.push("budget", "involvement", "files");
-    return base;
+const formatServicesRequired = (project) => {
+    if (project.servicesRequired && Array.isArray(project.servicesRequired) && project.servicesRequired.length > 0) {
+        const labels = {
+            ARCHITECT: "Architecture",
+            INTERIOR_DESIGNER: "Interiors",
+            CONTRACTOR: "Construction",
+        };
+        return project.servicesRequired.map((s) => labels[s] || formatEnumLabel(s)).join(", ");
+    }
+    if (typeof project.servicesRequired === "string" && project.servicesRequired) {
+        return formatEnumLabel(project.servicesRequired);
+    }
+    if (project.propertyStatus) {
+        return formatEnumLabel(project.propertyStatus);
+    }
+    return "Architecture, Interiors & Construction";
 };
 
+const formatTimeline = (project) => {
+    const formatSingle = (d) => {
+        if (!d) return null;
+        try {
+            const date = new Date(d);
+            if (isNaN(date.getTime())) return null;
+            return date.toLocaleDateString("en-GB", {
+                day: "numeric",
+                month: "short",
+                year: "numeric",
+            });
+        } catch {
+            return null;
+        }
+    };
 
-function SectionHeading({ children, Icon }) {
-    return (
-        <div className="flex items-center gap-2 mb-3">
-            {Icon && (
-                <div className="w-7 h-7 rounded-sm flex items-center justify-center flex-shrink-0" style={{ backgroundColor: "var(--background-secondary)" }}>
-                    <Icon size={15} style={{ color: "var(--primary)" }} />
-                </div>
-            )}
-            <h3
-                className="text-sm uppercase tracking-wide text-heading"
-                style={{ fontFamily: "var(--font-heading)", fontWeight: 700 }}
-            >
-                {children}
-            </h3>
-        </div>
-    );
-}
+    const start = formatSingle(project.startDate) || (project.createdAt ? formatSingle(project.createdAt) : "9 Oct 2026");
+    const end = formatSingle(project.completionDate) || "14 Nov 2026";
 
-function DetailRow({ label, value, Icon }) {
-    return (
-        <div className="flex items-start gap-3 py-3 px-1">
-            <div className="w-8 h-8 rounded-sm flex items-center justify-center flex-shrink-0 mt-0.5" style={{ backgroundColor: "var(--background-secondary)" }}>
-                {Icon && <Icon size={15} style={{ color: "var(--primary)" }} />}
-            </div>
-            <div className="min-w-0 flex-1">
-                <div className="text-[11px] uppercase tracking-wide text-muted mb-0.5" style={{ fontWeight: 700 }}>
-                    {label}
-                </div>
-                <div className="text-sm text-heading break-words" style={{ fontWeight: 400 }}>
-                    {value === "" || value === null || value === undefined ? "—" : value}
-                </div>
-            </div>
-        </div>
-    );
-}
+    return { start, end };
+};
 
-function DetailGrid({ items }) {
-    return (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 rounded-sm border border-border p-2 sm:p-3 bg-background">
-            {items.map((item, idx) => <DetailRow key={idx} {...item} />)}
-        </div>
-    );
-}
-
-function ProjectDetailsModal({ project, onClose }) {
-    const [sectionIndex, setSectionIndex] = useState(0);
-    if (!project) return null;
-
-    const isVideoUrl = (url = "") => /\.(mp4|mov|webm|avi|mkv)$/i.test(url);
-    const isPdfUrl = (url = "") => /\.pdf$/i.test(url);
-    const isUnrenderableImage = (url = "") => /\.(heic|heif)$/i.test(url);
-
-    const sectionKeys = getSectionsForStatus(project.propertyStatus);
-    const currentKey = sectionKeys[sectionIndex] || sectionKeys[0];
-    const isFirst = sectionIndex === 0;
-    const isLast = sectionIndex === sectionKeys.length - 1;
-
-    const attachmentsByType = (project.attachments || []).reduce((acc, att) => {
-        acc[att.type] = acc[att.type] || [];
-        acc[att.type].push(att);
-        return acc;
-    }, {});
-
-    return (
-        <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm p-0 sm:p-4" onClick={onClose}>
-            <div className="w-full sm:max-w-3xl bg-white sm:rounded-sm flex flex-col" style={{ maxHeight: "92vh" }} onClick={(e) => e.stopPropagation()}>
-
-                {/* Header */}
-                <div className="flex justify-between items-start gap-3 p-4 sm:p-5 border-b border-border">
-                    <div className="min-w-0 flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-sm flex items-center justify-center flex-shrink-0" style={{ backgroundColor: "var(--primary)" }}>
-                            <Briefcase size={18} className="text-white" />
-                        </div>
-                        <div className="min-w-0">
-                            <h2
-                                className="text-lg sm:text-xl"
-                                style={{
-                                    fontFamily: "var(--font-heading)",
-                                    fontWeight: 700,
-                                    color: "var(--heading)",
-                                }}
-                            >
-                                <span
-                                    className="text-sm font-semibold uppercase tracking-wider mr-2"
-                                    style={{ color: "var(--text-muted)" }}
-                                >
-                                    Title :--
-                                </span>
-
-                                <span className="text-heading">
-                                    {project.title || "Project Details"}
-                                </span>
-                            </h2>
-                            <p className="text-xs sm:text-sm text-muted mt-0.5" style={{ fontWeight: 400 }}>
-                                Section {sectionIndex + 1} of {sectionKeys.length} · {STEP_META[currentKey]}
-                            </p>
-                        </div>
-                    </div>
-                    <button onClick={onClose} className="text-muted hover:text-text transition-colors p-1 -mr-1 shrink-0" aria-label="Close">
-                        <X size={22} />
-                    </button>
-                </div>
-
-                {/* Body */}
-                <div className="px-4 sm:px-5 py-4 overflow-y-auto flex-1 space-y-5">
-
-                    {currentKey === "basic" && (
-                        <>
-                            <div>
-                                <SectionHeading Icon={FileText}>Basic Information</SectionHeading>
-                                <div className="space-y-3">
-                                    <DetailGrid items={[
-                                        { label: "Project Title", value: project.title, Icon: FileText },
-                                        { label: "Current Stage", value: formatEnumLabel(project.status), Icon: CheckCircle },
-                                    ]} />
-                                    <DetailGrid items={[
-                                        { label: "Category", value: formatEnumLabel(project.category), Icon: Tag },
-                                        { label: "Property Status", value: formatEnumLabel(project.propertyStatus), Icon: Home },
-                                    ]} />
-                                    <DetailGrid items={[
-                                        { label: "Services Required", value: (project.servicesRequired || []).map(formatEnumLabel).join(", "), Icon: Briefcase },
-                                    ]} />
-                                </div>
-                            </div>
-
-                            <div>
-                                <SectionHeading Icon={FileText}>Description</SectionHeading>
-                                <div className="rounded-sm border border-border p-3 bg-background">
-                                    <div className="text-sm text-heading whitespace-pre-wrap break-words" style={{ fontWeight: 400 }}>
-                                        {project.description || "—"}
-                                    </div>
-                                </div>
-                            </div>
-                        </>
-                    )}
-
-                    {currentKey === "location" && (
-                        <div>
-                            <SectionHeading Icon={MapPin}>Location Details</SectionHeading>
-                            <div className="space-y-3">
-                                <DetailGrid items={[
-                                    { label: "Address", value: project.address, Icon: MapPin },
-                                    { label: "City", value: project.city, Icon: MapPin },
-                                ]} />
-                                <DetailGrid items={[
-                                    { label: "State", value: project.state, Icon: MapPin },
-                                    { label: "Pincode", value: project.pincode, Icon: MapPin },
-                                ]} />
-                            </div>
-                        </div>
-                    )}
-
-                    {currentKey === "property" && (
-                        <div>
-                            <SectionHeading Icon={Briefcase}>Property Details</SectionHeading>
-                            <div className="space-y-3">
-                                <DetailGrid items={[
-                                    { label: "Property Size (sq ft)", value: project.propertySize, Icon: Ruler },
-                                    { label: "Number of Floors", value: project.numberOfFloors, Icon: Layers },
-                                ]} />
-                                <DetailGrid items={[
-                                    { label: "Number of Bedrooms", value: project.numberOfBedrooms, Icon: BedDouble },
-                                    { label: "Number of Bathrooms", value: project.numberOfBathrooms, Icon: Bath },
-                                ]} />
-                            </div>
-                        </div>
-                    )}
-
-                    {currentKey === "design" && (
-                        <div>
-                            <SectionHeading Icon={Palette}>Design Preferences</SectionHeading>
-                            <div className="space-y-3">
-                                <DetailGrid items={[
-                                    { label: "Design Style", value: (project.designStyle || []).map(formatEnumLabel).join(", "), Icon: Palette },
-                                    { label: "Space Requirements", value: (project.spaceRequirements || []).map(formatEnumLabel).join(", "), Icon: Sofa },
-                                ]} />
-                                <DetailGrid items={[
-                                    { label: "Color Preferences", value: project.colorPreferences, Icon: Palette },
-                                ]} />
-                            </div>
-                        </div>
-                    )}
-
-                    {currentKey === "space" && (
-                        <div>
-                            <SectionHeading Icon={Heart}>Current Space Context</SectionHeading>
-                            <div className="space-y-3">
-                                <DetailGrid items={[
-                                    { label: "What they like", value: project.currentSpaceLikes, Icon: Heart },
-                                    { label: "Problems to solve", value: project.currentSpaceProblems, Icon: AlertTriangle },
-                                ]} />
-                                <DetailGrid items={[
-                                    { label: "Accessibility Needs", value: project.accessibilityNeeds, Icon: UserCheck },
-                                    { label: "Who uses the space", value: project.spaceUsers, Icon: Users },
-                                ]} />
-                            </div>
-                        </div>
-                    )}
-
-                    {currentKey === "budget" && (
-                        <div>
-                            <SectionHeading Icon={IndianRupee}>Budget & Timeline</SectionHeading>
-                            <div className="space-y-3">
-                                <DetailGrid items={[
-                                    { label: "Minimum Budget", value: project.budgetMin ? `₹${project.budgetMin}` : "", Icon: IndianRupee },
-                                    { label: "Maximum Budget", value: project.budgetMax ? `₹${project.budgetMax}` : "", Icon: IndianRupee },
-                                ]} />
-                                <DetailGrid items={[
-                                    { label: "Start Date", value: project.startDate ? new Date(project.startDate).toLocaleDateString() : "", Icon: Calendar },
-                                    { label: "Completion Date", value: project.completionDate ? new Date(project.completionDate).toLocaleDateString() : "", Icon: Calendar },
-                                ]} />
-                                <DetailGrid items={[
-                                    { label: "Priority", value: formatEnumLabel(project.priority), Icon: Flag },
-                                ]} />
-                            </div>
-                        </div>
-                    )}
-
-                    {currentKey === "involvement" && (
-                        <div>
-                            <SectionHeading Icon={Users}>Involvement & Communication</SectionHeading>
-                            <div className="space-y-3">
-                                <DetailGrid items={[
-                                    { label: "Client Involvement", value: formatEnumLabel(project.clientInvolvement), Icon: Users },
-                                    { label: "Preferred Communication", value: formatEnumLabel(project.preferredCommunication), Icon: MessageCircle },
-                                ]} />
-                                <DetailGrid items={[
-                                    { label: "Preferred Working Hours", value: project.preferredWorkingHours, Icon: Clock },
-                                    { label: "Site Visit Required", value: project.siteVisitRequired ? "Yes" : "No", Icon: MapPin },
-                                ]} />
-                            </div>
-                        </div>
-                    )}
-
-                    {currentKey === "files" && (
-                        <>
-                            <div>
-                                <SectionHeading Icon={Upload}>Attachments</SectionHeading>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    {FILE_FIELDS.map(({ key, label, attachmentType }) => {
-                                        const items = attachmentsByType[attachmentType] || [];
-                                        return (
-                                            <div key={key} className="rounded-sm border border-border p-3 bg-background">
-                                                <div className="flex items-center gap-2 mb-2">
-                                                    <div className="w-7 h-7 rounded-sm flex items-center justify-center flex-shrink-0" style={{ backgroundColor: "var(--background-secondary)" }}>
-                                                        <ImageIcon size={14} style={{ color: "var(--primary)" }} />
-                                                    </div>
-                                                    <span className="text-xs text-heading uppercase tracking-wide" style={{ fontWeight: 700 }}>{label}</span>
-                                                </div>
-                                                {items.length === 0 ? (
-                                                    <div className="text-sm text-muted italic pl-1" style={{ fontWeight: 400 }}>
-                                                        No {label.toLowerCase()} uploaded
-                                                    </div>
-                                                ) : (
-                                                    <div className="grid grid-cols-3 gap-2">
-                                                        {items.map((att) => (
-                                                            <a key={att.id} href={att.url} target="_blank" rel="noreferrer"
-                                                                className="block rounded-sm overflow-hidden border border-border hover:border-primary transition-colors bg-white aspect-square relative">
-                                                                {isVideoUrl(att.url) ? (
-                                                                    <div className="w-full h-full flex flex-col items-center justify-center gap-1">
-                                                                        <VideoIcon size={20} className="text-muted" />
-                                                                        <span className="text-[9px] text-muted px-1 text-center" style={{ fontWeight: 400 }}>View video</span>
-                                                                    </div>
-                                                                ) : isPdfUrl(att.url) ? (
-                                                                    <div className="w-full h-full flex flex-col items-center justify-center gap-1">
-                                                                        <FileText size={20} className="text-muted" />
-                                                                        <span className="text-[9px] text-muted px-1 text-center" style={{ fontWeight: 400 }}>View PDF</span>
-                                                                    </div>
-                                                                ) : isUnrenderableImage(att.url) ? (
-                                                                    <div className="w-full h-full flex flex-col items-center justify-center gap-1">
-                                                                        <ImageIcon size={20} className="text-muted" />
-                                                                        <span className="text-[9px] text-muted px-1 text-center" style={{ fontWeight: 400 }}>View image</span>
-                                                                    </div>
-                                                                ) : (
-                                                                    <img src={att.url} alt={label} className="w-full h-full object-cover" />
-                                                                )}
-                                                            </a>
-                                                        ))}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-
-                            <div>
-                                <SectionHeading Icon={StickyNote}>Additional Notes</SectionHeading>
-                                <div className="rounded-sm border border-border p-3 bg-background">
-                                    <div className="text-sm text-heading whitespace-pre-wrap break-words" style={{ fontWeight: 400 }}>
-                                        {project.additionalNotes || "—"}
-                                    </div>
-                                </div>
-                            </div>
-                        </>
-                    )}
-                </div>
-
-                {/* Footer */}
-                <div className="flex items-center gap-3 p-4 sm:p-5 border-t border-border">
-                    {!isFirst ? (
-                        <button type="button" onClick={() => setSectionIndex((i) => Math.max(0, i - 1))}
-                            className="flex items-center gap-1 px-5 py-2.5 border rounded-sm"
-                            style={{ borderColor: "var(--primary)", color: "var(--primary)", fontWeight: 600 }}>
-                            <ChevronLeft size={18} /> Back
-                        </button>
-                    ) : <span />}
-                    <div className="ml-auto flex gap-3">
-                        <button type="button" onClick={onClose} className="px-5 py-2.5 border rounded-sm"
-                            style={{ borderColor: "var(--border)", color: "var(--muted)", fontWeight: 600 }}>
-                            Close
-                        </button>
-                        {!isLast && (
-                            <button type="button" onClick={() => setSectionIndex((i) => Math.min(sectionKeys.length - 1, i + 1))}
-                                className="flex items-center gap-1 px-5 py-2.5 text-white rounded-sm"
-                                style={{ backgroundColor: "var(--primary)", fontWeight: 600 }}
-                                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--primary-hover)")}
-                                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "var(--primary)")}>
-                                Next <ChevronRight size={18} />
-                            </button>
-                        )}
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-}
-
-
+import ProjectDetailsModal from "../../../global/Projectdetailsmodal";
+import EditProjectModal from "./EditProjectModal";
+import { Pencil, Search, ChevronDown, ChevronLeft, ChevronRight, Eye, Sparkles } from "lucide-react";
 
 export default function ProjectsPage() {
     const [showForm, setShowForm] = useState(false);
     const [selectedProject, setSelectedProject] = useState(null);
+    const [editingProject, setEditingProject] = useState(null);
     const [workspaceProjectId, setWorkspaceProjectId] = useState(null);
+    const [workspaceInitialTab, setWorkspaceInitialTab] = useState("overview");
+    const [activeActionProject, setActiveActionProject] = useState(null);
+    const [menuCoords, setMenuCoords] = useState({ top: 0, right: 0, openUp: false });
     const [currentPage, setCurrentPage] = useState(1);
-    const [limit] = useState(10);
+    const [limit, setLimit] = useState(10);
     const [statusFilter, setStatusFilter] = useState("");
+    const [searchQuery, setSearchQuery] = useState("");
 
-    const { data: projectsData, isLoading: isLoadingProjects, isFetching } = useListProjectsQuery({
+    const { data: projectsData, isLoading: isLoadingProjects, isFetching, refetch: refetchProjects } = useListProjectsQuery({
         page: currentPage,
         limit: limit,
         ...(statusFilter && { status: statusFilter }),
     });
 
+    const [updateProjectAvailability, { isLoading: isUpdatingAvailability }] = useUpdateProjectAvailabilityMutation();
+
+    // Close action dropdown on outside click, window scroll or resize
+    useEffect(() => {
+        const handleClose = () => setActiveActionProject(null);
+        if (activeActionProject) {
+            window.addEventListener("click", handleClose);
+            window.addEventListener("scroll", handleClose, true);
+            window.addEventListener("resize", handleClose);
+            return () => {
+                window.removeEventListener("click", handleClose);
+                window.removeEventListener("scroll", handleClose, true);
+                window.removeEventListener("resize", handleClose);
+            };
+        }
+    }, [activeActionProject]);
+
+    const handleToggleActions = (e, project) => {
+        e.stopPropagation();
+        if (activeActionProject?.id === project.id) {
+            setActiveActionProject(null);
+            return;
+        }
+        const rect = e.currentTarget.getBoundingClientRect();
+        const spaceBelow = window.innerHeight - rect.bottom;
+        const openUp = spaceBelow < 220;
+
+        setMenuCoords({
+            top: openUp ? rect.top - 6 : rect.bottom + 6,
+            right: window.innerWidth - rect.right,
+            openUp,
+        });
+        setActiveActionProject(project);
+    };
+
     if (workspaceProjectId) {
         return (
-            <div className="w-full py-2 px-3 sm:px-6 lg:px-10 sm:py-6">
+            <div className="min-h-screen w-full bg-[var(--background)] p-4 sm:p-6 lg:p-8">
                 <ProjectWorkspace
                     projectId={workspaceProjectId}
-                    onBack={() => setWorkspaceProjectId(null)}
+                    initialTab={workspaceInitialTab}
+                    onBack={() => {
+                        setWorkspaceProjectId(null);
+                        setWorkspaceInitialTab("overview");
+                    }}
                 />
             </div>
         );
     }
-
-
-
 
     const handleAvailabilityChange = async (projectId, currentStatus, newStatus) => {
         try {
@@ -422,15 +203,12 @@ export default function ProjectsPage() {
                 projectId,
                 status: newStatus,
             }).unwrap();
-            // Success - refetch will happen automatically via invalidatesTags
+            refetchProjects();
         } catch (error) {
             console.error("Failed to update availability:", error);
             alert("Failed to update project status");
         }
     };
-
-
-    const [updateProjectAvailability, { isLoading: isUpdatingAvailability }] = useUpdateProjectAvailabilityMutation();
 
     const handlePageChange = (newPage) => {
         setCurrentPage(newPage);
@@ -442,284 +220,399 @@ export default function ProjectsPage() {
         setCurrentPage(1);
     };
 
-    const projectColumns = [
-        {
-            key: "title",
-            label: "Project Details",
-            icon: FolderKanban,
-            width: "20%",
-            render: (project) => (
-                <div className="min-w-0 flex flex-col gap-4">
+    const rawProjects = projectsData?.data || [];
+    const pagination = projectsData?.pagination || {};
 
-                    {/* Title */}
-                    <div>
-                        <div
-                            className="text-[11px] font-extrabold uppercase tracking-widest mb-2"
-                            style={{ color: "var(--heading)" }}
-                        >
-                            TITLE
-                        </div>
-
-                        <div
-                            className="text-base font-semibold leading-6"
-                            style={{
-                                color: "var(--text)",
-                                fontFamily: "var(--font-heading)",
-                            }}
-                        >
-                            {project.title}
-                        </div>
-                    </div>
-
-                    {/* Divider */}
-                    {/* <div className="border-t border-border"></div> */}
-
-                    {/* Description */}
-                    <div>
-                        <div
-                            className="text-[11px] font-extrabold uppercase tracking-widest mb-2"
-                            style={{ color: "var(--heading)" }}
-                        >
-                            DESCRIPTION
-                        </div>
-
-                        <div
-                            className="text-sm leading-6"
-                            style={{ color: "var(--text)" }}
-                        >
-                            <p className="line-clamp-2">
-                                {project.description}
-                            </p>
-
-                            {project.description &&
-                                project.description.length > 80 && (
-                                    <button
-                                        type="button"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            setSelectedProject(project);
-                                        }}
-                                        className="text-xs font-semibold mt-2 hover:underline"
-                                        style={{ color: "var(--primary)" }}
-                                    >
-                                        Read more →
-                                    </button>
-                                )}
-                        </div>
-                    </div>
-                </div>
-            ),
-        },
-        {
-            key: "category",
-            label: "Category & Priority",
-            icon: Tag,
-            width: "15%",
-            render: (project) => (
-                <div className="flex flex-col items-center justify-center gap-2 text-center">
-                    <span className="inline-flex items-center justify-center px-2.5 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium">
-                        <ExpandableCell
-                            text={formatEnumLabel(project.category)}
-                            maxLines={1}
-                        />
-                    </span>
-
-                    <span className="text-lg font-bold text-text leading-none">
-                        &amp;
-                    </span>
-
-                    <span className="inline-flex items-center justify-center px-2.5 py-1 bg-gold/10 text-gold rounded-full text-xs font-medium">
-                        <ExpandableCell
-                            text={formatEnumLabel(project.priority)}
-                            maxLines={1}
-                        />
-                    </span>
-                </div>
-            ),
-        },
-        {
-            key: "location", label: "Location", icon: MapPin, width: "15%",
-            render: (project) => <ExpandableCell text={`${project.city}, ${project.state}`} maxLines={2} />,
-        },
-        {
-            key: "budget", label: "Budget", icon: IndianRupee, width: "14%",
-            render: (project) => (
-                <span className="text-xs leading-snug">
-                    ₹{project.budgetMin} – ₹{project.budgetMax}
-                </span>
-            ),
-        },
-        {
-            key: "status", label: "Status", icon: CheckCircle, width: "13%",
-            render: (project) => {
-                const s = STATUS_BADGE[project.status] || STATUS_BADGE.WAITING_FOR_QUOTATIONS;
-                return (
-                    <span
-                        className="text-[10px] px-2 py-1 rounded-sm font-semibold uppercase tracking-wide inline-block"
-                        style={{ background: `color-mix(in srgb, ${s.color} 12%, transparent)`, color: s.color }}
-                    >
-                        {s.label}
-                    </span>
-                );
-            },
-        },
-        {
-            key: "timeline", label: "Timeline", icon: Calendar, width: "13%",
-            render: (project) => (
-                <span className="text-xs">
-                    {new Date(project.startDate).toLocaleDateString()} – {new Date(project.completionDate).toLocaleDateString()}
-                </span>
-            ),
-        },
-        {
-            key: "actions", label: "Actions", width: "24%",
-            render: (project) => (
-                <div className="flex items-center gap-1.5">
-                    <button
-                        className="px-3 py-1.5 text-white rounded-sm font-semibold text-xs transition-colors whitespace-nowrap flex items-center gap-1 shadow-xs"
-                        style={{ backgroundColor: "var(--primary)" }}
-                        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--primary-hover)")}
-                        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "var(--primary)")}
-                        onClick={(e) => { e.stopPropagation(); setWorkspaceProjectId(project.id); }}
-                    >
-                        <FolderKanban size={13} /> Workspace
-                    </button>
-
-                    <button
-                        className="px-2.5 py-1.5 border border-border bg-white text-heading rounded-sm font-medium text-xs hover:bg-background-secondary transition-colors whitespace-nowrap"
-                        onClick={(e) => { e.stopPropagation(); setSelectedProject(project); }}
-                    >
-                        Specs
-                    </button>
-
-                    {project.availabilityStatus === "CLOSED" ? (
-                        <button
-                            className="flex items-center gap-1 px-2.5 py-1.5 rounded-sm font-medium text-xs transition-colors whitespace-nowrap text-white"
-                            style={{ backgroundColor: "#10b981" }}
-                            disabled={isUpdatingAvailability}
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                handleAvailabilityChange(project.id, "CLOSED", "OPEN");
-                            }}
-                            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#059669")}
-                            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#10b981")}
-                        >
-                            <Globe size={13} /> Open
-                        </button>
-                    ) : (
-                        <button
-                            className="flex items-center gap-1 px-2.5 py-1.5 rounded-sm font-medium text-xs transition-colors whitespace-nowrap text-white"
-                            style={{ backgroundColor: "#ef4444" }}
-                            disabled={isUpdatingAvailability}
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                handleAvailabilityChange(project.id, "OPEN", "CLOSED");
-                            }}
-                            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#dc2626")}
-                            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#ef4444")}
-                        >
-                            <Lock size={13} /> Close
-                        </button>
-                    )}
-                </div>
-            ),
-        },
-
-
-    ];
+    const filteredProjects = rawProjects.filter((p) => {
+        if (!searchQuery.trim()) return true;
+        const term = searchQuery.toLowerCase();
+        return (
+            p.title?.toLowerCase().includes(term) ||
+            p.city?.toLowerCase().includes(term) ||
+            p.state?.toLowerCase().includes(term) ||
+            p.category?.toLowerCase().includes(term) ||
+            p.scope?.toLowerCase().includes(term)
+        );
+    });
 
     return (
-        <div className="min-h-screen w-full bg-background text-text">
-            <div className="w-full max-w-none py-2 px-3 sm:px-6 lg:px-10 sm:py-8">
-                <div className="mb-4 sm:mb-6">
-                    <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-heading mb-1" style={{ fontFamily: "var(--font-heading)" }}>
-                        Projects
-                    </h1>
-                    <p className="text-sm sm:text-base text-muted">Create and manage your design projects</p>
+        <div className="min-h-screen w-full bg-[var(--background)] text-[var(--text)]">
+            <div className="w-full py-4 px-3 sm:px-6 lg:px-10 sm:py-8 space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[var(--border)] pb-5">
+                    <div>
+                        <div className="flex items-center gap-2">
+                            <h1
+                                className="text-2xl sm:text-3xl font-bold text-[var(--heading)]"
+                                style={{ fontFamily: "var(--font-heading)" }}
+                            >
+                                My Projects
+                            </h1>
+                            <span className="text-xs px-2.5 py-0.5 rounded-full bg-[var(--gold)]/15 text-[var(--heading)] font-bold border border-[var(--gold)]/30">
+                                Client Dashboard
+                            </span>
+                        </div>
+                        <p className="text-xs sm:text-sm text-[var(--muted)] mt-1">
+                            Track and manage your renovation, interior, and architectural projects
+                        </p>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                        <button
+                            onClick={() => setShowForm(true)}
+                            className="w-full sm:w-auto px-5 py-2.5 bg-[var(--gold)] text-black rounded-xl font-bold text-xs uppercase tracking-wider hover:brightness-105 transition shadow-sm flex items-center justify-center gap-2 cursor-pointer"
+                        >
+                            <Plus size={16} /> Create New Project
+                        </button>
+                    </div>
                 </div>
 
-                {!showForm && (
-                    <button
-                        onClick={() => setShowForm(true)}
-                        className="mb-6 flex items-center gap-2 px-6 py-3 text-white rounded-sm font-medium transition-colors w-full sm:w-auto justify-center"
-                        style={{ backgroundColor: "var(--primary)" }}
-                        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--primary-hover)")}
-                        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "var(--primary)")}
-                    >
-                        <Plus size={20} /> Create New Project
-                    </button>
+                {showForm && (
+                    <CreateProjectForm
+                        onClose={() => setShowForm(false)}
+                        onSuccess={() => {
+                            setShowForm(false);
+                            refetchProjects();
+                        }}
+                    />
                 )}
 
-                {showForm && <CreateProjectForm onClose={() => setShowForm(false)} />}
-
-                <div className="w-full">
-                    <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 mb-4">
-                        <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-heading" style={{ fontFamily: "var(--font-heading)" }}>
-                            Your Projects
-                        </h2>
-
-                        <div className="flex flex-wrap gap-2">
-                            {["", "WAITING_FOR_QUOTATIONS", "PROPOSALS_RECEIVED", "IN_PROGRESS", "COMPLETED", "CANCELLED"].map((s) => (
+                <div className="space-y-4">
+                    <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+                        <div className="flex items-center gap-1.5 overflow-x-auto pb-2 md:pb-0 scrollbar-none">
+                            {[
+                                { label: "All Projects", value: "" },
+                                { label: "Waiting Quotations", value: "WAITING_FOR_QUOTATIONS" },
+                                { label: "Proposals Received", value: "PROPOSALS_RECEIVED" },
+                                { label: "Active", value: "IN_PROGRESS" },
+                                { label: "Completed", value: "COMPLETED" },
+                                { label: "Cancelled", value: "CANCELLED" },
+                            ].map((tab) => (
                                 <button
-                                    key={s || "ALL"}
-                                    onClick={() => handleStatusFilter(s)}
-                                    className="text-[10px] sm:text-[11px] px-3 py-1.5 rounded-sm font-semibold uppercase tracking-wide whitespace-nowrap transition-colors"
-                                    style={{
-                                        backgroundColor: statusFilter === s ? "var(--primary)" : "var(--background-secondary)",
-                                        color: statusFilter === s ? "#fff" : "var(--muted)",
-                                    }}
+                                    key={tab.value}
+                                    onClick={() => handleStatusFilter(tab.value)}
+                                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition cursor-pointer ${
+                                        statusFilter === tab.value
+                                            ? "bg-[var(--gold)] text-black font-bold shadow-xs"
+                                            : "bg-[var(--surface)] text-[var(--muted)] hover:text-[var(--heading)] border border-[var(--border)]"
+                                    }`}
                                 >
-                                    {s ? STATUS_STYLE[s] : "All"}
+                                    {tab.label}
                                 </button>
                             ))}
                         </div>
-                    </div>
 
-                    {isLoadingProjects ? (
-                        <Loader />
-                    ) : projectsData?.data && projectsData.data.length > 0 ? (
-                        <>
-                            <div className="w-full overflow-x-auto">
-                                <Table
-                                    columns={projectColumns}
-                                    data={projectsData.data}
-                                    showSerialNo={true}
-                                    startIndex={(currentPage - 1) * limit}
-                                    rowKey="id"
-                                    minWidth="900px"
-                                    emptyMessage="No projects yet."
-                                />
+                        <div className="flex items-center gap-2">
+                            <div className="relative">
+                                <select
+                                    value={limit}
+                                    onChange={(e) => {
+                                        setLimit(Number(e.target.value));
+                                        setCurrentPage(1);
+                                    }}
+                                    className="appearance-none pl-3 pr-8 py-2 bg-white border border-[var(--border)] rounded-lg text-xs font-bold text-[var(--heading)] outline-none cursor-pointer"
+                                >
+                                    <option value={10}>10</option>
+                                    <option value={25}>25</option>
+                                    <option value={50}>50</option>
+                                </select>
+                                <ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--muted)] pointer-events-none" />
                             </div>
 
-                            <Pagination
-                                pagination={projectsData.pagination}
-                                onPageChange={handlePageChange}
-                                isFetching={isFetching}
-                            />
-                        </>
-                    ) : (
-                        <div className="text-center py-12">
-                            <Briefcase size={48} className="mx-auto text-muted opacity-50 mb-4" />
-                            <p className="text-muted mb-4">
-                                {statusFilter ? "No projects match this filter." : "No projects yet. Create one to get started."}
-                            </p>
-                            {!statusFilter && (
-                                <button
-                                    onClick={() => setShowForm(true)}
-                                    className="px-6 py-2 text-white rounded-sm font-medium transition-colors"
-                                    style={{ backgroundColor: "var(--primary)" }}
-                                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--primary-hover)")}
-                                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "var(--primary)")}
-                                >
-                                    Create Your First Project
-                                </button>
-                            )}
+                            <div className="relative w-full sm:w-64">
+                                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted)]" />
+                                <input
+                                    type="text"
+                                    placeholder="Search..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="w-full pl-8 pr-3 py-2 border border-[var(--border)] rounded-lg text-xs text-[var(--heading)] outline-none focus:border-[var(--primary)]"
+                                />
+                            </div>
                         </div>
-                    )}
+                    </div>
+
+                    <div className="bg-white border border-[#EDE8E1] rounded-2xl shadow-xs overflow-visible">
+                        {isLoadingProjects ? (
+                            <div className="p-16 text-center text-xs text-[var(--muted)] flex flex-col items-center gap-2">
+                                <div className="w-8 h-8 border-3 border-[var(--primary)] border-t-transparent rounded-full animate-spin" />
+                                <span>Loading project records...</span>
+                            </div>
+                        ) : filteredProjects.length === 0 ? (
+                            <div className="p-16 text-center text-xs text-[var(--muted)] flex flex-col items-center gap-3">
+                                <FolderKanban size={40} className="text-[var(--muted)] opacity-30" />
+                                <h4 className="text-sm font-bold text-[var(--heading)]">No projects found</h4>
+                                <p className="text-[var(--muted)] max-w-sm">
+                                    {statusFilter || searchQuery
+                                        ? "No project records match your active search and status filter."
+                                        : "You haven't posted any projects yet. Click 'Create New Project' to get started."}
+                                </p>
+                            </div>
+                        ) : (
+                            <div className="overflow-x-auto overflow-y-visible rounded-2xl">
+                                <table className="w-full text-left text-xs border-collapse min-w-[1050px]">
+                                    <thead className="bg-[#FAF7F2] text-[#1A1A1A] font-bold text-[11px] uppercase tracking-wider border-b border-[#EDE8E1]">
+                                        <tr>
+                                            <th className="px-5 py-4 w-16 text-left">S.NO</th>
+                                            <th className="px-5 py-4 min-w-[220px]">PROJECT TITLE</th>
+                                            <th className="px-5 py-4 w-48">CATEGORY & SCOPE</th>
+                                            <th className="px-5 py-4 w-44">LOCATION</th>
+                                            <th className="px-5 py-4 w-44">BUDGET RANGE</th>
+                                            <th className="px-5 py-4 w-48 text-center">STATUS</th>
+                                            <th className="px-5 py-4 w-44">TIMELINE</th>
+                                            <th className="px-5 py-4 w-36 text-center">ACTIONS</th>
+                                        </tr>
+                                    </thead>
+
+                                    <tbody className="divide-y divide-[#EDE8E1] text-[#1A1A1A]">
+                                        {filteredProjects.map((project, idx) => {
+                                            const sNo = (currentPage - 1) * limit + idx + 1;
+                                            const s = STATUS_PILL_CONFIG[project.status] || STATUS_PILL_CONFIG.WAITING_FOR_QUOTATIONS;
+                                            const isClosed = project.availabilityStatus === "CLOSED";
+                                            const timeline = formatTimeline(project);
+
+                                            return (
+                                                <tr
+                                                    key={project.id}
+                                                    className="hover:bg-[#FAF7F2]/40 transition duration-150"
+                                                >
+                                                    <td className="px-5 py-4 font-bold text-sm text-[#1A1A1A] align-middle">
+                                                        {sNo}
+                                                    </td>
+
+                                                    <td className="px-5 py-4 align-middle">
+                                                        <div className="flex flex-col">
+                                                            <span
+                                                                onClick={() => setSelectedProject(project)}
+                                                                className="font-bold text-[#1A1A1A] text-sm hover:text-[var(--primary)] transition cursor-pointer"
+                                                                title={project.title}
+                                                            >
+                                                                {project.title}
+                                                            </span>
+                                                            <span className="text-xs text-gray-500 font-normal mt-0.5">
+                                                                {formatServicesRequired(project)}
+                                                            </span>
+                                                        </div>
+                                                    </td>
+
+                                                    <td className="px-5 py-4 align-middle whitespace-nowrap">
+                                                        <div className="flex flex-col">
+                                                            <span className="font-bold text-sm text-[#1A1A1A]">
+                                                                {formatEnumLabel(project.category) || "Residential"}
+                                                            </span>
+                                                            <span className="text-xs text-gray-500 font-normal mt-0.5">
+                                                                {project.scope ? formatEnumLabel(project.scope) : (project.propertyStatus ? formatEnumLabel(project.propertyStatus) : "Full Project")}
+                                                            </span>
+                                                        </div>
+                                                    </td>
+
+                                                    <td className="px-5 py-4 align-middle whitespace-nowrap">
+                                                        <div className="flex items-start gap-2">
+                                                            <MapPin size={15} className="text-gray-400 shrink-0 mt-0.5" />
+                                                            <div className="flex flex-col text-sm text-[#1A1A1A]">
+                                                                <span className="font-medium">{project.city ? `${project.city},` : "—"}</span>
+                                                                <span className="text-xs text-gray-500">{project.state || ""}</span>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+
+                                                    <td className="px-5 py-4 align-middle whitespace-nowrap">
+                                                        <div className="flex flex-col font-bold text-sm text-[#1A1A1A]">
+                                                            <span>₹{project.budgetMin ? Number(project.budgetMin).toLocaleString("en-IN") : "0"} –</span>
+                                                            <span>₹{project.budgetMax ? Number(project.budgetMax).toLocaleString("en-IN") : "0"}</span>
+                                                        </div>
+                                                    </td>
+
+                                                    <td className="px-5 py-4 align-middle whitespace-nowrap text-center">
+                                                        <span
+                                                            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-[11px] font-bold uppercase tracking-wider shadow-2xs"
+                                                            style={{
+                                                                backgroundColor: s.bg,
+                                                                border: `1px solid ${s.border}`,
+                                                                color: s.text,
+                                                            }}
+                                                        >
+                                                            <span
+                                                                className="w-2 h-2 rounded-full shrink-0"
+                                                                style={{ backgroundColor: s.dot }}
+                                                            />
+                                                            {s.label}
+                                                        </span>
+                                                    </td>
+
+                                                    <td className="px-5 py-4 align-middle whitespace-nowrap">
+                                                        <div className="flex items-start gap-2">
+                                                            <Calendar size={15} className="text-gray-400 shrink-0 mt-0.5" />
+                                                            <div className="flex flex-col text-xs font-semibold text-[#1A1A1A]">
+                                                                <span>{timeline.start} –</span>
+                                                                <span>{timeline.end}</span>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+
+                                                    <td className="px-5 py-4 align-middle whitespace-nowrap text-center">
+                                                        <button
+                                                            type="button"
+                                                            onClick={(e) => handleToggleActions(e, project)}
+                                                            className={`inline-flex items-center justify-between gap-2 px-3.5 py-2 bg-white border rounded-xl text-xs font-semibold shadow-xs transition cursor-pointer ${
+                                                                activeActionProject?.id === project.id
+                                                                    ? "border-gray-900 text-gray-900 bg-gray-50"
+                                                                    : "border-gray-200 hover:border-gray-300 text-gray-800 hover:bg-gray-50"
+                                                            }`}
+                                                        >
+                                                            <span>Actions</span>
+                                                            <ChevronDown
+                                                                size={14}
+                                                                className={`text-gray-500 transition-transform duration-150 ${activeActionProject?.id === project.id ? "rotate-180" : ""}`}
+                                                            />
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+
+                        {!isLoadingProjects && filteredProjects.length > 0 && (
+                            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 border-t border-[#EDE8E1] bg-white text-xs text-gray-500">
+                                <div>
+                                    Showing <strong className="text-gray-900 font-bold">{(currentPage - 1) * limit + 1}</strong> to{" "}
+                                    <strong className="text-gray-900 font-bold">
+                                        {Math.min(currentPage * limit, pagination.total || filteredProjects.length)}
+                                    </strong>{" "}
+                                    of <strong className="text-gray-900 font-bold">{pagination.total || filteredProjects.length}</strong> projects
+                                </div>
+
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        onClick={() => handlePageChange(currentPage - 1)}
+                                        disabled={currentPage <= 1}
+                                        className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition"
+                                    >
+                                        <ChevronLeft size={14} />
+                                    </button>
+
+                                    <span className="w-8 h-8 flex items-center justify-center rounded-lg bg-[#FAF0E6] text-gray-900 font-bold text-xs">
+                                        {currentPage}
+                                    </span>
+
+                                    <button
+                                        onClick={() => handlePageChange(currentPage + 1)}
+                                        disabled={currentPage >= (pagination.totalPages || Math.ceil((pagination.total || filteredProjects.length) / limit) || 1)}
+                                        className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition"
+                                    >
+                                        <ChevronRight size={14} />
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
 
+            {activeActionProject && (
+                <div
+                    className="fixed w-44 bg-white rounded-2xl shadow-2xl border border-gray-100 py-1.5 z-[9999] animate-in fade-in zoom-in-95 duration-100 divide-y divide-gray-100 text-left"
+                    style={{
+                        top: `${menuCoords.top}px`,
+                        right: `${menuCoords.right}px`,
+                        transform: menuCoords.openUp ? "translateY(-100%)" : "none",
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    <div className="py-1">
+                        {activeActionProject.status === "PROPOSALS_RECEIVED" && (
+                            <button
+                                onClick={() => {
+                                    const p = activeActionProject;
+                                    setActiveActionProject(null);
+                                    setWorkspaceInitialTab("bids");
+                                    setWorkspaceProjectId(p.id);
+                                }}
+                                className="w-full text-left px-3.5 py-2 text-xs font-medium text-amber-700 hover:bg-amber-50 flex items-center gap-2.5 transition cursor-pointer"
+                            >
+                                <Sparkles size={14} className="text-amber-600 shrink-0" />
+                                <span>Proposals</span>
+                            </button>
+                        )}
+                        <button
+                            onClick={() => {
+                                const p = activeActionProject;
+                                setActiveActionProject(null);
+                                setWorkspaceInitialTab("overview");
+                                setWorkspaceProjectId(p.id);
+                            }}
+                            className="w-full text-left px-3.5 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2.5 transition cursor-pointer"
+                        >
+                            <FolderKanban size={14} className="text-gray-500 shrink-0" />
+                            <span>Workspace</span>
+                        </button>
+                        <button
+                            onClick={() => {
+                                const p = activeActionProject;
+                                setActiveActionProject(null);
+                                setSelectedProject(p);
+                            }}
+                            className="w-full text-left px-3.5 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2.5 transition cursor-pointer"
+                        >
+                            <Eye size={14} className="text-gray-500 shrink-0" />
+                            <span>Specs</span>
+                        </button>
+                        <button
+                            onClick={() => {
+                                const p = activeActionProject;
+                                setActiveActionProject(null);
+                                setEditingProject(p);
+                            }}
+                            className="w-full text-left px-3.5 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2.5 transition cursor-pointer"
+                        >
+                            <Pencil size={14} className="text-gray-500 shrink-0" />
+                            <span>Edit</span>
+                        </button>
+                    </div>
+                    <div className="py-1">
+                        {activeActionProject.availabilityStatus === "CLOSED" ? (
+                            <button
+                                onClick={() => {
+                                    const p = activeActionProject;
+                                    setActiveActionProject(null);
+                                    handleAvailabilityChange(p.id, "CLOSED", "OPEN");
+                                }}
+                                disabled={isUpdatingAvailability}
+                                className="w-full text-left px-3.5 py-2 text-xs font-medium text-emerald-600 hover:bg-emerald-50 flex items-center gap-2.5 transition cursor-pointer"
+                            >
+                                <Globe size={14} className="text-emerald-500 shrink-0" />
+                                <span>Open Bidding</span>
+                            </button>
+                        ) : (
+                            <button
+                                onClick={() => {
+                                    const p = activeActionProject;
+                                    setActiveActionProject(null);
+                                    handleAvailabilityChange(p.id, "OPEN", "CLOSED");
+                                }}
+                                disabled={isUpdatingAvailability}
+                                className="w-full text-left px-3.5 py-2 text-xs font-medium text-rose-600 hover:bg-rose-50 flex items-center gap-2.5 transition cursor-pointer"
+                            >
+                                <Lock size={14} className="text-rose-500 shrink-0" />
+                                <span>Close</span>
+                            </button>
+                        )}
+                    </div>
+                </div>
+            )}
+
             {selectedProject && <ProjectDetailsModal project={selectedProject} onClose={() => setSelectedProject(null)} />}
+
+            {editingProject && (
+                <EditProjectModal
+                    project={editingProject}
+                    isOpen={!!editingProject}
+                    onClose={() => setEditingProject(null)}
+                    onUpdated={() => refetchProjects()}
+                />
+            )}
         </div>
     );
 }

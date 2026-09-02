@@ -58,13 +58,55 @@ export const reviewApiSlice = apiSlice.injectEndpoints({
       ],
     }),
 
+    getReviewById: builder.query({
+      query: (reviewId) => `/reviews/${reviewId}`,
+      providesTags: (result, error, reviewId) => [{ type: "Reviews", id: reviewId }],
+    }),
+
+    updateReview: builder.mutation({
+      query: ({ reviewId, ...body }) => ({
+        url: `/reviews/${reviewId}`,
+        method: "PUT",
+        body,
+      }),
+      invalidatesTags: [
+        "Reviews",
+        "MyReviews",
+        "UserReviews",
+        "ProjectReviews",
+        "EligibleReviews",
+        "Project",
+        "DesignerUserDetails",
+        "ArchitectUserDetails",
+        "ContractorUserDetails",
+      ],
+    }),
+
+    deleteReview: builder.mutation({
+      query: (reviewId) => ({
+        url: `/reviews/${reviewId}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: [
+        "Reviews",
+        "MyReviews",
+        "UserReviews",
+        "ProjectReviews",
+        "EligibleReviews",
+        "Project",
+        "DesignerUserDetails",
+        "ArchitectUserDetails",
+        "ContractorUserDetails",
+      ],
+    }),
+
     replyToReview: builder.mutation({
       query: ({ reviewId, reply }) => ({
         url: `/reviews/${reviewId}/reply`,
         method: "POST",
         body: { reply },
       }),
-      invalidatesTags: ["Reviews", "MyReviews", "UserReviews"],
+      invalidatesTags: ["Reviews", "MyReviews", "UserReviews", "ProjectReviews"],
     }),
   }),
 });
@@ -75,5 +117,8 @@ export const {
   useGetEligibleToReviewQuery,
   useGetUserReviewsQuery,
   useGetProjectReviewsQuery,
+  useGetReviewByIdQuery,
+  useUpdateReviewMutation,
+  useDeleteReviewMutation,
   useReplyToReviewMutation,
 } = reviewApiSlice;

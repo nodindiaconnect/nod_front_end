@@ -114,6 +114,21 @@ export const authApiSlice = apiSlice.injectEndpoints({
                 params: { username },
             }),
         }),
+        // ── CATEGORIES & SPECIALIZATIONS (Dynamic registration) ──
+        getCategoriesAndSpecializations: builder.query({
+            query: () => ({
+                url: "/Auth/categories-specializations",
+                method: "GET",
+            }),
+            providesTags: ["Categories"],
+        }),
+        getCategories: builder.query({
+            query: () => ({
+                url: "/Auth/categories",
+                method: "GET",
+            }),
+            providesTags: ["Categories"],
+        }),
     }),
 });
 
@@ -131,4 +146,6 @@ export const {
     useResendOtpMutation,
     useVerifyRecaptchaMutation,
     useLazyCheckUsernameQuery,
+    useGetCategoriesAndSpecializationsQuery,
+    useGetCategoriesQuery,
 } = authApiSlice;

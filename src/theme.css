@@ -140,3 +140,33 @@
 @media (min-width: 640px) {
   .profile-page__section { padding: 1.5rem; }
 }
+
+/* Thin, elegant, subtle scrollbars across chat & dashboards */
+.chat-scrollbar::-webkit-scrollbar,
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+.chat-scrollbar::-webkit-scrollbar-track,
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.chat-scrollbar::-webkit-scrollbar-thumb,
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(139, 129, 120, 0.25);
+  border-radius: 9999px;
+}
+
+.chat-scrollbar::-webkit-scrollbar-thumb:hover,
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(139, 129, 120, 0.45);
+}
+
+.chat-scrollbar,
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(139, 129, 120, 0.25) transparent;
+}
+

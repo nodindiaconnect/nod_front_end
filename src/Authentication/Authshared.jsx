@@ -191,7 +191,8 @@ export const ROLE_FIELDS = {
         subtitle: "Showcase your style and attract the right clients.",
         fields: [
             { id: "bio", label: "Short Bio", type: "textarea", placeholder: "Tell clients about your design philosophy..." },
-            { id: "specialization", label: "Specialization", type: "select", options: ["Interior Designer", "Exterior Designer", "AutoCAD Designer", "BIM designer", "vastu consultant", "product designer", "Structural Designer", "Landscape Designer", "3D Visualizer"] },
+            { id: "category", label: "Category", type: "category", placeholder: "Select Category" },
+            { id: "specialization", label: "Specialization", type: "specialization", placeholder: "Select Specialization" },
             { id: "style", label: "Signature Style", type: "select", options: ["Modern", "Minimalist", "Luxury", "Scandinavian", "Industrial", "Eclectic"] },
             { id: "experience", label: "Years of Experience", type: "number", placeholder: "e.g. 5" },
             { id: "rate", label: "Hourly Rate (Optional)", type: "number", placeholder: "e.g. 80" },

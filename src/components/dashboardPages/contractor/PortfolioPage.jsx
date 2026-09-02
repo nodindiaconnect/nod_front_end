@@ -1,9 +1,6 @@
-import React from 'react'
+import React from "react";
+import PortfolioManager from "../../dashboard/shared/PortfolioManager";
 
 export default function PortfolioPage() {
-  return (
-    <div>
-      PortfolioPageProposalsPage.jsx
-    </div>
-  )
+  return <PortfolioManager roleTitle="Contractor" roleKey="CONTRACTOR" />;
 }

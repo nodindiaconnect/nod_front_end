@@ -119,7 +119,7 @@ const getStepsForStatus = (propertyStatus) => {
 };
 
 const EMPTY_FORM = {
-    title: "", category: "", servicesRequired: [], description: "",
+    title: "", category: "", scope: "FULL_PROJECT", servicesRequired: ["ARCHITECT", "CONTRACTOR", "INTERIOR_DESIGNER"], description: "",
     address: "", city: "", state: "", pincode: "", propertySize: "",
     numberOfFloors: "", numberOfBedrooms: "", numberOfBathrooms: "",
     propertyStatus: "", designStyle: [], colorPreferences: "",
@@ -129,6 +129,7 @@ const EMPTY_FORM = {
     priority: "NORMAL", siteVisitRequired: false, preferredCommunication: "",
     preferredWorkingHours: "", additionalNotes: "",
 };
+
 
 // Each file-type now holds an array of upload entries (up to MAX_FILES_PER_TYPE):
 // { id, file, status: "uploading" | "success" | "error", error, url }
@@ -153,6 +154,14 @@ const DESCRIPTION_MIN_LENGTH = 30;
 const DESCRIPTION_MAX_LENGTH = 2000;
 
 const genId = () => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+
+const getTodayDateString = () => {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+};
 
 const isValidHex = (hex) => /^#([0-9A-F]{3}|[0-9A-F]{6})$/i.test((hex || "").trim());
 
@@ -440,6 +449,18 @@ export default function CreateProjectForm({ onClose }) {
                 if (!missing.includes("budgetMin")) missing.push("budgetMin");
                 if (!missing.includes("budgetMax")) missing.push("budgetMax");
             }
+            const today = getTodayDateString();
+            if (formData.startDate && formData.startDate < today) {
+                if (!missing.includes("startDate")) missing.push("startDate");
+            }
+            if (formData.completionDate) {
+                if (formData.completionDate < today) {
+                    if (!missing.includes("completionDate")) missing.push("completionDate");
+                }
+                if (formData.startDate && formData.completionDate < formData.startDate) {
+                    if (!missing.includes("completionDate")) missing.push("completionDate");
+                }
+            }
         }
         if (stepKey === "files") {
             const hasPhoto = files.propertyPhoto.some((f) => f.status === "success");
@@ -568,6 +589,16 @@ export default function CreateProjectForm({ onClose }) {
             if (descTooShort) parts.push(`Project Description must be at least ${DESCRIPTION_MIN_LENGTH} characters (currently ${descLen}).`);
             if (descTooLong) parts.push(`Project Description must be under ${DESCRIPTION_MAX_LENGTH} characters (currently ${descLen}).`);
 
+            const today = getTodayDateString();
+            if (formData.startDate && formData.startDate < today) {
+                parts.push("Start Date cannot be in the past.");
+            }
+            if (formData.completionDate && formData.startDate && formData.completionDate < formData.startDate) {
+                parts.push("Completion Date must be on or after Start Date.");
+            } else if (formData.completionDate && formData.completionDate < today) {
+                parts.push("Completion Date cannot be in the past.");
+            }
+
             setStepError(parts.join(" "));
             return;
         }
@@ -663,63 +694,180 @@ export default function CreateProjectForm({ onClose }) {
                             </div>
                         </div>
                     )}
+
                     {currentStepKey === "basic" && (
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                            <div className="space-y-5">
-                                <div>
-                                    <label className="block text-sm font-medium text-heading mb-2">Project Title <span className="text-danger">*</span></label>
-                                    <input type="text" name="title" value={formData.title} onChange={handleInputChange}
-                                        placeholder="e.g., Modern Living Room Renovation" className={inputClass + " w-full " + errCls("title")} />
-                                </div>
-                                <div className="flex flex-col sm:flex-row gap-4">
-                                    <div className="flex-1">
-                                        <label className="block text-sm font-medium text-heading mb-2">Category <span className="text-danger">*</span></label>
-                                        <div className="relative">
-                                            <select name="category" value={formData.category} onChange={handleInputChange}
-                                                className={selectWrapClass + " " + errCls("category")}>
-                                                <option value="">Select category</option>
-                                                {(ENUMS.category || []).map((c) => <option key={c} value={c}>{formatEnumLabel(c)}</option>)}
-                                            </select>
-                                            <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
-                                        </div>
-                                    </div>
-                                    <div className="flex-1">
-                                        <label className="block text-sm font-medium text-heading mb-2">Property Status <span className="text-danger">*</span></label>
-                                        <div className="relative">
-                                            <select name="propertyStatus" value={formData.propertyStatus} onChange={handleInputChange}
-                                                className={selectWrapClass + " " + errCls("propertyStatus")}>
-                                                <option value="">Select status</option>
-                                                {(ENUMS.propertyStatus || []).map((s) => <option key={s} value={s}>{formatEnumLabel(s)}</option>)}
-                                            </select>
-                                            <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
-                                        </div>
-                                    </div>
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-heading mb-2">Project Description <span className="text-danger">*</span></label>
-                                    <textarea name="description" value={formData.description} onChange={handleInputChange}
-                                        placeholder="Describe your project vision and requirements..." rows="5"
-                                        maxLength={DESCRIPTION_MAX_LENGTH}
-                                        className={inputClass + " w-full resize-none " + errCls("description")} />
-                                    <div className="flex justify-between mt-1.5">
-                                        <span className="text-[11px] text-muted">Min {DESCRIPTION_MIN_LENGTH} characters</span>
-                                        <span className={"text-[11px] " + (formData.description.trim().length > DESCRIPTION_MAX_LENGTH ? "text-danger" : "text-muted")}>
-                                            {formData.description.length}/{DESCRIPTION_MAX_LENGTH}
-                                        </span>
-                                    </div>
+
+                        <div className="space-y-6">
+                            {/* 4-Way Scope Selector */}
+                            <div>
+                                <label className="block text-sm font-bold text-heading mb-2">
+                                    Project Scope <span className="text-danger">*</span>
+                                </label>
+                                <p className="text-xs text-muted mb-3">
+                                    Choose the scope of work. Only role-relevant verified professionals will be notified.
+                                </p>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                                    {[
+                                        {
+                                            id: "FULL_PROJECT",
+                                            title: "Full Project",
+                                            subtitle: "Architecture + Build + Interiors",
+                                            roles: ["ARCHITECT", "CONTRACTOR", "INTERIOR_DESIGNER"],
+                                            badge: "3-Phase Pipeline",
+                                        },
+                                        {
+                                            id: "ARCHITECTURE_ONLY",
+                                            title: "Architecture & Planning",
+                                            subtitle: "Blueprints, Structure & Approvals",
+                                            roles: ["ARCHITECT"],
+                                            badge: "Architects Only",
+                                        },
+                                        {
+                                            id: "CONSTRUCTION_ONLY",
+                                            title: "Construction & Build",
+                                            subtitle: "Civil, MEP & Structural Execution",
+                                            roles: ["CONTRACTOR"],
+                                            badge: "Contractors Only",
+                                        },
+                                        {
+                                            id: "DESIGN_ONLY",
+                                            title: "Interior Design",
+                                            subtitle: "Layouts, Decor & Furnishing",
+                                            roles: ["INTERIOR_DESIGNER"],
+                                            badge: "Designers Only",
+                                        },
+                                    ].map((opt) => {
+                                        const isSelected = formData.scope === opt.id;
+                                        return (
+                                            <div
+                                                key={opt.id}
+                                                onClick={() => {
+                                                    setFormData((p) => ({
+                                                        ...p,
+                                                        scope: opt.id,
+                                                        servicesRequired: opt.roles,
+                                                    }));
+                                                    clearValidation();
+                                                }}
+                                                className={`p-4 rounded-lg border-2 cursor-pointer transition-all flex flex-col justify-between gap-2 ${
+                                                    isSelected
+                                                        ? "border-[var(--primary)] bg-[var(--primary)]/5 shadow-xs"
+                                                        : "border-border bg-background hover:border-[var(--primary)]/40 hover:bg-black/5"
+                                                }`}
+                                            >
+                                                <div>
+                                                    <div className="flex items-center justify-between mb-1">
+                                                        <span className="text-xs font-bold text-heading">{opt.title}</span>
+                                                        <span
+                                                            className={`text-[9px] px-1.5 py-0.5 rounded font-bold uppercase ${
+                                                                isSelected
+                                                                    ? "bg-[var(--primary)] text-white"
+                                                                    : "bg-black/10 text-muted"
+                                                            }`}
+                                                        >
+                                                            {opt.badge}
+                                                        </span>
+                                                    </div>
+                                                    <p className="text-[11px] text-muted leading-tight">{opt.subtitle}</p>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
                                 </div>
                             </div>
-                            <div>
-                                <label className="block text-sm font-medium text-heading mb-2">Services Required <span className="text-danger">*</span></label>
-                                <div className={"flex flex-col gap-3 rounded-md " + (missingFields.includes("servicesRequired") ? "ring-1 ring-danger p-2" : "")}>
-                                    {(ENUMS.servicesRequired || []).map((service) => (
-                                        <label key={service} className="flex items-center gap-3 px-4 py-3.5 bg-background border border-border rounded-md cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors">
-                                            <input type="checkbox" checked={formData.servicesRequired.includes(service)}
-                                                onChange={() => handleMultiSelect("servicesRequired", service)}
-                                                className="w-4 h-4 rounded shrink-0" style={{ accentColor: "var(--primary)" }} />
-                                            <span className="text-sm text-text font-medium">{formatEnumLabel(service)}</span>
-                                        </label>
-                                    ))}
+
+                            {/* 3-Phase Pipeline Preview when FULL_PROJECT is selected */}
+                            {formData.scope === "FULL_PROJECT" && (
+                                <div className="p-4 bg-[var(--background-secondary)] rounded-lg border border-border space-y-2">
+                                    <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[var(--primary)]">
+                                        <Layers size={15} /> 3-Phase Multi-Award Workflow Preview
+                                    </div>
+                                    <p className="text-xs text-muted">
+                                        You can award one winning bid per profession independently. Execution and milestone payments proceed in strict sequential phases:
+                                    </p>
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1 text-xs">
+                                        <div className="p-2.5 bg-white rounded border border-border/80 flex items-center gap-2">
+                                            <span className="w-5 h-5 rounded-full bg-[var(--primary)] text-white text-[10px] font-bold flex items-center justify-center">1</span>
+                                            <div>
+                                                <span className="font-bold text-heading block">Planning Phase</span>
+                                                <span className="text-[10px] text-muted">Led by Architect</span>
+                                            </div>
+                                        </div>
+                                        <div className="p-2.5 bg-white rounded border border-border/80 flex items-center gap-2">
+                                            <span className="w-5 h-5 rounded-full bg-[var(--gold)] text-black text-[10px] font-bold flex items-center justify-center">2</span>
+                                            <div>
+                                                <span className="font-bold text-heading block">Construction Phase</span>
+                                                <span className="text-[10px] text-muted">Led by Contractor</span>
+                                            </div>
+                                        </div>
+                                        <div className="p-2.5 bg-white rounded border border-border/80 flex items-center gap-2">
+                                            <span className="w-5 h-5 rounded-full bg-emerald-600 text-white text-[10px] font-bold flex items-center justify-center">3</span>
+                                            <div>
+                                                <span className="font-bold text-heading block">Interiors Phase</span>
+                                                <span className="text-[10px] text-muted">Led by Interior Designer</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 pt-2">
+                                <div className="space-y-5">
+                                    <div>
+                                        <label className="block text-sm font-medium text-heading mb-2">Project Title <span className="text-danger">*</span></label>
+                                        <input type="text" name="title" value={formData.title} onChange={handleInputChange}
+                                            placeholder="e.g., Modern Villa Construction & Interior Design" className={inputClass + " w-full " + errCls("title")} />
+                                    </div>
+                                    <div className="flex flex-col sm:flex-row gap-4">
+                                        <div className="flex-1">
+                                            <label className="block text-sm font-medium text-heading mb-2">Category <span className="text-danger">*</span></label>
+                                            <div className="relative">
+                                                <select name="category" value={formData.category} onChange={handleInputChange}
+                                                    className={selectWrapClass + " " + errCls("category")}>
+                                                    <option value="">Select category</option>
+                                                    {(ENUMS.category || []).map((c) => <option key={c} value={c}>{formatEnumLabel(c)}</option>)}
+                                                </select>
+                                                <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
+                                            </div>
+                                        </div>
+                                        <div className="flex-1">
+                                            <label className="block text-sm font-medium text-heading mb-2">Property Status <span className="text-danger">*</span></label>
+                                            <div className="relative">
+                                                <select name="propertyStatus" value={formData.propertyStatus} onChange={handleInputChange}
+                                                    className={selectWrapClass + " " + errCls("propertyStatus")}>
+                                                    <option value="">Select status</option>
+                                                    {(ENUMS.propertyStatus || []).map((s) => <option key={s} value={s}>{formatEnumLabel(s)}</option>)}
+                                                </select>
+                                                <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-heading mb-2">Project Description <span className="text-danger">*</span></label>
+                                        <textarea name="description" value={formData.description} onChange={handleInputChange}
+                                            placeholder="Describe your project vision and requirements..." rows="5"
+                                            maxLength={DESCRIPTION_MAX_LENGTH}
+                                            className={inputClass + " w-full resize-none " + errCls("description")} />
+                                        <div className="flex justify-between mt-1.5">
+                                            <span className="text-[11px] text-muted">Min {DESCRIPTION_MIN_LENGTH} characters</span>
+                                            <span className={"text-[11px] " + (formData.description.trim().length > DESCRIPTION_MAX_LENGTH ? "text-danger" : "text-muted")}>
+                                                {formData.description.length}/{DESCRIPTION_MAX_LENGTH}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-heading mb-2">Services Required <span className="text-danger">*</span></label>
+                                    <div className={"flex flex-col gap-3 rounded-md " + (missingFields.includes("servicesRequired") ? "ring-1 ring-danger p-2" : "")}>
+                                        {(ENUMS.servicesRequired || []).map((service) => (
+                                            <label key={service} className="flex items-center gap-3 px-4 py-3.5 bg-background border border-border rounded-md cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors">
+                                                <input type="checkbox" checked={formData.servicesRequired.includes(service)}
+                                                    onChange={() => handleMultiSelect("servicesRequired", service)}
+                                                    className="w-4 h-4 rounded shrink-0" style={{ accentColor: "var(--primary)" }} />
+                                                <span className="text-sm text-text font-medium">{formatEnumLabel(service)}</span>
+                                            </label>
+                                        ))}
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -882,12 +1030,12 @@ export default function CreateProjectForm({ onClose }) {
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-heading mb-2 flex items-center gap-2"><Calendar size={16} /> Start Date <span className="text-danger">*</span></label>
-                                    <input type="date" name="startDate" value={formData.startDate} onChange={handleInputChange}
+                                    <input type="date" name="startDate" min={getTodayDateString()} value={formData.startDate} onChange={handleInputChange}
                                         className={inputClass + " w-full " + errCls("startDate")} />
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-heading mb-2 flex items-center gap-2"><Calendar size={16} /> Completion Date <span className="text-danger">*</span></label>
-                                    <input type="date" name="completionDate" value={formData.completionDate} onChange={handleInputChange}
+                                    <input type="date" name="completionDate" min={formData.startDate || getTodayDateString()} value={formData.completionDate} onChange={handleInputChange}
                                         className={inputClass + " w-full " + errCls("completionDate")} />
                                 </div>
                             </div>
