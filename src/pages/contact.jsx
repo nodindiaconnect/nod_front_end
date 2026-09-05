@@ -1,5 +1,3 @@
-
-
 import { useState } from "react";
 import {
   Loader2,
@@ -25,6 +23,7 @@ import {
 } from "lucide-react";
 import "../theme.css";
 import { useSubmitContactSectionLeadMutation } from "./supplyproductsapislice";
+import contact from "../assets/contact.png";
 
 const root = getComputedStyle(document.documentElement);
 const PRIMARY = root.getPropertyValue("--primary").trim();
@@ -45,28 +44,34 @@ const SERVICES = [
   { label: "PROJECT MANAGEMENT", icon: ClipboardList },
   { label: "PORTFOLIO", icon: BookOpen },
 ];
-
 const OFFICES = [
   {
     icon: Building2,
-    title: "NOD Studio & Head Office",
-    lines: ["Interiors With Art Ltd", "84 Drayton Gardens", "India SW10 9SD"],
+    title: "NOD Studio",
+    lines: [
+      "Connect. Collaborate. Build.",
+      "Designers, Architects & Contractors",
+      "Projects, Bids & Professional Services",
+      "Materials & Suppliers in One Place",
+    ],
   },
   {
     icon: MapPin,
     title: "India Office",
     lines: [
-      "Interiors With Art India",
-      "Prestige Tech Park",
-      "Marathahalli, Bengaluru 560103",
+      "1st Floor, Beside Uday Amrik Homes Main Gate",
+      "Itarsi Road, Sadar",
+      "Betul, Madhya Pradesh - 460001",
+      "Monday to Friday",
+      "10:00 AM to 5:00 PM IST",
     ],
   },
   {
     icon: Phone,
     title: "Direct",
     lines: [],
-    email: "client@interiorswithart.com",
-    phone: "020 7602 7999",
+    email: "Nightowldesignershelp@gmail.com",
+    phone: "+91 89669 69035",
   },
 ];
 
@@ -138,8 +143,7 @@ function Field({
 /* Hero photo — real live image (swap the src for your own studio photo)  */
 /* ---------------------------------------------------------------------- */
 
-const HERO_IMAGE_URL =
-  "https://assets.architecturaldigest.in/photos/68e7532c8f68bff2132f4ed9/1:1/w_1600%2Cc_limit/SB_BIGsmall1711_0067_Panorama%25201%2520(1).jpg";
+const HERO_IMAGE_URL = contact;
 
 function HeroArt() {
   return (

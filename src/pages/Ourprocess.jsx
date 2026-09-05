@@ -1,14 +1,20 @@
-import { motion } from "framer-motion"
-import { Link } from "react-router-dom"
-import { Palette, Compass, HardHat, ClipboardCheck, ArrowUpRight } from "lucide-react"
-import "../theme.css"
+import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
+import {
+  Palette,
+  Compass,
+  HardHat,
+  ClipboardCheck,
+  ArrowUpRight,
+} from "lucide-react";
+import "../theme.css";
 
 export default function OurServices() {
   const services = [
     {
       icon: Palette,
-      title: "Interior Designs",
-      desc: "Connect with verified interior designers who craft personalized layouts, mood boards and material palettes tailored to your space, style and budget.",
+      title: "Designers",
+      desc: "Connect with verified  designers who craft personalized layouts, mood boards and material palettes tailored to your space, style and budget.",
       cta: "Find a Designer",
       to: "/explore?role=designer",
     },
@@ -33,11 +39,13 @@ export default function OurServices() {
       cta: "Explore Suppliers",
       to: "/Signin",
     },
-  ]
+  ];
 
   return (
-    <section id="services" className="relative py-24 px-4 md:px-8 overflow-hidden bg-[var(--background-secondary)]">
-
+    <section
+      id="services"
+      className="relative py-24 px-4 md:px-8 overflow-hidden bg-[var(--background-secondary)]"
+    >
       {/* BACKGROUND PHOTO */}
       <div className="absolute inset-0">
         <img
@@ -51,17 +59,19 @@ export default function OurServices() {
       </div>
 
       <div className="relative z-10 max-w-6xl mx-auto">
-
         {/* HEADING */}
         <div className="mb-16 text-center">
           <span className="text-xs uppercase tracking-[0.3em] text-[var(--gold)] font-bold block mb-3">
             Our Services
           </span>
           <h2 className="text-3xl md:text-4xl font-extrabold text-[var(--heading)] leading-tight font-[var(--font-heading)]">
-            One Platform, Every <span className="text-[var(--gold)]">Expert</span> You Need
+            One Platform, Every{" "}
+            <span className="text-[var(--gold)]">Expert</span> You Need
           </h2>
           <p className="mx-auto mt-5 max-w-2xl text-sm text-[var(--text)] font-light leading-relaxed font-[var(--font-body)]">
-            Whether you need a single room reimagined or a full build managed start to finish, we connect you with verified interior designers, architects and contractors — all in one place.
+            Whether you need a single room reimagined or a full build managed
+            start to finish, we connect you with verified DESIGNERS,
+            architects and contractors — all in one place.
           </p>
           <div className="w-10 h-[2px] bg-[var(--gold)] mx-auto mt-8" />
         </div>
@@ -69,7 +79,7 @@ export default function OurServices() {
         {/* SERVICE CARDS */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {services.map((service, index) => {
-            const Icon = service.icon
+            const Icon = service.icon;
             return (
               <motion.div
                 key={index}
@@ -88,7 +98,10 @@ export default function OurServices() {
                   <Icon size={24} strokeWidth={2} />
                 </div>
 
-                <h3 className="text-base font-bold text-[var(--heading)] mb-3 font-[var(--font-heading)] group-hover:text-[var(--gold-hover)]" style={{ transition: "var(--transition)" }}>
+                <h3
+                  className="text-base font-bold text-[var(--heading)] mb-3 font-[var(--font-heading)] group-hover:text-[var(--gold-hover)]"
+                  style={{ transition: "var(--transition)" }}
+                >
                   {service.title}
                 </h3>
 
@@ -106,11 +119,10 @@ export default function OurServices() {
                   <ArrowUpRight size={14} strokeWidth={2.5} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5" style={{ transition: "var(--transition)" }} />
                 </Link> */}
               </motion.div>
-            )
+            );
           })}
         </div>
-
       </div>
     </section>
-  )
+  );
 }

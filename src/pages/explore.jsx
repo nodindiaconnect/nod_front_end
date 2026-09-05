@@ -27,7 +27,7 @@ const ROLE_SLUG_TO_NUM = {
 };
 
 const ROLE_LABELS = {
-  2: "Interior Designers",
+  2: "Designers",
   3: "Architects",
   4: "Contractors",
 };
