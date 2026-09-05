@@ -218,33 +218,32 @@ export default function HeroSection({ panelRef }) {
 
         {/* Headline — snappier entrance */}
         <h1
-          className="font-[var(--font-heading)] text-3xl sm:text-5xl md:text-6xl leading-[1.15] max-w-4xl text-balance"
+          className="font-[var(--font-heading)] text-3xl sm:text-5xl md:text-6xl leading-[1.18] max-w-4xl text-balance drop-shadow-md font-bold tracking-tight"
           style={{
-            color: ON_PHOTO,
+            color: "#FFFFFF",
             opacity: loaded ? 1 : 0,
             transform: loaded ? "translateY(0)" : "translateY(12px)",
             transition: "opacity 0.6s ease 0.35s, transform 0.6s ease 0.35s",
+            textShadow: "0 2px 16px rgba(0,0,0,0.6)",
           }}
         >
-          The Poetry of Design{" "}
-          <span style={{ color: GOLD, fontStyle: "italic", fontWeight: 400 }}>&amp;</span>
-          <br />
-          the Engineering of Craft
+          The Marketplace Powering the Future of{" "}
+          <span style={{ color: GOLD, fontStyle: "italic", fontWeight: 500 }}>Design</span> &amp;{" "}
+          <span style={{ color: GOLD, fontStyle: "italic", fontWeight: 500 }}>Construction.</span>
         </h1>
 
         {/* Subtext */}
         <p
-          className="mt-6 max-w-md text-sm md:text-base leading-relaxed"
+          className="mt-6 max-w-2xl text-base sm:text-lg md:text-xl leading-relaxed font-normal"
           style={{
-            color: ON_PHOTO_MUTED,
+            color: "#F7F3EA",
             opacity: loaded ? 1 : 0,
             transform: loaded ? "translateY(0)" : "translateY(12px)",
             transition: "opacity 0.6s ease 0.45s, transform 0.6s ease 0.45s",
+            textShadow: "0 1px 10px rgba(0,0,0,0.7)",
           }}
         >
-          We turn architectural drawings into rooms people live in for
-          decades — matched with designers, architects, and craftsmen who
-          treat the details like the whole project.
+          Where clients find talent, professionals find opportunities, and projects move forward.
         </p>
 
       

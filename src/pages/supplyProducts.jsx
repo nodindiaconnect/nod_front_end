@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import {
   MapPin,
   ChevronLeft,
@@ -25,13 +25,17 @@ import {
   Navigation,
   RotateCcw,
   Clock,
+  Home,
+  CheckCircle2,
+  Store,
 } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   useGetPublicProductsQuery,
   useLazySearchLocationsQuery,
 } from "./supplyproductsapislice";
 import "../theme.css";
+import logo from "../assets/logo.png";
 
 const MIN_QUERY_LENGTH = 2;
 const DEBOUNCE_MS = 350;
@@ -130,6 +134,138 @@ function getTags(product) {
   const category = clamp(product.category, HARD_CAP.tag);
   return FALLBACK_TAGS_BY_CATEGORY[category] || DEFAULT_TAGS;
 }
+
+const FALLBACK_SUPPLIERS = [
+  {
+    id: "sup_1",
+    name: "Greenply Architectural Woods & Plywood",
+    type: "Manufacturer",
+    city: "Mumbai",
+    state: "Maharashtra",
+    rating: 4.9,
+    experienceYears: 12,
+    verified: true,
+  },
+  {
+    id: "sup_2",
+    name: "Tata Tiscon & Jindal Steel Supplies",
+    type: "Distributor",
+    city: "Delhi",
+    state: "Delhi NCR",
+    rating: 4.8,
+    experienceYears: 15,
+    verified: true,
+  },
+  {
+    id: "sup_3",
+    name: "UltraTech Building Materials & ReadyMix",
+    type: "Manufacturer",
+    city: "Pune",
+    state: "Maharashtra",
+    rating: 4.9,
+    experienceYears: 18,
+    verified: true,
+  },
+  {
+    id: "sup_4",
+    name: "Kajaria Premium Ceramics & Italian Marble",
+    type: "Wholesaler",
+    city: "Bengaluru",
+    state: "Karnataka",
+    rating: 4.7,
+    experienceYears: 10,
+    verified: true,
+  },
+  {
+    id: "sup_5",
+    name: "Asian Paints Royale Pro & PU Coatings",
+    type: "Distributor",
+    city: "Hyderabad",
+    state: "Telangana",
+    rating: 4.8,
+    experienceYears: 8,
+    verified: true,
+  },
+  {
+    id: "sup_6",
+    name: "Jaquar & Kohler Sanitary Architectural Systems",
+    type: "Retailer",
+    city: "Ahmedabad",
+    state: "Gujarat",
+    rating: 4.9,
+    experienceYears: 14,
+    verified: true,
+  },
+];
+
+const FALLBACK_PRODUCTS = [
+  {
+    id: "prod_1",
+    supplierId: "sup_1",
+    productName: "Marine Grade BWP Calibrated Plywood (18mm)",
+    category: "Wood & Plywood",
+    supplierType: "Manufacturer",
+    price: "₹1,850 / Sheet",
+    minOrderQuantity: "25 Sheets",
+    imageUrl: "https://images.unsplash.com/photo-1513694203232-719a280e022f?w=600&q=80",
+    tags: ["BWP Grade", "100% Calibrated", "Waterproof"],
+  },
+  {
+    id: "prod_2",
+    supplierId: "sup_2",
+    productName: "Fe 550D High Ductility Corrosion Resistant TMT Rebars",
+    category: "Steel & Metal",
+    supplierType: "Distributor",
+    price: "₹64,500 / Ton",
+    minOrderQuantity: "5 Tons",
+    imageUrl: "https://images.unsplash.com/photo-1504917599217-d4dc5ebe6122?w=600&q=80",
+    tags: ["Fe 550D", "BIS Certified", "Bulk Delivery"],
+  },
+  {
+    id: "prod_3",
+    supplierId: "sup_3",
+    productName: "High Strength OPC 53 Grade Structural Cement",
+    category: "Cement & Concrete",
+    supplierType: "Manufacturer",
+    price: "₹385 / Bag",
+    minOrderQuantity: "100 Bags",
+    imageUrl: "https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=600&q=80",
+    tags: ["OPC 53 Grade", "High Strength", "Prompt Delivery"],
+  },
+  {
+    id: "prod_4",
+    supplierId: "sup_4",
+    productName: "Full Body Vitrified Large Format Italian Marble Tiles (1200x1800mm)",
+    category: "Tiles & Stone",
+    supplierType: "Wholesaler",
+    price: "₹145 / Sq.ft",
+    minOrderQuantity: "500 Sq.ft",
+    imageUrl: "https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=600&q=80",
+    tags: ["Italian Marble", "Full Body", "Stain Proof"],
+  },
+  {
+    id: "prod_5",
+    supplierId: "sup_5",
+    productName: "Royale Luxury Architectural Emulsion & Epoxy Wall Base",
+    category: "Paints & Coatings",
+    supplierType: "Distributor",
+    price: "₹5,200 / 20L Bucket",
+    minOrderQuantity: "5 Buckets",
+    imageUrl: "https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=600&q=80",
+    tags: ["Washable", "Teflon Surface", "Zero VOC"],
+  },
+  {
+    id: "prod_6",
+    supplierId: "sup_6",
+    productName: "Concealed Thermostatic Diverter & Matte Black Rain Shower Kit",
+    category: "Plumbing & Sanitary",
+    supplierType: "Retailer",
+    price: "₹14,800 / Set",
+    minOrderQuantity: "2 Sets",
+    imageUrl: "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=600&q=80",
+    tags: ["Brass Casting", "10 Yr Warranty", "Matte Finish"],
+  },
+];
 
 // Deterministic "years in business" fallback when the record doesn't carry
 // a real value — keeps it stable per-supplier instead of re-randomizing.
@@ -511,10 +647,14 @@ export default function FeaturedProducts() {
     skip: !locationResolved || locationStatus === "locating",
   });
 
-  const products = res?.data?.products || [];
-  const suppliers = res?.data?.suppliers || [];
+  const apiProducts = res?.data?.products || [];
+  const apiSuppliers = res?.data?.suppliers || [];
+  const products = apiProducts.length > 0 ? apiProducts : FALLBACK_PRODUCTS;
+  const suppliers = apiSuppliers.length > 0 ? apiSuppliers : FALLBACK_SUPPLIERS;
   const totalPages = res?.data?.totalPages || 1;
-  const totalCount = res?.data?.total ?? totalPages * perPage;
+  const totalCount = res?.data?.total ?? products.length;
+
+  const [showListingModal, setShowListingModal] = useState(false);
 
   const getSupplier = (supplierId) =>
     suppliers.find((s) => s.id === supplierId);
@@ -594,7 +734,7 @@ export default function FeaturedProducts() {
   const rangeStart = totalCount === 0 ? 0 : (page - 1) * perPage + 1;
   const rangeEnd = Math.min(page * perPage, totalCount);
 
-  if ((isLoading || locationStatus === "locating") && page === 1) {
+  if ((isLoading || locationStatus === "locating") && page === 1 && !products.length) {
     return (
       <section className="py-24 md:py-36 text-center">
         <Loader2
@@ -608,31 +748,56 @@ export default function FeaturedProducts() {
     );
   }
 
-  if (error && page === 1) {
-    return (
-      <section className="py-24 md:py-36 text-center">
-        <p className="text-[var(--danger)] font-[var(--font-body)]">
-          Failed to load suppliers.
-        </p>
-      </section>
-    );
-  }
-
   return (
     <section
       id="products"
-      className="relative bg-[var(--background-secondary)] overflow-x-hidden"
+      className="relative bg-[var(--background-secondary)] overflow-x-hidden min-h-screen"
     >
+      {/* ============ TOP NAVBAR ============ */}
+      <header className="sticky top-0 z-40 bg-[#1b130f]/95 backdrop-blur-md border-b border-white/10 px-4 sm:px-8 py-3.5 flex items-center justify-between">
+        <Link to="/" className="flex items-center gap-2.5">
+          <img src={logo} alt="Night Owl Designers" className="w-8 h-8 rounded-full object-cover" />
+          <h2 className="font-[var(--font-heading)] text-base sm:text-lg text-white font-bold tracking-tight">
+            NOD <span className="text-[var(--gold)]">Suppliers</span>
+          </h2>
+        </Link>
+
+        <nav className="flex items-center gap-4 sm:gap-6 text-xs sm:text-sm font-medium">
+          <Link
+            to="/"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 text-white hover:bg-[var(--gold)] hover:text-[#1b130f] transition font-semibold"
+          >
+            <Home size={14} />
+            <span>Home</span>
+          </Link>
+          <button
+            onClick={() => setShowListingModal(true)}
+            className="text-[var(--gold)] hover:underline font-semibold cursor-pointer"
+          >
+            How to List Business
+          </button>
+          <Link to="/portfolios" className="text-gray-300 hover:text-white transition hidden sm:inline-block">
+            Portfolios
+          </Link>
+          <Link to="/contact" className="text-gray-300 hover:text-white transition hidden sm:inline-block">
+            Contact
+          </Link>
+          <Link
+            to="/Signup?role=MaterialSupplier"
+            className="px-4 py-1.5 rounded-full bg-[var(--gold)] text-[#1b130f] font-semibold hover:brightness-110 transition"
+          >
+            List My Business
+          </Link>
+        </nav>
+      </header>
+
       {/* ------------------------------------------------------------ */}
       {/* Hero — contained within the same page grid as every other    */}
       {/* section below, so its left/right edges always line up.       */}
       {/* Kept compact (no big top/bottom air) to match the reference. */}
       {/* ------------------------------------------------------------ */}
       <div className="relative bg-[var(--background-secondary)] overflow-hidden">
-        {/* Background photo — blended into the header itself (not a separate
-                    boxed column). A gradient wash keeps the left-side text readable
-                    and fades the image into the section's own background color so
-                    there's no visible seam or "card" edge. */}
+        {/* Background photo */}
         <div className="absolute inset-0">
           <img
             src="https://www.greenply.com:5001/originalfile1769165379328-6117.jpg"
@@ -1156,14 +1321,127 @@ export default function FeaturedProducts() {
             </p>
             <button
               type="button"
-              className="h-9 flex items-center gap-1.5 border border-[var(--gold)] text-[var(--gold)] text-[11.5px] font-semibold px-4 rounded-md hover:bg-[var(--gold)] hover:text-[var(--background)] transition-colors"
+              onClick={() => setShowListingModal(true)}
+              className="h-9 flex items-center gap-1.5 border border-[var(--gold)] bg-[var(--gold)] text-[#1b130f] text-[11.5px] font-semibold px-4 rounded-md hover:brightness-110 transition-colors cursor-pointer"
             >
-              Become a Supplier
+              <Store size={14} />
+              List My Business
               <ArrowRight size={13} />
             </button>
           </div>
         </div>
       </div>
+
+      {/* ============ HOW TO LIST YOUR BUSINESS MODAL ============ */}
+      <AnimatePresence>
+        {showListingModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 15 }}
+              className="relative w-full max-w-2xl bg-white dark:bg-[#1b130f] rounded-2xl shadow-2xl border border-[var(--border)] overflow-hidden p-6 sm:p-8"
+            >
+              <button
+                onClick={() => setShowListingModal(false)}
+                className="absolute top-5 right-5 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-white/10 text-gray-500 hover:text-gray-800 transition"
+              >
+                <X size={18} />
+              </button>
+
+              <div className="flex items-center gap-2 mb-2">
+                <Store size={22} className="text-[var(--gold)]" />
+                <span className="text-xs uppercase font-bold tracking-widest text-[var(--gold)]">
+                  Supplier Onboarding Guide
+                </span>
+              </div>
+
+              <h2 className="text-2xl sm:text-3xl font-bold font-[var(--font-heading)] text-[var(--heading)] mb-3">
+                How to List Your Business as a Supplier on NOD
+              </h2>
+
+              <p className="text-sm text-[var(--muted)] mb-6 leading-relaxed">
+                Connect directly with thousands of licensed architects, interior designers, and general contractors seeking verified building and interior materials.
+              </p>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+                <div className="p-4 rounded-xl border border-[var(--border)] bg-gray-50 dark:bg-white/5 flex items-start gap-3">
+                  <span className="w-7 h-7 rounded-full bg-[var(--gold)]/20 text-[var(--gold)] font-bold text-xs flex items-center justify-center shrink-0">
+                    1
+                  </span>
+                  <div>
+                    <h3 className="text-sm font-bold text-[var(--heading)] mb-1">
+                      Register Supplier Account
+                    </h3>
+                    <p className="text-xs text-[var(--muted)] leading-relaxed">
+                      Sign up with your business name, GST/registration details, and branch locations.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-xl border border-[var(--border)] bg-gray-50 dark:bg-white/5 flex items-start gap-3">
+                  <span className="w-7 h-7 rounded-full bg-[var(--gold)]/20 text-[var(--gold)] font-bold text-xs flex items-center justify-center shrink-0">
+                    2
+                  </span>
+                  <div>
+                    <h3 className="text-sm font-bold text-[var(--heading)] mb-1">
+                      Upload Product Catalog
+                    </h3>
+                    <p className="text-xs text-[var(--muted)] leading-relaxed">
+                      List your materials, specifications, pricing, minimum order quantities, and delivery coverage.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-xl border border-[var(--border)] bg-gray-50 dark:bg-white/5 flex items-start gap-3">
+                  <span className="w-7 h-7 rounded-full bg-[var(--gold)]/20 text-[var(--gold)] font-bold text-xs flex items-center justify-center shrink-0">
+                    3
+                  </span>
+                  <div>
+                    <h3 className="text-sm font-bold text-[var(--heading)] mb-1">
+                      Receive Direct Inquiries
+                    </h3>
+                    <p className="text-xs text-[var(--muted)] leading-relaxed">
+                      Get quotation requests and bulk procurement leads directly from active project owners and architects.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-xl border border-[var(--border)] bg-gray-50 dark:bg-white/5 flex items-start gap-3">
+                  <span className="w-7 h-7 rounded-full bg-[var(--gold)]/20 text-[var(--gold)] font-bold text-xs flex items-center justify-center shrink-0">
+                    4
+                  </span>
+                  <div>
+                    <h3 className="text-sm font-bold text-[var(--heading)] mb-1">
+                      Fulfill &amp; Get Paid
+                    </h3>
+                    <p className="text-xs text-[var(--muted)] leading-relaxed">
+                      Dispatch orders with verified milestone protection and transparent digital payment settlements.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row items-center justify-end gap-3 pt-4 border-t border-[var(--border)]">
+                <button
+                  type="button"
+                  onClick={() => setShowListingModal(false)}
+                  className="w-full sm:w-auto px-5 py-2.5 rounded-lg border border-[var(--border)] text-sm font-medium hover:bg-gray-100 dark:hover:bg-white/5 transition"
+                >
+                  Close
+                </button>
+                <Link
+                  to="/Signup?role=MaterialSupplier"
+                  className="w-full sm:w-auto px-6 py-2.5 rounded-lg bg-[var(--gold)] text-[#1b130f] text-sm font-bold flex items-center justify-center gap-2 hover:brightness-110 transition"
+                >
+                  <Store size={15} />
+                  Start Listing My Business Now
+                </Link>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </section>
   );
 }

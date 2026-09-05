@@ -32,13 +32,13 @@ export default function Footer() {
     ]
 
     const professionalsLinks = [
-        { label: "Join as Designer", href: "/Signin", icon: UserPlus },
-        { label: "Join as Contracter", href: "/Signin", icon: Wrench },
-        { label: "Join as Architect", href: "/Signin", icon: Building2 },
+        { label: "Join as Designer", href: "/Signup?role=Designer", icon: UserPlus },
+        { label: "Join as Contractor", href: "/Signup?role=Contractor", icon: Wrench },
+        { label: "Join as Architect", href: "/Signup?role=Architect", icon: Building2 },
     ]
 
     const companyLinks = [
-        { label: "About Us", href: "/about", icon: Info },
+        { label: "About Us", href: "/About", icon: Info },
         { label: "Why Choose NOD", href: "/why-choose", icon: Award },
     ]
 
@@ -159,7 +159,7 @@ export default function Footer() {
 
                         {/* Social Icons */}
                         <div className="flex gap-3">
-                            <a href="https://www.instagram.com/nod._india/"
+                            <a href="https://www.instagram.com/nodindia.in?igsi=bG1lczVtMHNydHNu"
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="h-10 w-10 flex items-center justify-center rounded-full border transition-all duration-300"
@@ -179,7 +179,7 @@ export default function Footer() {
                                 </svg>
                             </a>
 
-                            <a href="https://www.linkedin.com/in/nod-india-9131b9400/"
+                            <a href="https://www.linkedin.com/in/nod-india-9131b9400"
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="h-10 w-10 flex items-center justify-center rounded-full border transition-all duration-300"
@@ -278,7 +278,7 @@ export default function Footer() {
                                 </span>
 
                                 <a
-                                    href="mailto:nodindiaconnect@gmail.com"
+                                    href="mailto:nightowldesignershelp@gmail.com"
                                     className="text-xs leading-relaxed pt-1.5 underline transition-colors duration-300"
                                     style={{ color: FOOTER_MUTED }}
                                     onMouseEnter={(e) =>
@@ -288,7 +288,7 @@ export default function Footer() {
                                         (e.currentTarget.style.color = FOOTER_MUTED)
                                     }
                                 >
-                                    nodindiaconnect@gmail.com
+                                    nightowldesignershelp@gmail.com
                                 </a>
                             </li>
                         </ul>

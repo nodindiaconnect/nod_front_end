@@ -1,35 +1,38 @@
 import { useState } from "react";
+import commercialImg from "../assets/commercial_interior.jpg";
+import residentialImg from "../assets/residential_bedroom.jpg";
+import structuralImg from "../assets/structural_blueprint.jpg";
 
 const projects = [
   {
-    key: "vf",
-    label: "VF",
+    key: "royal-heritage",
+    label: "ROYAL HERITAGE RECEPTION",
+    img: commercialImg,
+  },
+  {
+    key: "master-suite",
+    label: "CONTEMPORARY MASTER SUITE",
+    img: residentialImg,
+  },
+  {
+    key: "structural-plan",
+    label: "STRUCTURAL LAYOUT MASTERPLAN",
+    img: structuralImg,
+  },
+  {
+    key: "luxury-villa",
+    label: "MODERN ARCHITECTURAL VILLA",
     img: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=900&q=80&auto=format&fit=crop",
   },
   {
-    key: "ppv",
-    label: "PPV",
-    img: "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=900&q=80&auto=format&fit=crop",
-  },
-  {
-    key: "vm",
-    label: "VM",
-    img: "https://images.unsplash.com/photo-1615529162924-f8605388461d?w=900&q=80&auto=format&fit=crop",
-  },
-  {
-    key: "ssna",
-    label: "SSNA",
-    img: "https://images.unsplash.com/photo-1592229505726-ca121723b8ef?w=900&q=80&auto=format&fit=crop",
-  },
-  {
-    key: "pg",
-    label: "PG",
-    img: "https://images.unsplash.com/photo-1613977257363-707ba9348227?w=900&q=80&auto=format&fit=crop",
-  },
-  {
-    key: "cv",
-    label: "CV",
+    key: "minimal-living",
+    label: "LUXURY LIVING & DINING LOUNGE",
     img: "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=900&q=80&auto=format&fit=crop",
+  },
+  {
+    key: "executive-office",
+    label: "EXECUTIVE INTERIOR ARCHITECTURE",
+    img: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=900&q=80&auto=format&fit=crop",
   },
 ];
 

@@ -6,13 +6,16 @@ import {
   useScroll,
   useTransform,
 } from "framer-motion";
+import residentialImg from "../assets/residential_bedroom.jpg";
+import commercialImg from "../assets/commercial_interior.jpg";
+import structuralImg from "../assets/structural_blueprint.jpg";
 
 const categories = [
   {
     key: "residential",
     label: "RESIDENTIAL",
-    labelColor: "text-black",
-    img: "https://images.unsplash.com/photo-1613977257363-707ba9348227?w=900&q=80&auto=format&fit=crop",
+    labelColor: "text-amber-900",
+    img: residentialImg,
     width: "w-full md:w-[270px] lg:w-[290px]",
     height: "h-[300px] lg:h-[330px]",
     className: "md:mt-16",
@@ -21,18 +24,18 @@ const categories = [
   {
     key: "commercial",
     label: "COMMERCIAL",
-    labelColor: "text-blue-600",
-    img: "https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?w=900&q=80&auto=format&fit=crop",
+    labelColor: "text-amber-700",
+    img: commercialImg,
     width: "w-full md:w-[280px] lg:w-[300px]",
     height: "h-[320px] lg:h-[350px]",
     className: "z-20",
     speed: -120,
   },
   {
-    key: "marine",
-    label: "MARINE",
+    key: "structural",
+    label: "STRUCTURAL",
     labelColor: "text-slate-800",
-    img: "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=900&q=80&auto=format&fit=crop",
+    img: structuralImg,
     width: "w-full md:w-[270px] lg:w-[290px]",
     height: "h-[300px] lg:h-[330px]",
     className: "md:mt-24",

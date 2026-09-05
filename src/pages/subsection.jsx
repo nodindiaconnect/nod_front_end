@@ -1,4 +1,6 @@
 import "../theme.css"
+import commercialImg from "../assets/commercial_interior.jpg"
+import residentialImg from "../assets/residential_bedroom.jpg"
 
 export default function NewHeritage() {
     return (
@@ -9,20 +11,20 @@ export default function NewHeritage() {
                 <div className="lg:col-span-6 relative h-[420px] md:h-[500px] w-full max-w-md mx-auto lg:mx-0">
 
                     {/* Back image */}
-                    <div className="absolute left-0 top-[35%] h-[55%] w-[55%] overflow-hidden rounded-sm shadow-2xl z-0">
+                    <div className="absolute left-0 top-[35%] h-[55%] w-[55%] overflow-hidden rounded-sm shadow-2xl z-0 border border-[var(--border)]">
                         <img
-                            src="https://images.unsplash.com/photo-1484154218962-a197022b5858?w=1200"
-                            alt="Modern interior mood board"
+                            src={residentialImg}
+                            alt="Luxury residential master suite"
                             className="h-full w-full object-cover"
                             loading="lazy"
                         />
                     </div>
 
                     {/* Front image */}
-                    <div className="absolute right-0 top-0 h-[85%] w-[65%] overflow-hidden rounded-sm shadow-2xl z-10">
+                    <div className="absolute right-0 top-0 h-[85%] w-[65%] overflow-hidden rounded-sm shadow-2xl z-10 border border-[var(--border)]">
                         <img
-                            src="https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=1200"
-                            alt="Luxury living room"
+                            src={commercialImg}
+                            alt="Royal heritage reception lounge"
                             className="h-full w-full object-cover"
                             loading="lazy"
                         />
@@ -31,26 +33,27 @@ export default function NewHeritage() {
                 </div>
 
                 {/* TEXT RIGHT */}
-                {/* This block sits on the plain card/section background (not a photo),
-                    so it uses the tokens that flip with light/dark mode
-                    (--heading, --text) rather than the fixed --on-photo* tokens. */}
                 <div className="lg:col-span-6 flex flex-col items-start">
 
-                    <h2 className="text-4xl md:text-5xl font-serif text-[var(--heading)] leading-tight mb-2">
-                        New Heritage
+                    <span className="text-xs uppercase tracking-[0.3em] text-[var(--gold)] font-bold block mb-3">
+                        About Night Owl Designers
+                    </span>
+
+                    <h2 className="text-3xl sm:text-4xl md:text-5xl font-serif text-[var(--heading)] leading-tight mb-2">
+                        Timeless Craftsmanship
                     </h2>
 
-                    <p className="text-2xl md:text-3xl font-serif italic text-[var(--heading)] leading-snug mb-6">
-                        A design house rooted in tradition.
+                    <p className="text-xl sm:text-2xl md:text-3xl font-serif italic text-[var(--heading)] leading-snug mb-6">
+                        Bridging design vision with precision execution.
                     </p>
 
                     <p className="text-sm md:text-base text-[var(--text)] font-light leading-relaxed mb-10 opacity-90 max-w-lg">
-                        For interior designer Shea McGee, design has always been about how a space makes you feel—not just how it looks. Since 2014, that philosophy has shaped Studio McGee and continues to guide every project today. Our New Heritage aesthetic is rooted in classic design principles and traditional craftsmanship, adapted through a modern lens—creating homes that feel collected, comfortable, and effortlessly timeless.
+                        At NOD (Night Owl Designers), we believe architectural and interior excellence demands seamless synergy between designers, structural engineers, contractors, and material suppliers. We bring every stakeholder together onto a unified, transparent marketplace to transform conceptual blueprints into iconic spaces built to endure for decades.
                     </p>
 
-                    <a href="/about">
+                    <a href="/About">
                         <button className="cursor-pointer rounded-none border border-[var(--gold)]/70 hover:border-[var(--gold)] px-8 py-3.5 text-[11px] tracking-[0.2em] font-semibold text-[var(--heading)] hover:bg-[var(--gold)]/10 transition-all duration-300">
-                            ABOUT
+                            ABOUT US
                         </button>
                     </a>
 

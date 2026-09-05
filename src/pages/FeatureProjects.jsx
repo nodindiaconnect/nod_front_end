@@ -11,6 +11,9 @@ import {
 import { motion } from "framer-motion";
 import "../theme.css";
 
+import commercialImg from "../assets/commercial_interior.jpg";
+import residentialImg from "../assets/residential_bedroom.jpg";
+
 export default function FeaturedProjects() {
   // Setup state for likes and saves
   const [likes, setLikes] = useState({});
@@ -30,52 +33,47 @@ export default function FeaturedProjects() {
 
   const projects = [
     {
-      image:
-        "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=1200",
-      title: "Modern Luxury Living Room",
+      image: commercialImg,
+      title: "Royal Heritage Reception Lounge",
       designer: "Aria Sterling",
       budget: "₹18.5M",
-      location: "New York, USA",
+      location: "Mumbai, India",
       duration: "9 Months",
       className: "md:col-span-1 md:row-span-2 h-[550px] md:h-[700px]",
     },
     {
-      image:
-        "https://images.unsplash.com/photo-1484154218962-a197022b5858?w=1200",
-      title: "Scandinavian Kitchen",
+      image: "https://images.unsplash.com/photo-1484154218962-a197022b5858?w=1200",
+      title: "Scandinavian Modular Kitchen",
       designer: "Sophia Wilson",
       budget: "₹5.2M",
-      location: "London, UK",
+      location: "Bengaluru, India",
       duration: "4 Months",
       className: "md:col-span-2 md:row-span-1 h-[260px] md:h-[330px]",
     },
     {
-      image:
-        "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=1200",
-      title: "Executive Office Interior",
+      image: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=1200",
+      title: "Executive Corporate Interior",
       designer: "Oliver Bennett",
       budget: "₹8.8M",
-      location: "Dubai, UAE",
+      location: "Delhi NCR, India",
       duration: "6 Months",
       className: "md:col-span-1 md:row-span-1 h-[260px] md:h-[330px]",
     },
     {
-      image:
-        "https://images.unsplash.com/photo-1494526585095-c41746248156?w=1200",
-      title: "Minimal Bedroom Suite",
+      image: residentialImg,
+      title: "Minimal Luxury Master Suite",
       designer: "Emma Carter",
       budget: "₹12.0M",
-      location: "Toronto, Canada",
+      location: "Pune, India",
       duration: "7 Months",
       className: "md:col-span-1 md:row-span-1 h-[260px] md:h-[330px]",
     },
     {
-      image:
-        "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=1200",
-      title: "Luxury Villa Interior",
+      image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1200",
+      title: "Contemporary Villa Architecture",
       designer: "Daniel Morgan",
       budget: "₹24.0M",
-      location: "Los Angeles, USA",
+      location: "Hyderabad, India",
       duration: "11 Months",
       className: "md:col-span-2 md:row-span-1 h-[260px] md:h-[330px]",
     },

@@ -333,7 +333,7 @@ export default function Navbar() {
                     size="sm"
                     className="rounded-sm px-4"
                   >
-                    SIGN IN
+                    Get started
                   </Button>
                 </a>
               )}
@@ -444,19 +444,19 @@ export default function Navbar() {
                     <div className="flex flex-col gap-3 mt-6">
                       <a href="/Signin">
                         <Button
-                          variant="outline"
-                          fullWidth
-                          className="rounded-full"
-                        >
-                          SIGN IN
-                        </Button>
-                      </a>
-
-                      <a href="/signup">
-                        <Button
                           variant="gold"
                           fullWidth
                           className="rounded-full"
+                        >
+                          Get started
+                        </Button>
+                      </a>
+
+                      <a href="/contact">
+                        <Button
+                          variant="outline"
+                          fullWidth
+                          className="rounded-full text-white"
                         >
                           Contact
                         </Button>

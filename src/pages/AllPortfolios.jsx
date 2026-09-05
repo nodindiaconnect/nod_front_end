@@ -25,7 +25,11 @@ const ROLE_LABELS = {
 const FILTER_ROLES = [
   { id: "ALL", label: "All Roles" },
   { id: 3, label: "Architect" },
-  { id: 2, label: "Interior Designer" },
+  { id: 2, label: "Designers" },
+  { id: "residential_interior", label: "Residential Interior", role: 2 },
+  { id: "commercial_interior", label: "Commercial Interior", role: 2 },
+  { id: "bim_3d", label: "BIM & 3D Visualizer", role: 2 },
+  { id: "landscape_exterior", label: "Landscape & Exterior", role: 2 },
   { id: 4, label: "Contractor" },
   { id: 5, label: "Material Supplier" },
 ];
@@ -291,7 +295,36 @@ export default function PortfolioDirectory() {
 
     // Role filter
     if (selectedRole !== "ALL") {
-      list = list.filter((u) => Number(u.role) === Number(selectedRole));
+      if (typeof selectedRole === "number" || !isNaN(Number(selectedRole))) {
+        list = list.filter((u) => Number(u.role) === Number(selectedRole));
+      } else if (selectedRole === "residential_interior") {
+        list = list.filter((u) => Number(u.role) === 2 && (
+          u.category?.toLowerCase().includes("residential") ||
+          u.specialization?.toLowerCase().includes("residential") ||
+          u.category?.toLowerCase().includes("interior")
+        ));
+      } else if (selectedRole === "commercial_interior") {
+        list = list.filter((u) => Number(u.role) === 2 && (
+          u.category?.toLowerCase().includes("commercial") ||
+          u.specialization?.toLowerCase().includes("commercial") ||
+          u.category?.toLowerCase().includes("office")
+        ));
+      } else if (selectedRole === "bim_3d") {
+        list = list.filter((u) => (
+          u.category?.toLowerCase().includes("bim") ||
+          u.category?.toLowerCase().includes("3d") ||
+          u.specialization?.toLowerCase().includes("bim") ||
+          u.specialization?.toLowerCase().includes("3d") ||
+          u.specialization?.toLowerCase().includes("cad")
+        ));
+      } else if (selectedRole === "landscape_exterior") {
+        list = list.filter((u) => (
+          u.category?.toLowerCase().includes("landscape") ||
+          u.category?.toLowerCase().includes("exterior") ||
+          u.specialization?.toLowerCase().includes("landscape") ||
+          u.specialization?.toLowerCase().includes("exterior")
+        ));
+      }
     }
 
     // Search filter
@@ -371,9 +404,6 @@ export default function PortfolioDirectory() {
         <nav className="hidden md:flex items-center gap-7 text-[13.5px] font-medium text-gray-600">
           <Link to="/" className="hover:text-[#b8823a] transition-colors">
             Home
-          </Link>
-          <Link to="/designs" className="hover:text-[#b8823a] transition-colors">
-            Projects
           </Link>
           <Link
             to="/portfolios"

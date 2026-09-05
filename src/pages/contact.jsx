@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import {
   Loader2,
   CheckCircle2,
@@ -20,6 +21,7 @@ import {
   Pencil,
   Heart,
   ArrowRight,
+  Navigation,
 } from "lucide-react";
 import "../theme.css";
 import { useSubmitContactSectionLeadMutation } from "./supplyproductsapislice";
@@ -70,12 +72,33 @@ const OFFICES = [
     icon: Phone,
     title: "Direct",
     lines: [],
-    email: "Nightowldesignershelp@gmail.com",
+    email: "nightowldesignershelp@gmail.com",
     phone: "+91 89669 69035",
   },
 ];
 
-const SOCIALS = [Globe, Mail, Link2, Rss];
+const SOCIALS_DATA = [
+  {
+    name: "Instagram",
+    href: "https://www.instagram.com/nodindia.in?igsi=bG1lczVtMHNydHNu",
+    icon: Globe,
+  },
+  {
+    name: "LinkedIn",
+    href: "https://www.linkedin.com/in/nod-india-9131b9400",
+    icon: Link2,
+  },
+  {
+    name: "Email",
+    href: "mailto:nightowldesignershelp@gmail.com",
+    icon: Mail,
+  },
+  {
+    name: "Website",
+    href: "https://nodindia.in",
+    icon: Rss,
+  },
+];
 
 const BENEFITS = [
   {
@@ -157,6 +180,7 @@ function HeroArt() {
 }
 
 export default function ContactSection() {
+  const navigate = useNavigate();
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -166,6 +190,21 @@ export default function ContactSection() {
     details: "",
   });
   const [errors, setErrors] = useState({});
+
+  const handleConnectNearbySuppliers = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          navigate(`/supplier-products?lat=${pos.coords.latitude}&lng=${pos.coords.longitude}&nearby=true`);
+        },
+        () => {
+          navigate("/supplier-products?nearby=true");
+        }
+      );
+    } else {
+      navigate("/supplier-products");
+    }
+  };
 
   const [submitLead, { isLoading, isSuccess, isError, error }] =
     useSubmitContactSectionLeadMutation();
@@ -316,25 +355,31 @@ export default function ContactSection() {
                   Follow Us
                 </p>
                 <div className="flex items-center gap-2.5">
-                  {SOCIALS.map((Icon, i) => (
-                    <a
-                      key={i}
-                      href="#"
-                      aria-label="Social link"
-                      className="w-8 h-8 rounded-full flex items-center justify-center transition-colors"
-                      style={{ border: `1px solid ${BORDER}`, color: TEXT }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.borderColor = GOLD;
-                        e.currentTarget.style.color = GOLD;
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.borderColor = BORDER;
-                        e.currentTarget.style.color = TEXT;
-                      }}
-                    >
-                      <Icon size={14} />
-                    </a>
-                  ))}
+                  {SOCIALS_DATA.map((item, i) => {
+                    const Icon = item.icon;
+                    return (
+                      <a
+                        key={i}
+                        href={item.href}
+                        target={item.href.startsWith("http") ? "_blank" : undefined}
+                        rel={item.href.startsWith("http") ? "noopener noreferrer" : undefined}
+                        aria-label={item.name}
+                        title={item.name}
+                        className="w-8 h-8 rounded-full flex items-center justify-center transition-colors"
+                        style={{ border: `1px solid ${BORDER}`, color: TEXT }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.borderColor = GOLD;
+                          e.currentTarget.style.color = GOLD;
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.borderColor = BORDER;
+                          e.currentTarget.style.color = TEXT;
+                        }}
+                      >
+                        <Icon size={14} />
+                      </a>
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -565,35 +610,52 @@ export default function ContactSection() {
               find the right products for your requirements.
             </p>
 
-            <button
-              type="button"
-              className="self-start px-6 py-3 rounded-lg text-[11.5px] font-semibold tracking-[0.05em] flex items-center gap-2 transition-colors"
-              style={{
-                border: `1px solid ${HEADING}`,
-                color: HEADING,
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = HEADING;
-                e.currentTarget.style.color = BG;
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = "transparent";
-                e.currentTarget.style.color = HEADING;
-              }}
-            >
-              Browse Supplier Products
-              <ArrowRight size={14} />
-            </button>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+              <button
+                type="button"
+                onClick={() => navigate("/supplier-products")}
+                className="px-5 py-3 rounded-lg text-[11.5px] font-semibold tracking-[0.05em] flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                style={{
+                  border: `1px solid ${HEADING}`,
+                  color: HEADING,
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = HEADING;
+                  e.currentTarget.style.color = BG;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "transparent";
+                  e.currentTarget.style.color = HEADING;
+                }}
+              >
+                Browse Supplier Products
+                <ArrowRight size={14} />
+              </button>
+
+              <button
+                type="button"
+                onClick={handleConnectNearbySuppliers}
+                className="px-5 py-3 rounded-lg text-[11.5px] font-semibold tracking-[0.05em] flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                style={{
+                  background: GOLD,
+                  color: "#1b130f",
+                  border: `1px solid ${GOLD}`,
+                }}
+              >
+                <Navigation size={13} />
+                Connect Nearby Suppliers
+              </button>
+            </div>
           </div>
 
           <div className="md:col-span-8">
             <div
-              className="relative w-full min-h-[320px] rounded-2xl overflow-hidden"
+              className="relative w-full min-h-[340px] rounded-2xl overflow-hidden shadow-md"
               style={{ border: `1px solid ${BORDER}` }}
             >
               <iframe
                 title="NOD Studio & Head Office location"
-                src="https://www.google.com/maps?q=84+Drayton+Gardens,+London+SW10+9SD&output=embed"
+                src="https://maps.google.com/maps?q=Beside+Uday+Amrik+Homes+Main+Gate,+Itarsi+Road,+Sadar,+Betul,+Madhya+Pradesh+460001&t=&z=15&ie=UTF8&iwloc=&output=embed"
                 className="absolute inset-0 w-full h-full"
                 style={{ border: 0 }}
                 loading="lazy"
@@ -602,10 +664,9 @@ export default function ContactSection() {
               />
 
               <div
-                className="absolute bottom-4 right-4 max-w-[230px] rounded-xl p-4"
+                className="absolute bottom-4 right-4 max-w-[260px] rounded-xl p-4 bg-white/95 backdrop-blur-md shadow-xl"
                 style={{
-                  background: BG,
-                  boxShadow: "0 12px 30px -10px rgba(28,23,18,0.3)",
+                  border: `1px solid ${BORDER}`,
                 }}
               >
                 <p
@@ -615,16 +676,16 @@ export default function ContactSection() {
                   NOD Studio &amp; Head Office
                 </p>
                 <p
-                  className="text-[12px] leading-snug mb-2"
+                  className="text-[11.5px] leading-snug mb-2"
                   style={{ color: TEXT }}
                 >
-                  84 Drayton Gardens, India SW10 9SD
+                  Beside Uday Amrik Homes, Itarsi Road, Sadar, Betul – 460001, MP, India
                 </p>
                 <a
-                  href="https://www.google.com/maps/search/?api=1&query=84+Drayton+Gardens,+London+SW10+9SD"
+                  href="https://www.google.com/maps/dir/?api=1&destination=Beside+Uday+Amrik+Homes+Main+Gate,+Itarsi+Road,+Sadar,+Betul,+Madhya+Pradesh+460001"
                   target="_blank"
                   rel="noreferrer"
-                  className="text-[11.5px] font-semibold flex items-center gap-1"
+                  className="text-[11.5px] font-semibold flex items-center gap-1 hover:underline"
                   style={{ color: GOLD }}
                 >
                   GET DIRECTIONS
