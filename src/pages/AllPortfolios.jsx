@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import {
   ArrowRight,
@@ -11,38 +11,51 @@ import {
   Star,
   Bell,
   Building2,
+  Check,
+  X,
+  Sparkles,
 } from "lucide-react";
 import { useGetAllPortfoliosQuery } from "./supplyproductsapislice";
 
 const ROLE_LABELS = {
   1: "Client",
-  2: "Interior Designer",
+  2: "Designer",
   3: "Architect",
   4: "Contractor",
   5: "Material Supplier",
 };
 
+const DESIGNER_SPECIALIZATIONS = [
+  { id: "ALL", label: "All Designers", query: "" },
+  { id: "interior", label: "Interior Design", query: "interior" },
+  { id: "exterior", label: "Exterior Designer", query: "exterior" },
+  { id: "autocad", label: "AutoCAD Designer", query: "autocad" },
+  { id: "bim_3d", label: "BIM & 3D Visualizer", query: "bim|3d|cad" },
+  { id: "landscape", label: "Landscape Designer", query: "landscape" },
+  { id: "structural", label: "Structural Designer", query: "structural" },
+  { id: "product", label: "Product Designer", query: "product" },
+  { id: "vastu", label: "Vastu Consultant", query: "vastu" },
+  { id: "residential", label: "Residential Interior", query: "residential" },
+  { id: "commercial", label: "Commercial Interior", query: "commercial|office" },
+];
+
 const FILTER_ROLES = [
   { id: "ALL", label: "All Roles" },
   { id: 3, label: "Architect" },
-  { id: 2, label: "Designers" },
-  { id: "residential_interior", label: "Residential Interior", role: 2 },
-  { id: "commercial_interior", label: "Commercial Interior", role: 2 },
-  { id: "bim_3d", label: "BIM & 3D Visualizer", role: 2 },
-  { id: "landscape_exterior", label: "Landscape & Exterior", role: 2 },
+  { id: 2, label: "Designers", hasSubmenu: true },
   { id: 4, label: "Contractor" },
   { id: 5, label: "Material Supplier" },
 ];
 
 const ROLE_CONFIG = {
   2: {
-    name: "Interior Designer",
+    name: "Designer",
     badgeBg: "bg-purple-100 text-purple-700",
     catBg: "bg-purple-50 text-purple-700 border-purple-100",
-    defaultCat: "Interior Design",
-    defaultSpec: "Interior Designer",
+    defaultCat: "Design & Planning",
+    defaultSpec: "Designer",
     defaultCover:
-      "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=800&q=80",
+      "/extracted/img_9.jpg",
   },
   3: {
     name: "Architect",
@@ -51,7 +64,7 @@ const ROLE_CONFIG = {
     defaultCat: "Residential Architecture",
     defaultSpec: "Architect",
     defaultCover:
-      "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80",
+      "/extracted/img_6.jpg",
   },
   4: {
     name: "Contractor",
@@ -60,7 +73,7 @@ const ROLE_CONFIG = {
     defaultCat: "Civil Construction",
     defaultSpec: "General Contractor",
     defaultCover:
-      "https://images.unsplash.com/photo-1541888946425-d0fbb18086f6?auto=format&fit=crop&w=800&q=80",
+      "/extracted/img_9.jpg",
   },
   5: {
     name: "Material Supplier",
@@ -69,7 +82,7 @@ const ROLE_CONFIG = {
     defaultCat: "Building Materials",
     defaultSpec: "Material Supplier",
     defaultCover:
-      "https://images.unsplash.com/photo-1590381105924-c72589b9ef3f?auto=format&fit=crop&w=800&q=80",
+      "/extracted/img_8.jpg",
   },
 };
 
@@ -149,11 +162,22 @@ function normalisePortfolio(user) {
   );
   const location = locationParts.length > 0 ? locationParts.join(", ") : "India";
 
+  // Dynamic Specialization Level
+  const specializationLevel =
+    user.specializationLevel ||
+    profile.specializationLevel ||
+    profile.level ||
+    profile.experienceLevel ||
+    user.designer?.specializationLevel ||
+    user.architect?.specializationLevel ||
+    (experience >= 6 ? "Professional" : experience >= 3 ? "Intermediate" : "Beginner");
+
   return {
     ...user,
     profile,
     category,
     specialization: rawSpecialization,
+    specializationLevel,
     experience,
     rating,
     totalReviews,
@@ -227,6 +251,14 @@ function PortfolioCard({ user, onOpen }) {
               </span>
             </div>
           )}
+          {user.specializationLevel && (
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-[11px] font-bold text-gray-500 shrink-0">Level:</span>
+              <span className="px-2 py-0.5 rounded-md text-[10.5px] font-semibold bg-[#fef9ee] text-[#b8823a] border border-[#eed7a1] truncate">
+                {user.specializationLevel}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Footer: Experience, Rating, Action Arrow */}
@@ -268,8 +300,26 @@ export default function PortfolioDirectory() {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [selectedRole, setSelectedRole] = useState("ALL");
+  const [designerSpec, setDesignerSpec] = useState("ALL");
+  const [selectedLevel, setSelectedLevel] = useState("ALL");
+  const [isDesignerMenuOpen, setIsDesignerMenuOpen] = useState(false);
   const [sortBy, setSortBy] = useState("latest");
   const [page, setPage] = useState(1);
+  const designerDropdownRef = useRef(null);
+
+  // Close designer dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (
+        designerDropdownRef.current &&
+        !designerDropdownRef.current.contains(event.target)
+      ) {
+        setIsDesignerMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   // Fetch real portfolio data from backend API
   const { data, isLoading, isFetching } = useGetAllPortfoliosQuery({
@@ -295,36 +345,29 @@ export default function PortfolioDirectory() {
 
     // Role filter
     if (selectedRole !== "ALL") {
-      if (typeof selectedRole === "number" || !isNaN(Number(selectedRole))) {
+      if (Number(selectedRole) === 2) {
+        list = list.filter((u) => Number(u.role) === 2);
+        if (designerSpec !== "ALL") {
+          const specObj = DESIGNER_SPECIALIZATIONS.find((s) => s.id === designerSpec);
+          const q = (specObj?.query || designerSpec).toLowerCase();
+          const keywords = q.split("|");
+          list = list.filter((u) => {
+            const spec = (u.specialization || "").toLowerCase();
+            const cat = (u.category || "").toLowerCase();
+            const rawSpecs = (u.specializationsText || "").toLowerCase();
+            return keywords.some((kw) => spec.includes(kw) || cat.includes(kw) || rawSpecs.includes(kw));
+          });
+        }
+      } else {
         list = list.filter((u) => Number(u.role) === Number(selectedRole));
-      } else if (selectedRole === "residential_interior") {
-        list = list.filter((u) => Number(u.role) === 2 && (
-          u.category?.toLowerCase().includes("residential") ||
-          u.specialization?.toLowerCase().includes("residential") ||
-          u.category?.toLowerCase().includes("interior")
-        ));
-      } else if (selectedRole === "commercial_interior") {
-        list = list.filter((u) => Number(u.role) === 2 && (
-          u.category?.toLowerCase().includes("commercial") ||
-          u.specialization?.toLowerCase().includes("commercial") ||
-          u.category?.toLowerCase().includes("office")
-        ));
-      } else if (selectedRole === "bim_3d") {
-        list = list.filter((u) => (
-          u.category?.toLowerCase().includes("bim") ||
-          u.category?.toLowerCase().includes("3d") ||
-          u.specialization?.toLowerCase().includes("bim") ||
-          u.specialization?.toLowerCase().includes("3d") ||
-          u.specialization?.toLowerCase().includes("cad")
-        ));
-      } else if (selectedRole === "landscape_exterior") {
-        list = list.filter((u) => (
-          u.category?.toLowerCase().includes("landscape") ||
-          u.category?.toLowerCase().includes("exterior") ||
-          u.specialization?.toLowerCase().includes("landscape") ||
-          u.specialization?.toLowerCase().includes("exterior")
-        ));
       }
+    }
+
+    // Specialization Level filter
+    if (selectedLevel !== "ALL") {
+      list = list.filter(
+        (u) => (u.specializationLevel || "").toLowerCase() === selectedLevel.toLowerCase()
+      );
     }
 
     // Search filter
@@ -466,6 +509,108 @@ export default function PortfolioDirectory() {
           {/* Role Filter Pills */}
           <div className="flex flex-wrap items-center gap-2">
             {FILTER_ROLES.map((r) => {
+              // Custom interactive dropdown for Designers
+              if (r.id === 2) {
+                const isSelected = selectedRole === 2;
+                const activeSpec = DESIGNER_SPECIALIZATIONS.find((s) => s.id === designerSpec);
+                const isCustomSpec = isSelected && designerSpec !== "ALL";
+
+                return (
+                  <div key={r.id} className="relative inline-block" ref={designerDropdownRef}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!isSelected) {
+                          setSelectedRole(2);
+                          setPage(1);
+                        }
+                        setIsDesignerMenuOpen((prev) => !prev);
+                      }}
+                      className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full border text-[13px] font-medium transition-all cursor-pointer ${
+                        isSelected
+                          ? "bg-[#fef9ee] border-[#eed7a1] text-[#9c6c2c] shadow-2xs font-semibold"
+                          : "bg-white border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300"
+                      }`}
+                    >
+                      <span>
+                        {isCustomSpec ? `Designers: ${activeSpec?.label}` : "Designers"}
+                      </span>
+                      <ChevronDown
+                        size={14}
+                        className={`transition-transform duration-200 ${
+                          isDesignerMenuOpen ? "rotate-180 text-[#b8823a]" : "text-gray-400"
+                        }`}
+                      />
+                      {isCustomSpec && (
+                        <span
+                          role="button"
+                          tabIndex={0}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDesignerSpec("ALL");
+                            setPage(1);
+                          }}
+                          className="ml-1 p-0.5 rounded-full hover:bg-[#eed7a1]/50 text-gray-500 hover:text-gray-900 transition-colors"
+                          title="Clear specialization filter"
+                        >
+                          <X size={13} />
+                        </span>
+                      )}
+                    </button>
+
+                    {/* Designer Specializations Dropdown Menu */}
+                    {isDesignerMenuOpen && (
+                      <div className="absolute left-0 top-full mt-2 w-64 sm:w-72 bg-white rounded-2xl shadow-xl border border-gray-200/90 py-2 z-50 animate-in fade-in zoom-in-95 duration-150">
+                        <div className="px-3.5 py-1.5 border-b border-gray-100 flex items-center justify-between">
+                          <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400">
+                            Designer Specializations
+                          </span>
+                          {designerSpec !== "ALL" && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setDesignerSpec("ALL");
+                                setPage(1);
+                              }}
+                              className="text-[11px] font-semibold text-[#b8823a] hover:underline cursor-pointer"
+                            >
+                              Reset
+                            </button>
+                          )}
+                        </div>
+                        <div className="max-h-64 overflow-y-auto py-1 divide-y divide-gray-50">
+                          {DESIGNER_SPECIALIZATIONS.map((spec) => {
+                            const isCurrent = isSelected && designerSpec === spec.id;
+                            return (
+                              <button
+                                key={spec.id}
+                                type="button"
+                                onClick={() => {
+                                  setSelectedRole(2);
+                                  setDesignerSpec(spec.id);
+                                  setIsDesignerMenuOpen(false);
+                                  setPage(1);
+                                }}
+                                className={`w-full text-left px-3.5 py-2 text-xs sm:text-[13px] flex items-center justify-between transition-colors cursor-pointer ${
+                                  isCurrent
+                                    ? "bg-[#fef9ee] text-[#b8823a] font-bold"
+                                    : "text-gray-700 hover:bg-gray-50 font-medium"
+                                }`}
+                              >
+                                <span>{spec.label}</span>
+                                {isCurrent && (
+                                  <Check size={14} className="text-[#b8823a] stroke-[2.5]" />
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+
               const isSelected = selectedRole === r.id;
               return (
                 <button
@@ -473,39 +618,67 @@ export default function PortfolioDirectory() {
                   type="button"
                   onClick={() => {
                     setSelectedRole(r.id);
+                    setDesignerSpec("ALL");
+                    setIsDesignerMenuOpen(false);
                     setPage(1);
                   }}
-                  className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full border text-[13px] font-medium transition-all ${
+                  className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full border text-[13px] font-medium transition-all cursor-pointer ${
                     isSelected
                       ? "bg-[#fef9ee] border-[#eed7a1] text-[#9c6c2c] shadow-2xs font-semibold"
                       : "bg-white border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300"
                   }`}
                 >
                   {r.label}
-                  {r.id === "ALL" && <ChevronDown size={14} />}
                 </button>
               );
             })}
           </div>
 
-          {/* Sort Dropdown */}
-          <div className="flex items-center gap-2 text-sm text-gray-500 shrink-0">
-            <span>Sort by:</span>
-            <div className="relative">
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="appearance-none bg-white border border-gray-200 rounded-lg pl-3 pr-8 py-1.5 text-[13px] font-medium text-gray-800 focus:outline-none focus:border-[#b8823a] shadow-2xs cursor-pointer"
-              >
-                <option value="latest">Latest</option>
-                <option value="rating">Highest Rated</option>
-                <option value="experience">Most Experienced</option>
-                <option value="name">Name (A–Z)</option>
-              </select>
-              <ChevronDown
-                size={14}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
-              />
+          {/* Controls: Level Filter & Sort Dropdown */}
+          <div className="flex items-center gap-3 flex-wrap sm:flex-nowrap shrink-0">
+            {/* Specialization Level Dropdown */}
+            <div className="flex items-center gap-1.5 text-xs sm:text-sm text-gray-500 shrink-0">
+              <span className="font-medium">Level:</span>
+              <div className="relative">
+                <select
+                  value={selectedLevel}
+                  onChange={(e) => {
+                    setSelectedLevel(e.target.value);
+                    setPage(1);
+                  }}
+                  className="appearance-none bg-white border border-gray-200 rounded-lg pl-3 pr-8 py-1.5 text-[13px] font-medium text-gray-800 focus:outline-none focus:border-[#b8823a] shadow-2xs cursor-pointer"
+                >
+                  <option value="ALL">All Levels</option>
+                  <option value="Beginner">Beginner</option>
+                  <option value="Intermediate">Intermediate</option>
+                  <option value="Professional">Professional</option>
+                </select>
+                <ChevronDown
+                  size={14}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+                />
+              </div>
+            </div>
+
+            {/* Sort Dropdown */}
+            <div className="flex items-center gap-1.5 text-xs sm:text-sm text-gray-500 shrink-0">
+              <span className="font-medium">Sort by:</span>
+              <div className="relative">
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="appearance-none bg-white border border-gray-200 rounded-lg pl-3 pr-8 py-1.5 text-[13px] font-medium text-gray-800 focus:outline-none focus:border-[#b8823a] shadow-2xs cursor-pointer"
+                >
+                  <option value="latest">Latest</option>
+                  <option value="rating">Highest Rated</option>
+                  <option value="experience">Most Experienced</option>
+                  <option value="name">Name (A–Z)</option>
+                </select>
+                <ChevronDown
+                  size={14}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -605,6 +778,8 @@ export default function PortfolioDirectory() {
               onClick={() => {
                 setSearch("");
                 setSelectedRole("ALL");
+                setDesignerSpec("ALL");
+                setSelectedLevel("ALL");
               }}
               className="mt-4 px-4 py-2 text-xs font-semibold text-[#b8823a] bg-[#fef9ee] border border-[#eed7a1] rounded-full hover:bg-[#fbf4e8] transition"
             >
@@ -616,3 +791,5 @@ export default function PortfolioDirectory() {
     </div>
   );
 }
+
+

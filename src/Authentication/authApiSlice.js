@@ -129,6 +129,17 @@ export const authApiSlice = apiSlice.injectEndpoints({
             }),
             providesTags: ["Categories"],
         }),
+        // ── GET CURRENCY (Auto-resolved from phone code / country) ──
+        getCurrency: builder.query({
+            query: (params = {}) => ({
+                url: "/Auth/currency",
+                method: "GET",
+                params: {
+                    phoneCode: params.phoneCode,
+                    country: params.country,
+                },
+            }),
+        }),
     }),
 });
 
@@ -148,4 +159,6 @@ export const {
     useLazyCheckUsernameQuery,
     useGetCategoriesAndSpecializationsQuery,
     useGetCategoriesQuery,
+    useGetCurrencyQuery,
+    useLazyGetCurrencyQuery,
 } = authApiSlice;

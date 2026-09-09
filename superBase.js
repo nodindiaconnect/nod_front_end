@@ -1,26 +1,41 @@
 import { createClient } from "@supabase/supabase-js";
+import { validateImageForContactInfo } from "./src/utils/imageTextValidator.js";
 
 const supabase = createClient(
     import.meta.env.VITE_SUPABASE_URL,
     import.meta.env.VITE_SUPABASE_ANON_KEY
 );
 
+// List of known public buckets in Supabase
+const KNOWN_BUCKETS = ["designers", "products", "posts"];
+
 /**
  * Uploads a single file to a Supabase Storage bucket and returns its public URL.
  *
  * @param {File} file - The file object (e.g. from an <input type="file"> onChange event)
- * @param {string} bucket - Storage bucket name (default: "products")
+ * @param {string} bucket - Storage bucket name (default: "designers")
  * @param {string} folder - Optional folder/path prefix inside the bucket
  * @returns {Promise<{ path: string, publicUrl: string }>}
  */
-export async function uploadFile(file, bucket = "products", folder = "") {
+export async function uploadFile(file, bucket = "designers", folder = "") {
     if (!file) throw new Error("No file provided");
+
+    // Scan image files for prohibited phone numbers, emails, or contact info
+    const scanResult = await validateImageForContactInfo(file);
+    if (!scanResult.isValid) {
+        throw new Error(
+            scanResult.error ||
+            "Upload rejected: This image contains prohibited contact details (phone number or email)."
+        );
+    }
 
     const fileExt = file.name.split(".").pop();
     const uniqueName = `${crypto.randomUUID()}.${fileExt}`;
     const path = folder ? `${folder}/${uniqueName}` : uniqueName;
 
-    let targetBucket = bucket;
+    // Direct all portfolio and professional uploads to "designers" bucket if bucket is not recognized
+    let targetBucket = KNOWN_BUCKETS.includes(bucket) ? bucket : "designers";
+
     let { error: uploadError } = await supabase.storage
         .from(targetBucket)
         .upload(path, file, {
@@ -29,19 +44,23 @@ export async function uploadFile(file, bucket = "products", folder = "") {
         });
 
     if (uploadError) {
-        // Fallback to "designers" or "products" bucket if specific bucket is unavailable
-        const fallbackBucket = targetBucket === "products" ? "designers" : "products";
-        const { error: fallbackError } = await supabase.storage
-            .from(fallbackBucket)
-            .upload(path, file, {
-                cacheControl: "3600",
-                upsert: false,
-            });
+        // Fallback to "designers" bucket if target bucket is unavailable
+        const fallbackBucket = "designers";
+        if (targetBucket !== fallbackBucket) {
+            const { error: fallbackError } = await supabase.storage
+                .from(fallbackBucket)
+                .upload(path, file, {
+                    cacheControl: "3600",
+                    upsert: false,
+                });
 
-        if (fallbackError) {
+            if (fallbackError) {
+                throw new Error(`Upload failed: ${uploadError.message}`);
+            }
+            targetBucket = fallbackBucket;
+        } else {
             throw new Error(`Upload failed: ${uploadError.message}`);
         }
-        targetBucket = fallbackBucket;
     }
 
     const { data: publicUrlData } = supabase.storage
@@ -52,18 +71,31 @@ export async function uploadFile(file, bucket = "products", folder = "") {
 }
 
 /**
- * Convenience wrapper for uploading multiple named files at once, e.g.
- * the { floorPlan, propertyPhoto, referenceImage, video } object from
- * ProjectsPage's `files` state. Skips any keys with a null value.
+ * Convenience wrapper for uploading multiple files.
+ * Supports both an Array of Files: [File, File, ...] -> returns [{ path, publicUrl }, ...]
+ * and a named object map: { key1: File, key2: File } -> returns { key1: url, key2: url }
  *
- * @param {Record<string, File|null>} filesMap
- * @param {string} bucket
+ * @param {File[]|Record<string, File|null>} filesMap
+ * @param {string} bucket - default: "designers"
  * @param {string} folder
- * @returns {Promise<Record<string, string>>} map of key -> publicUrl
+ * @returns {Promise<Array<{path: string, publicUrl: string}>|Record<string, string>>}
  */
-export async function uploadFiles(filesMap, bucket = "products", folder = "") {
-    const entries = Object.entries(filesMap).filter(([, file]) => !!file);
+export async function uploadFiles(filesMap, bucket = "designers", folder = "") {
+    if (!filesMap) return Array.isArray(filesMap) ? [] : {};
 
+    // If passed as an Array of files
+    if (Array.isArray(filesMap)) {
+        const results = await Promise.all(
+            filesMap.filter(Boolean).map(async (file) => {
+                const { publicUrl, path } = await uploadFile(file, bucket, folder);
+                return { publicUrl, path };
+            })
+        );
+        return results;
+    }
+
+    // If passed as a named dictionary of files
+    const entries = Object.entries(filesMap).filter(([, file]) => !!file);
     const results = await Promise.all(
         entries.map(async ([key, file]) => {
             const { publicUrl } = await uploadFile(file, bucket, folder);

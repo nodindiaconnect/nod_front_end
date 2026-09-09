@@ -247,6 +247,13 @@ export default function ProfilePage() {
   }, [profileRes, hydrated]);
 
   const updateField = (key, value) => {
+    if (key === "bio" && /\d/.test(value)) {
+      setStatus({ type: "error", message: "Bio cannot contain numbers." });
+      return;
+    }
+    if (key === "bio" && status.message === "Bio cannot contain numbers.") {
+      setStatus({ type: "muted", message: "" });
+    }
     setForm((prev) => ({ ...prev, [key]: value }));
     setDirty(true);
   };
@@ -293,7 +300,7 @@ export default function ProfilePage() {
     if (!file) return;
     setAvatarUploading(true);
     try {
-      const response = await uploadFile(file, "contractors", "profile-photos");
+      const response = await uploadFile(file, "designers", "profile-photos");
       if (response.publicUrl) {
         setForm((prev) => ({ ...prev, photos: [response.publicUrl] }));
         setDirty(true);
@@ -323,6 +330,8 @@ export default function ProfilePage() {
     if (!form.serviceCities.length) return "Add at least one service city.";
     if (form.minBudgetHandled === "" || form.maxBudgetHandled === "")
       return "Set your budget range.";
+    if (form.bio && /\d/.test(form.bio))
+      return "Bio cannot contain numbers.";
     if (Number(form.minBudgetHandled) > Number(form.maxBudgetHandled))
       return "Minimum budget cannot exceed maximum budget.";
     return null;

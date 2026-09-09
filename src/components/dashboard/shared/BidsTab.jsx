@@ -31,7 +31,7 @@ import {
 const ROLE_TABS = [
   { key: "ALL", label: "All Proposals" },
   { key: "ARCHITECT", label: "Architects" },
-  { key: "INTERIOR_DESIGNER", label: "Interior Designers" },
+  { key: "INTERIOR_DESIGNER", label: "Designers" },
   { key: "CONTRACTOR", label: "Contractors" },
 ];
 
@@ -147,12 +147,23 @@ export default function BidsTab({
       (Array.isArray(pro?.photos) && pro.photos.length > 0 ? (typeof pro.photos[0] === "string" ? pro.photos[0] : pro.photos[0]?.url) : null) ||
       null;
 
+    const parsedProfile = typeof user.profile === "object" ? user.profile : (() => {
+      try { return JSON.parse(user.profile) || {}; } catch { return {}; }
+    })();
+
+    const specializationLevel =
+      pro?.specializationLevel ||
+      user?.specializationLevel ||
+      parsedProfile?.specializationLevel ||
+      null;
+
     return {
       userId: user.id || null,
       name: user.name || "Professional",
       profileImg: img,
       city: user.city || user.state ? `${user.city || ""}, ${user.state || ""}` : "Verified Location",
       role: bid.role ? bid.role.replace(/_/g, " ") : "Specialist",
+      specializationLevel,
       experience: pro?.experience || pro?.yearsOfExperience || "Verified Pro",
       rating: pro?.rating || 4.9,
     };
@@ -359,6 +370,11 @@ export default function BidsTab({
                         <span className="text-[11px] px-2.5 py-0.5 rounded-full font-semibold bg-[var(--background-secondary)] text-[var(--primary)]">
                           {pro.role}
                         </span>
+                        {pro.specializationLevel && (
+                          <span className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-[#fef9ee] border border-[#eed7a1] text-[#9c6c2c]">
+                            {pro.specializationLevel}
+                          </span>
+                        )}
 
                         {/* Status Badges */}
                         {isAccepted && (
@@ -548,7 +564,7 @@ export default function BidsTab({
               </button>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 bg-[var(--background-secondary)] p-4 rounded-md">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-[var(--background-secondary)] p-4 rounded-md">
               <div>
                 <div className="text-[11px] uppercase tracking-wider text-muted font-semibold">
                   Role
@@ -557,6 +573,16 @@ export default function BidsTab({
                   {getProDetails(viewingBid).role}
                 </div>
               </div>
+              {getProDetails(viewingBid).specializationLevel ? (
+                <div>
+                  <div className="text-[11px] uppercase tracking-wider text-muted font-semibold">
+                    Level
+                  </div>
+                  <div className="text-sm font-bold text-[var(--gold)]">
+                    {getProDetails(viewingBid).specializationLevel}
+                  </div>
+                </div>
+              ) : null}
               <div>
                 <div className="text-[11px] uppercase tracking-wider text-muted font-semibold">
                   Quoted Price

@@ -20,10 +20,10 @@ import { toast } from "react-toastify";
 
 
 const SCOPES = [
-  { id: "FULL_PROJECT", label: "Full Project (All Disciplines)", desc: "Requires Architect, Contractor, and Interior Designer across 3 execution phases." },
+  { id: "FULL_PROJECT", label: "Full Project (All Disciplines)", desc: "Requires Architect, Contractor, and Designer across 3 execution phases." },
   { id: "ARCHITECTURE_ONLY", label: "Architecture / Planning Only", desc: "Structural blueprints, floor plans, and municipal permits." },
   { id: "CONSTRUCTION_ONLY", label: "Construction / Civil Execution Only", desc: "Civil contractor, MEP, framing, and site execution." },
-  { id: "DESIGN_ONLY", label: "Interior Design & Fitouts Only", desc: "Space planning, 3D renders, materials, and modular woodwork." },
+  { id: "DESIGN_ONLY", label: "Designer Only", desc: "Space planning, 3D renders, materials, and design concepts." },
 ];
 
 const CATEGORIES = ["RESIDENTIAL", "COMMERCIAL", "OFFICE", "VILLA", "APARTMENT"];
@@ -126,6 +126,14 @@ export default function EditProjectModal({ project, isOpen, onClose, onUpdated }
       return;
     }
 
+    if (Number(budgetMin) < 1000) {
+      setErrorMsg("Minimum budget must be at least ₹1,000.");
+      return;
+    }
+    if (Number(budgetMax) < 1000) {
+      setErrorMsg("Maximum budget must be at least ₹1,000.");
+      return;
+    }
     if (Number(budgetMin) > Number(budgetMax)) {
       setErrorMsg("Minimum budget cannot exceed maximum budget.");
       return;

@@ -15,7 +15,7 @@ import {
   ChevronRight,
   Briefcase,
   FileText,
-
+  Award,
   Check,
   ArrowRight,
 } from "lucide-react";
@@ -24,47 +24,61 @@ import { useGetAllPortfoliosQuery } from "../../../pages/supplyproductsapislice"
 const ROLES = [
   { id: "ALL", label: "All Specialists", sublabel: "All Specialties", icon: Layers },
   { id: 3, label: "Architects", sublabel: "Browse pros", icon: Building },
-  { id: 2, label: "Interior Designers", sublabel: "Browse pros", icon: Palette },
+  { id: 2, label: "Designers", sublabel: "Interior, 3D, BIM...", icon: Palette },
   { id: 4, label: "Contractors", sublabel: "Browse pros", icon: Hammer },
   { id: 5, label: "Material Suppliers", sublabel: "Browse pros", icon: Package },
 ];
 
 const ROLE_LABELS = {
   1: "Client",
-  2: "Interior Designer",
+  2: "Designer",
   3: "Architect",
   4: "Contractor",
   5: "Material Supplier",
 };
 
+const DESIGNER_SPECIALIZATIONS = [
+  { id: "ALL", label: "All Categories", query: "" },
+  { id: "interior", label: "Interior Designer", query: "interior" },
+  { id: "exterior", label: "Exterior Designer", query: "exterior" },
+  { id: "autocad", label: "AutoCAD Drafter", query: "autocad|draft" },
+  { id: "landscape", label: "Landscape Designer", query: "landscape" },
+  { id: "bim", label: "BIM Engineer", query: "bim|revit" },
+  { id: "product", label: "Product Designer", query: "product|furniture" },
+  { id: "graphic", label: "Graphic Designer", query: "graphic|signage" },
+  { id: "3d_modeler", label: "3D Modeler", query: "3d|model|render" },
+  { id: "walkthrough", label: "Walkthrough Specialist", query: "walkthrough|animation|vr" },
+  { id: "estimation", label: "Estimation Engineer", query: "estimation|boq|quantity" },
+];
+
 const ROLE_CONFIG = {
   2: {
-    defaultCat: "Drafting & Modeling",
-    defaultSpec: "AutoCAD Designer",
-    defaultSpecs: "AutoCAD Designer, Exterior Designer",
+    defaultCat: "Design & Planning",
+    defaultSpec: "Designer",
+    defaultSpecs: "Interior Design, 3D Visualizer",
     defaultCover:
-      "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=800&q=80",
+      "/extracted/img_9.jpg",
   },
   3: {
     defaultCat: "Residential Architecture",
     defaultSpec: "3D Architect",
     defaultSpecs: "Residential Architecture, Commercial Planning",
     defaultCover:
-      "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80",
+      "/extracted/img_6.jpg",
   },
   4: {
     defaultCat: "Civil Construction",
     defaultSpec: "Turnkey Contractor",
     defaultSpecs: "Turnkey Construction, Structural Framing",
     defaultCover:
-      "https://images.unsplash.com/photo-1541888946425-d0fbb18086f6?auto=format&fit=crop&w=800&q=80",
+      "/extracted/img_9.jpg",
   },
   5: {
     defaultCat: "Building Materials",
     defaultSpec: "Tiles & Sanitary",
     defaultSpecs: "Tiles & Sanitary, Hardware & Fittings",
     defaultCover:
-      "https://images.unsplash.com/photo-1590381105924-c72589b9ef3f?auto=format&fit=crop&w=800&q=80",
+      "/extracted/img_8.jpg",
   },
 };
 
@@ -164,11 +178,22 @@ function normaliseSpecialist(user) {
   );
   const location = locationParts.length > 0 ? locationParts.join(", ") : "India";
 
+  // Dynamic Specialization Level
+  const specializationLevel =
+    user.specializationLevel ||
+    profile.specializationLevel ||
+    profile.level ||
+    profile.experienceLevel ||
+    user.designer?.specializationLevel ||
+    user.architect?.specializationLevel ||
+    (experience >= 6 ? "Professional" : experience >= 3 ? "Intermediate" : "Beginner");
+
   return {
     ...user,
     profile,
     category,
     specialization: rawSpecialization,
+    specializationLevel,
     specializationsText,
     experience,
     rating,
@@ -244,6 +269,14 @@ function SpecialistCard({ user, onOpen }) {
                 <span className="font-bold text-gray-600 text-[11px] shrink-0">Specialization:</span>
                 <span className="px-2.5 py-0.5 rounded-md text-xs font-semibold bg-[#f7f4ed] text-gray-800 border border-gray-200/80 truncate max-w-[200px]">
                   {user.specialization}
+                </span>
+              </div>
+            )}
+            {user.specializationLevel && (
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="font-bold text-gray-600 text-[11px] shrink-0">Level:</span>
+                <span className="px-2.5 py-0.5 rounded-md text-[11px] font-semibold bg-[#fef9ee] text-[#b8823a] border border-[#eed7a1] truncate max-w-[200px]">
+                  {user.specializationLevel}
                 </span>
               </div>
             )}
@@ -336,6 +369,8 @@ function CardSkeleton() {
 export default function FindProsPage() {
   const navigate = useNavigate();
   const [selectedRole, setSelectedRole] = useState("ALL");
+  const [designerSpec, setDesignerSpec] = useState("ALL");
+  const [specLevelFilter, setSpecLevelFilter] = useState("ALL");
   const [searchQuery, setSearchQuery] = useState("");
   const [cityFilter, setCityFilter] = useState("ALL");
   const [sortBy, setSortBy] = useState("latest");
@@ -374,6 +409,26 @@ export default function FindProsPage() {
     // Role filter
     if (selectedRole !== "ALL") {
       list = list.filter((u) => Number(u.role) === Number(selectedRole));
+    }
+
+    // Designer Specialization filter
+    if (designerSpec !== "ALL") {
+      const specObj = DESIGNER_SPECIALIZATIONS.find((s) => s.id === designerSpec);
+      const q = (specObj?.query || designerSpec).toLowerCase();
+      const keywords = q.split("|");
+      list = list.filter((u) => {
+        const spec = (u.specialization || "").toLowerCase();
+        const cat = (u.category || "").toLowerCase();
+        const rawSpecs = (u.specializationsText || "").toLowerCase();
+        return keywords.some((kw) => spec.includes(kw) || cat.includes(kw) || rawSpecs.includes(kw));
+      });
+    }
+
+    // Specialization Level filter
+    if (specLevelFilter !== "ALL") {
+      list = list.filter(
+        (u) => (u.specializationLevel || "").toLowerCase() === specLevelFilter.toLowerCase()
+      );
     }
 
     // Search query
@@ -452,7 +507,7 @@ export default function FindProsPage() {
             </span>
           </div>
           <p className="text-xs sm:text-sm text-gray-500 mt-1.5">
-            Browse top-rated Architects, Interior Designers, Contractors, and Suppliers with verified reviews and performance track records.
+            Browse top-rated Architects,  Designers, Contractors, and Suppliers with verified reviews and performance track records.
           </p>
         </div>
       </div>
@@ -468,6 +523,7 @@ export default function FindProsPage() {
               type="button"
               onClick={() => {
                 setSelectedRole(r.id);
+                if (r.id !== 2) setDesignerSpec("ALL");
                 setPage(1);
               }}
               className={`p-3.5 sm:p-4 rounded-2xl border text-left transition-all duration-200 flex items-center gap-3 cursor-pointer ${
@@ -526,8 +582,43 @@ export default function FindProsPage() {
           />
         </div>
 
-        {/* Dropdowns: All Cities & Sort by */}
-        <div className="flex items-center gap-3 w-full md:w-auto shrink-0 flex-wrap justify-end">
+        {/* Dropdowns: Specialization, All Cities & Sort by */}
+        <div className="flex items-center gap-2.5 w-full md:w-auto shrink-0 flex-wrap justify-end">
+          {/* Designer Specialization Selector */}
+          <div className="relative">
+            <div
+              className={`flex items-center gap-1.5 border rounded-xl px-3 py-2 bg-white text-xs font-medium shadow-2xs transition-colors ${
+                designerSpec !== "ALL"
+                  ? "border-[#eed7a1] text-[#9c6c2c] bg-[#fef9ee]"
+                  : "border-gray-200 text-gray-800"
+              }`}
+            >
+              <Palette size={14} className={designerSpec !== "ALL" ? "text-[#b8823a]" : "text-gray-400"} />
+              <select
+                value={designerSpec}
+                onChange={(e) => {
+                  setDesignerSpec(e.target.value);
+                  if (e.target.value !== "ALL" && selectedRole !== 2) {
+                    setSelectedRole(2);
+                  }
+                  setPage(1);
+                }}
+                className="appearance-none bg-transparent pr-6 text-xs text-inherit outline-none cursor-pointer font-medium"
+              >
+                <option value="ALL">All Specializations</option>
+                {DESIGNER_SPECIALIZATIONS.filter((s) => s.id !== "ALL").map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.label}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown
+                size={13}
+                className="text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none"
+              />
+            </div>
+          </div>
+
           {/* All Cities Selector */}
           <div className="relative">
             <div className="flex items-center gap-1.5 border border-gray-200 rounded-xl px-3 py-2 bg-white text-xs font-medium text-gray-800 shadow-2xs">
@@ -546,6 +637,36 @@ export default function FindProsPage() {
                     {c}
                   </option>
                 ))}
+              </select>
+              <ChevronDown
+                size={13}
+                className="text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none"
+              />
+            </div>
+          </div>
+
+          {/* Specialization Level Selector */}
+          <div className="relative">
+            <div
+              className={`flex items-center gap-1.5 border rounded-xl px-3 py-2 bg-white text-xs font-medium shadow-2xs transition-colors ${
+                specLevelFilter !== "ALL"
+                  ? "border-[#eed7a1] text-[#9c6c2c] bg-[#fef9ee]"
+                  : "border-gray-200 text-gray-800"
+              }`}
+            >
+              <Award size={14} className={specLevelFilter !== "ALL" ? "text-[#b8823a]" : "text-gray-400"} />
+              <select
+                value={specLevelFilter}
+                onChange={(e) => {
+                  setSpecLevelFilter(e.target.value);
+                  setPage(1);
+                }}
+                className="appearance-none bg-transparent pr-6 text-xs text-inherit outline-none cursor-pointer font-medium"
+              >
+                <option value="ALL">All Levels</option>
+                <option value="Beginner">Beginner</option>
+                <option value="Intermediate">Intermediate</option>
+                <option value="Professional">Professional</option>
               </select>
               <ChevronDown
                 size={13}
@@ -577,6 +698,35 @@ export default function FindProsPage() {
         </div>
       </div>
 
+      {/* ── Designer Category Quick Pills ── */}
+      {selectedRole === 2 && (
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 pt-0.5 no-scrollbar text-xs">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400 shrink-0 mr-1">
+            Category:
+          </span>
+          {DESIGNER_SPECIALIZATIONS.map((s) => {
+            const isActive = designerSpec === s.id;
+            return (
+              <button
+                key={s.id}
+                type="button"
+                onClick={() => {
+                  setDesignerSpec(s.id);
+                  setPage(1);
+                }}
+                className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-all cursor-pointer ${
+                  isActive
+                    ? "bg-[#2d241e] text-white shadow-xs font-semibold"
+                    : "bg-white border border-gray-200 text-gray-700 hover:border-gray-300 hover:bg-gray-50"
+                }`}
+              >
+                {s.label}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       {/* ── Results Counter ── */}
       <div className="text-xs sm:text-sm font-bold text-gray-800">
         {filteredUsers.length} Professional{filteredUsers.length === 1 ? "" : "s"} found
@@ -602,6 +752,8 @@ export default function FindProsPage() {
             onClick={() => {
               setSearchQuery("");
               setSelectedRole("ALL");
+              setDesignerSpec("ALL");
+              setSpecLevelFilter("ALL");
               setCityFilter("ALL");
             }}
             className="mt-3 px-4 py-2 text-xs font-semibold text-[#b8823a] bg-[#fef9ee] border border-[#eed7a1] rounded-full hover:bg-[#fbf4e8] transition"

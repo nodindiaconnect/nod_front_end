@@ -335,7 +335,7 @@ export default function MilestonesTracker({
         <Shield size={40} className="mx-auto text-[var(--muted)] opacity-50" />
         <h4 className="text-base font-bold text-[var(--heading)]">No Contracts Awarded Yet</h4>
         <p className="text-xs text-[var(--muted)] max-w-md mx-auto">
-          Once you accept a bid from an Architect, Contractor, or Interior Designer, the project payment roadmap (50% Advance, 25% Second Milestone, 25% Final Payment) will be initialized automatically.
+          Once you accept a bid from an Architect, Contractor, or Designer, the project payment roadmap (50% Advance, 25% Second Milestone, 25% Final Payment) will be initialized automatically.
         </p>
       </div>
     );
@@ -828,7 +828,7 @@ export default function MilestonesTracker({
           onClick={() => !isProcessingDummyGateway && setShowPayModal(false)}
         >
           <div
-            className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 space-y-5 border border-border"
+            className="bg-white rounded-xl shadow-2xl max-w-md w-full p-5 sm:p-6 space-y-5 border border-border max-h-[92vh] overflow-y-auto modal-scrollbar custom-scrollbar"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center gap-3 border-b border-border pb-4">
@@ -917,7 +917,7 @@ export default function MilestonesTracker({
           onClick={() => setShowSubmitModal(false)}
         >
           <div
-            className="bg-white rounded-xl shadow-2xl max-w-lg w-full p-6 space-y-4 border border-border"
+            className="bg-white rounded-xl shadow-2xl max-w-lg w-full p-5 sm:p-6 space-y-4 border border-border max-h-[92vh] overflow-y-auto modal-scrollbar custom-scrollbar"
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="text-base font-bold text-heading">
@@ -981,7 +981,7 @@ export default function MilestonesTracker({
           onClick={() => setShowRejectModal(false)}
         >
           <div
-            className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 space-y-4 border border-border"
+            className="bg-white rounded-xl shadow-2xl max-w-md w-full p-5 sm:p-6 space-y-4 border border-border max-h-[92vh] overflow-y-auto modal-scrollbar custom-scrollbar"
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="text-base font-bold text-heading">Request Milestone Revision</h3>

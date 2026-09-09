@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import {
+  Award,
   Briefcase,
   ChevronRight,
   Cpu,
@@ -14,12 +15,14 @@ import {
   Send,
   Share2,
   UserPlus,
+  Clock,
 } from "lucide-react";
+import { CURRENCY_SYMBOLS } from "../Authentication/Authshared";
 import { useGetAllPortfoliosQuery } from "./supplyproductsapislice";
 
 const ROLE_LABELS = {
   1: "Client",
-  2: "Interior Designer",
+  2: "Designer",
   3: "Architect",
   4: "Contractor",
   5: "Material Supplier",
@@ -83,8 +86,20 @@ export default function PortfolioDetail() {
   const bioIsLong = bio.length > BIO_PREVIEW_LENGTH;
   const bioText = bioExpanded || !bioIsLong ? bio : `${bio.slice(0, BIO_PREVIEW_LENGTH)}…`;
 
+  const specLevel =
+    profile.specializationLevel ||
+    user.specializationLevel ||
+    user.designer?.specializationLevel ||
+    (profile.experience >= 6 ? "Professional" : profile.experience >= 3 ? "Intermediate" : profile.experience != null ? "Beginner" : null);
+
+  const currencyCode = profile.currency || user.currency || "INR";
+  const currencySymbol = CURRENCY_SYMBOLS[currencyCode] || currencyCode || "₹";
+  const rateVal = profile.rate || user.rate;
+
   const aboutRows = [
     profile.specialization && { icon: Layers, label: "Specialization", value: profile.specialization },
+    specLevel && { icon: Award, label: "Specialization Level", value: specLevel },
+    rateVal && { icon: Clock, label: "Hourly Rate", value: `${currencySymbol}${rateVal} / hr` },
     profile.software && { icon: Cpu, label: "Software", value: profile.software },
     profile.experience != null && { icon: Briefcase, label: "Experience", value: `${profile.experience} Years` },
     user.country && { icon: Globe2, label: "Country", value: user.country },
@@ -126,6 +141,16 @@ export default function PortfolioDetail() {
                 <span className="flex items-center gap-1.5 bg-white px-3 py-1 rounded-full font-medium">
                   <Layers size={13} /> {roleLabel}
                 </span>
+                {specLevel && (
+                  <span className="flex items-center gap-1 bg-[#fef9ee] border border-[#eed7a1] text-[#9c6c2c] px-3 py-1 rounded-full font-medium text-xs shadow-2xs">
+                    <Award size={13} className="text-[#b8823a]" /> {specLevel}
+                  </span>
+                )}
+                {rateVal && (
+                  <span className="flex items-center gap-1 bg-[#edf7ee] border border-[#c4e3c7] text-[#2d6a36] px-3 py-1 rounded-full font-medium text-xs shadow-2xs">
+                    <Clock size={13} className="text-[#2d6a36]" /> {currencySymbol}{rateVal}/hr
+                  </span>
+                )}
               </div>
               {bio && <p className="text-[14.5px] text-[#55504a] leading-relaxed max-w-[46ch] mb-5">{bio}</p>}
               <div className="flex flex-wrap gap-2.5">

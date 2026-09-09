@@ -621,7 +621,7 @@ export default function ProjectWorkspace({
                   {
                     phaseKey: "INTERIORS",
                     title: "Phase 3: Interior Design & Fitout",
-                    roleName: "Interior Designer",
+                    roleName: "Designer",
                     roleKey: "INTERIOR_DESIGNER",
                     desc: "Joinery, decor, lighting, client handover",
                   },

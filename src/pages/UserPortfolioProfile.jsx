@@ -18,7 +18,9 @@ import {
   Star,
   Award,
   MessageSquare,
+  Clock,
 } from "lucide-react";
+import { CURRENCY_SYMBOLS } from "../Authentication/Authshared";
 import {
   useGetUserPortfolioQuery,
   useGetUserPerformanceQuery,
@@ -30,7 +32,7 @@ import ProfessionalPerformanceSection from "../components/profile/ProfessionalPe
 
 const ROLE_LABELS = {
   1: "Client",
-  2: "Interior Designer",
+  2: "Designer",
   3: "Architect",
   4: "Contractor",
   5: "Material Supplier",
@@ -164,11 +166,31 @@ export default function UserPortfolioProfile() {
   const bioText =
     bioExpanded || !bioIsLong ? bio : `${bio.slice(0, BIO_PREVIEW_LENGTH)}…`;
 
+  const specLevel =
+    profile.specializationLevel ||
+    user.specializationLevel ||
+    user.designer?.specializationLevel ||
+    (profile.experience >= 6 ? "Professional" : profile.experience >= 3 ? "Intermediate" : profile.experience != null ? "Beginner" : null);
+
+  const currencyCode = profile.currency || user.currency || "INR";
+  const currencySymbol = CURRENCY_SYMBOLS[currencyCode] || currencyCode || "₹";
+  const rateVal = profile.rate || user.rate;
+
   const aboutRows = [
     profile.specialization && {
       icon: Layers,
       label: "Specialization",
       value: profile.specialization,
+    },
+    specLevel && {
+      icon: Award,
+      label: "Specialization Level",
+      value: specLevel,
+    },
+    rateVal && {
+      icon: Clock,
+      label: "Hourly Rate",
+      value: `${currencySymbol}${rateVal} / hr`,
     },
     profile.software && {
       icon: Cpu,
@@ -255,6 +277,16 @@ export default function UserPortfolioProfile() {
                 <span className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-full font-medium">
                   <Layers size={11} /> {roleLabel}
                 </span>
+                {specLevel && (
+                  <span className="flex items-center gap-1 bg-[#fef9ee] border border-[#eed7a1] text-[#9c6c2c] px-2.5 py-1 rounded-full font-medium text-xs shadow-2xs">
+                    <Award size={11} className="text-[#b8823a]" /> {specLevel}
+                  </span>
+                )}
+                {rateVal && (
+                  <span className="flex items-center gap-1 bg-[#edf7ee] border border-[#c4e3c7] text-[#2d6a36] px-2.5 py-1 rounded-full font-medium text-xs shadow-2xs">
+                    <Clock size={11} className="text-[#2d6a36]" /> {currencySymbol}{rateVal}/hr
+                  </span>
+                )}
                 {reviewSummary.totalReviews > 0 && (
                   <button
                     type="button"
@@ -349,26 +381,33 @@ export default function UserPortfolioProfile() {
                 className="flex gap-7 px-6 border-b border-[var(--border)] overflow-x-auto"
                 role="tablist"
               >
-                {TABS.map((tab) => (
-                  <button
-                    key={tab}
-                    type="button"
-                    role="tab"
-                    aria-selected={activeTab === tab}
-                    onClick={() => setActiveTab(tab)}
-                    className={`text-[14.5px] font-semibold py-4.5 whitespace-nowrap border-b-2 -mb-px transition cursor-pointer ${
-                      activeTab === tab
-                        ? "text-[var(--heading)] border-[var(--primary)]"
-                        : "text-[var(--muted)] border-transparent hover:text-[var(--heading)]"
-                    }`}
-                  >
-                    {tab === "Projects"
-                      ? `Projects (${projectCount})`
+                {TABS.map((tab) => {
+                  const isSupplier = Number(user.role) === 5;
+                  const tabLabel =
+                    tab === "Projects"
+                      ? isSupplier
+                        ? `Materials & Products (${projectCount})`
+                        : `Projects (${projectCount})`
                       : tab === "Reviews"
                       ? `Reviews (${reviewSummary.totalReviews ?? userReviews.length})`
-                      : tab}
-                  </button>
-                ))}
+                      : tab;
+                  return (
+                    <button
+                      key={tab}
+                      type="button"
+                      role="tab"
+                      aria-selected={activeTab === tab}
+                      onClick={() => setActiveTab(tab)}
+                      className={`text-[14.5px] font-semibold py-4.5 whitespace-nowrap border-b-2 -mb-px transition cursor-pointer ${
+                        activeTab === tab
+                          ? "text-[var(--heading)] border-[var(--primary)]"
+                          : "text-[var(--muted)] border-transparent hover:text-[var(--heading)]"
+                      }`}
+                    >
+                      {tabLabel}
+                    </button>
+                  );
+                })}
               </div>
 
               <div className="p-6 sm:p-8">
@@ -389,10 +428,14 @@ export default function UserPortfolioProfile() {
                         <Folder size={28} />
                       </div>
                       <h3 className="text-[17px] font-bold text-[var(--heading)] mb-1.5" style={{ fontFamily: "var(--font-heading)" }}>
-                        No projects added yet
+                        {Number(user.role) === 5
+                          ? "No materials or products listed yet"
+                          : "No projects added yet"}
                       </h3>
                       <p className="text-sm text-[var(--muted)] mb-5">
-                        This professional has not added any portfolio projects.
+                        {Number(user.role) === 5
+                          ? "This supplier has not added any catalog items to their showcase."
+                          : "This professional has not added any portfolio projects."}
                       </p>
                       <button
                         type="button"
@@ -409,17 +452,21 @@ export default function UserPortfolioProfile() {
                           <button
                             key={project.id}
                             type="button"
-                            onClick={() =>
-                              navigate(
-                                `/portfolio/${userId}/project/${project.id}`,
-                                {
-                                  state: { user, project, projects },
-                                },
-                              )
-                            }
-                            className="group text-left"
+                            onClick={() => {
+                              if (project.isProduct) {
+                                navigate(`/products/${project.id}`);
+                              } else {
+                                navigate(
+                                  `/portfolio/${userId}/project/${project.id}`,
+                                  {
+                                    state: { user, project, projects },
+                                  },
+                                );
+                              }
+                            }}
+                            className="group text-left flex flex-col"
                           >
-                            <div className="aspect-square rounded-[10px] overflow-hidden bg-[var(--background-secondary)] border border-[var(--border)]">
+                            <div className="relative aspect-square rounded-[10px] overflow-hidden bg-[var(--background-secondary)] border border-[var(--border)]">
                               {image && !failedImages[project.id] ? (
                                 <img
                                   src={image}
@@ -437,10 +484,20 @@ export default function UserPortfolioProfile() {
                                   {project.title?.[0] || "P"}
                                 </div>
                               )}
+                              {project.price != null && (
+                                <span className="absolute bottom-1.5 left-1.5 bg-black/75 backdrop-blur-xs text-white text-[11px] font-semibold px-2 py-0.5 rounded">
+                                  ₹{project.price}{project.unit ? ` / ${project.unit}` : ""}
+                                </span>
+                              )}
                             </div>
                             <p className="text-[13px] font-medium mt-1.5 truncate text-[var(--heading)]">
-                              {project.title || "Untitled project"}
+                              {project.title || "Untitled"}
                             </p>
+                            {project.category && (
+                              <p className="text-[11px] text-[var(--muted)] truncate">
+                                {project.category} {project.brand ? `• ${project.brand}` : ""}
+                              </p>
+                            )}
                           </button>
                         );
                       })}

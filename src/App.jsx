@@ -176,6 +176,7 @@ const PAGE_MAP = {
     Designer: DesignerPortfolio,
     Architect: ArchitectPortfolio,
     Contractor: ContractorPortfolio,
+    MaterialSupplier: SupplierProducts,
   },
   products: { MaterialSupplier: SupplierProducts },
   createProduct: { MaterialSupplier: SupplierCreateProduct },

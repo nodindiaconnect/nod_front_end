@@ -8,7 +8,6 @@ import {
   Search,
   Check,
   CheckCheck,
-  Paperclip,
   Circle,
   ArrowLeft,
   Smile,
@@ -34,17 +33,32 @@ import { useSocketChat } from "../../../utils/socketService";
 const ROLE_NAMES = {
   0: "Admin",
   1: "Client",
-  2: "Interior Designer",
+  2: "Designer",
   3: "Architect",
   4: "Contractor",
   5: "Material Supplier",
   ADMIN: "Admin",
   CLIENT: "Client",
-  DESIGNER: "Interior Designer",
-  INTERIOR_DESIGNER: "Interior Designer",
+  DESIGNER: "Designer",
+  INTERIOR_DESIGNER: "Designer",
   ARCHITECT: "Architect",
   CONTRACTOR: "Contractor",
   MATERIAL_SUPPLIER: "Material Supplier",
+};
+
+// URL and external link patterns to prevent sharing links in chat
+const LINK_PATTERNS = [
+  /https?:\/\/[^\s]+/i,
+  /www\.[a-zA-Z0-9-]+\.[a-zA-Z]{2,}[^\s]*/i,
+  /\b[a-zA-Z0-9][-a-zA-Z0-9]*\.(?:com|in|org|net|co|io|ai|app|biz|info|xyz|site|online|tech|store|dev|me|club|live|link|pro|top|vip|us|uk|ca|au|de|fr|jp|ru|cn|tv|cc|to|space|fun|cloud|gov|edu)(?:\/[^\s]*)?\b/i,
+  /\b(?:bit\.ly|tinyurl\.com|t\.co|goo\.gl|ow\.ly|is\.gd|buff\.ly|adf\.ly|bitly\.com)\b/i,
+  /(?:https?|ftp)\s*:\s*\/\s*\//i,
+  /[a-zA-Z0-9-]+\s*\.\s*(?:com|in|org|net|co|io|ai|app|xyz|site|online|tech|dev)\b/i,
+];
+
+const containsLink = (str) => {
+  if (!str || typeof str !== "string") return false;
+  return LINK_PATTERNS.some((pattern) => pattern.test(str));
 };
 
 export default function ChatWorkspace({
@@ -279,6 +293,12 @@ export default function ChatWorkspace({
     e?.preventDefault();
     const text = messageText.trim();
     if (!text || !activeChatId) return;
+
+    // Disallow sharing links/URLs in chat
+    if (containsLink(text)) {
+      toast.error("Sharing website links or external URLs is not allowed in chat.");
+      return;
+    }
 
     setMessageText("");
     emitStopTyping();
@@ -1094,14 +1114,6 @@ export default function ChatWorkspace({
                   onSubmit={handleSendMessage}
                   className="flex items-center gap-2"
                 >
-                  <button
-                    type="button"
-                    className="p-2 rounded-full text-muted hover:text-heading hover:bg-black/[0.04] transition flex-shrink-0"
-                    title="Attach files (plans, photos, docs)"
-                  >
-                    <Paperclip size={18} />
-                  </button>
-
                   <div className="flex-1 flex items-center gap-2 rounded-full bg-[var(--background-secondary)] px-4 py-1.5 focus-within:ring-2 focus-within:ring-[var(--gold)]/30 focus-within:bg-white transition border border-transparent focus-within:border-[var(--gold)]">
                     <textarea
                       ref={composerInputRef}

@@ -149,7 +149,7 @@ export default function FrozenMusicSection() {
               </p>
 
               <p>
-                Our integrated ecosystem brings interior designers, structural
+                Our integrated ecosystem brings designers, structural
                 architects, 3D visualizers, Vastu consultants, and construction
                 professionals under one unified vision. No translation errors.
                 No compromised quality. Just seamless realization from sketch to

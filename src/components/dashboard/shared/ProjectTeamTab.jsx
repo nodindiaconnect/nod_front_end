@@ -18,7 +18,7 @@ import {
 
 const ROLE_LABELS = {
   ARCHITECT: { label: "Architect", color: "var(--primary)" },
-  INTERIOR_DESIGNER: { label: "Interior Designer", color: "var(--gold)" },
+  INTERIOR_DESIGNER: { label: "Designer", color: "var(--gold)" },
   CONTRACTOR: { label: "General Contractor", color: "#2563eb" },
 };
 
@@ -197,6 +197,16 @@ export default function ProjectTeamTab({
           if (member) {
             const user = member.user || {};
             const specialistAvatar = getAvatarUrl(user);
+            const specProfile = typeof user.profile === "object" ? user.profile : (() => {
+              try { return JSON.parse(user.profile) || {}; } catch { return {}; }
+            })();
+            const specLevel =
+              member.specializationLevel ||
+              user.specializationLevel ||
+              member.designer?.specializationLevel ||
+              member.architect?.specializationLevel ||
+              specProfile?.specializationLevel ||
+              null;
 
             return (
               <div
@@ -205,12 +215,19 @@ export default function ProjectTeamTab({
               >
                 <div>
                   <div className="flex items-center justify-between mb-4">
-                    <span
-                      className="px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider text-white"
-                      style={{ backgroundColor: roleConfig.color }}
-                    >
-                      {roleConfig.label}
-                    </span>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span
+                        className="px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider text-white"
+                        style={{ backgroundColor: roleConfig.color }}
+                      >
+                        {roleConfig.label}
+                      </span>
+                      {specLevel && (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#fef9ee] border border-[#eed7a1] text-[#9c6c2c]">
+                          {specLevel}
+                        </span>
+                      )}
+                    </div>
                     <span className="flex items-center gap-1 text-xs text-[var(--success)] font-medium">
                       <CheckCircle2 size={13} /> Hired
                     </span>

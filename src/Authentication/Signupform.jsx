@@ -12,6 +12,7 @@ import {
     useResendOtpMutation,
     useLazyCheckUsernameQuery,
     useGetCategoriesAndSpecializationsQuery,
+    useGetCurrencyQuery,
 } from "../Authentication/authApiSlice"
 import {
     INK, INK_SOFT, GOLD, GOLD_DARK, LINE, SURFACE, ERROR_BG, ERROR_TEXT, OK_TEXT,
@@ -19,6 +20,8 @@ import {
     allCountriesList,
     FieldLabel, TextInput, SelectInput, TextAreaInput, PrimaryButton, GhostButton, StepProgress,
     TurnstileWidget,
+    RateInput, getCurrencyForPhoneAndCountry,
+    DEFAULT_DESIGNER_CATEGORIES,
 } from "./authShared"
 
 /* ────────────────────────────────────────────────────────────────
@@ -189,9 +192,17 @@ export default function SignUpForm({ onSwitchToLogin }) {
         refetchOnMountOrArgChange: true,
     })
 
-    const categoriesList = Array.isArray(categoriesResponse?.data)
+    // Dynamic currency resolution based on mobile phoneCode and country
+    const localCurrency = getCurrencyForPhoneAndCountry(phoneCode, country)
+    const { data: serverCurrencyRes } = useGetCurrencyQuery(
+        { phoneCode, country },
+        { skip: !phoneCode && !country }
+    )
+    const resolvedCurrency = serverCurrencyRes?.data || localCurrency
+
+    const categoriesList = (Array.isArray(categoriesResponse?.data) && categoriesResponse.data.length > 0)
         ? categoriesResponse.data
-        : []
+        : DEFAULT_DESIGNER_CATEGORIES
 
     const selectedCategoryObj = categoriesList.find(
         (c) => c.name === roleFields.category || c.id === roleFields.category
@@ -205,7 +216,7 @@ export default function SignUpForm({ onSwitchToLogin }) {
     if (roleConfig) {
         let pending = null
         roleConfig.fields.forEach((field) => {
-            const pairable = field.type === "text" || field.type === "number" || field.type === "category" || field.type === "specialization"
+            const pairable = field.type === "text" || field.type === "number" || field.type === "category" || field.type === "specialization" || field.type === "select" || field.type === "rate"
             if (!pairable) {
                 if (pending) {
                     profileRows.push([pending])
@@ -386,15 +397,26 @@ export default function SignUpForm({ onSwitchToLogin }) {
         if (role === "Designer") {
             if (!roleFields.category) return setErrorMsg("Please select a Category")
             if (!roleFields.specialization) return setErrorMsg("Please select a Specialization")
+            if (!roleFields.specializationLevel) return setErrorMsg("Please select a Specialization Level")
+        }
+        if (roleFields.bio && /\d/.test(roleFields.bio)) {
+            return setErrorMsg("Bio cannot contain numbers")
+        }
+        if (roleFields.rate !== undefined && roleFields.rate !== "" && Number(roleFields.rate) < 0) {
+            return setErrorMsg("Hourly rate cannot be negative")
         }
         try {
+            const payloadRoleFields = { ...roleFields }
+            if (payloadRoleFields.rate !== undefined && payloadRoleFields.rate !== "") {
+                payloadRoleFields.currency = resolvedCurrency?.currency || "INR"
+            }
             const res = await registerCreateAccount({
                 registerSessionToken,
                 country,
                 state: stateName,
                 city: cityName,
                 address: addressLine,
-                roleFields,
+                roleFields: payloadRoleFields,
             }).unwrap()
             if (res?.data?.registerSessionToken) {
                 setRegisterSessionToken(res.data.registerSessionToken)
@@ -875,7 +897,21 @@ export default function SignUpForm({ onSwitchToLogin }) {
                             {row.map((field) => (
                                 <div key={field.id} className="flex-1 min-w-0">
                                     {field.type === "textarea" && (
-                                        <TextAreaInput label={field.label} rows={3} placeholder={field.placeholder} value={roleFields[field.id] || ""} onChange={(e) => setRoleField(field.id, e.target.value)} />
+                                        <TextAreaInput
+                                            label={field.label}
+                                            rows={3}
+                                            placeholder={field.placeholder}
+                                            value={roleFields[field.id] || ""}
+                                            onChange={(e) => {
+                                                const val = e.target.value;
+                                                if (field.id === "bio" && /\d/.test(val)) {
+                                                    setErrorMsg("Bio cannot contain numbers");
+                                                    return;
+                                                }
+                                                if (field.id === "bio") setErrorMsg("");
+                                                setRoleField(field.id, val);
+                                            }}
+                                        />
                                     )}
                                     {(field.type === "text" || field.type === "number") && (
                                         <TextInput label={field.label} type={field.type} placeholder={field.placeholder} value={roleFields[field.id] || ""} onChange={(e) => setRoleField(field.id, e.target.value)} />
@@ -939,9 +975,18 @@ export default function SignUpForm({ onSwitchToLogin }) {
                                                     <option key={specId || specName} value={specName}>
                                                         {specName}
                                                     </option>
-                                                );
+                                                 );
                                             })}
                                         </SelectInput>
+                                    )}
+                                    {field.type === "rate" && (
+                                        <RateInput
+                                            label={field.label}
+                                            placeholder={field.placeholder}
+                                            currencyData={resolvedCurrency}
+                                            value={roleFields[field.id] || ""}
+                                            onChange={(e) => setRoleField(field.id, e.target.value)}
+                                        />
                                     )}
                                 </div>
                             ))}
@@ -976,9 +1021,17 @@ export default function SignUpForm({ onSwitchToLogin }) {
                             <div className="mb-2">
                                 <div className="text-xs font-semibold mb-2" style={{ color: INK, letterSpacing: "1px" }}>PROFILE</div>
                                 <div className="text-sm space-y-1 break-words" style={{ color: INK_SOFT }}>
-                                    {roleConfig.fields.map((f) => (
-                                        <div key={f.id}>{f.label}: {roleFields[f.id] || "—"}</div>
-                                    ))}
+                                    {roleConfig.fields.map((f) => {
+                                        let displayVal = roleFields[f.id] || "—"
+                                        if (f.id === "rate") {
+                                            displayVal = roleFields.rate
+                                                ? `${resolvedCurrency?.symbol || "₹"}${roleFields.rate} / hr (${resolvedCurrency?.currency || "INR"})`
+                                                : "Not specified (Optional)"
+                                        }
+                                        return (
+                                            <div key={f.id}>{f.label}: {displayVal}</div>
+                                        )
+                                    })}
                                 </div>
                             </div>
                         </>

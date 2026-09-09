@@ -5,7 +5,7 @@ import { useGetDesignerProjectsQuery } from "./dashboard/DesignerDashboardApiSli
 export default function ProposalsPage() {
   return (
     <ProfessionalProposalsView
-      roleTitle="Interior Designer"
+      roleTitle="Designer"
       serviceType="INTERIOR_DESIGNER"
       useGetProjectsQuery={useGetDesignerProjectsQuery}
     />

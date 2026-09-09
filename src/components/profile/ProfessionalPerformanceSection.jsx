@@ -65,8 +65,14 @@ const ROLE_THEMES = {
     accent: "#D97706",
     bgAccent: "bg-amber-50 text-amber-800 border-amber-200",
   },
+  DESIGNER: {
+    badge: "Design & Spatial Planning",
+    icon: Palette,
+    accent: "#4F46E5",
+    bgAccent: "bg-indigo-50 text-indigo-800 border-indigo-200",
+  },
   INTERIOR_DESIGNER: {
-    badge: "Interior Design & Fitouts",
+    badge: "Design & Spatial Planning",
     icon: Palette,
     accent: "#4F46E5",
     bgAccent: "bg-indigo-50 text-indigo-800 border-indigo-200",
@@ -86,7 +92,7 @@ function EmptyState({ label = "No data yet" }) {
 
 export default function ProfessionalPerformanceSection({
   performanceData = null,
-  role = "INTERIOR_DESIGNER",
+  role = "DESIGNER",
   user = null,
   portfolioPosts = [],
   reviews = [],
@@ -98,9 +104,9 @@ export default function ProfessionalPerformanceSection({
       ? "ARCHITECT"
       : role === 4 || role === "CONTRACTOR"
       ? "CONTRACTOR"
-      : "INTERIOR_DESIGNER";
+      : "DESIGNER";
 
-  const theme = ROLE_THEMES[roleKey] || ROLE_THEMES.INTERIOR_DESIGNER;
+  const theme = ROLE_THEMES[roleKey] || ROLE_THEMES.DESIGNER;
   const RoleIcon = theme.icon;
 
   // ── Pull straight from the API response — no synthesized fallbacks ──

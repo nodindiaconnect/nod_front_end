@@ -752,9 +752,11 @@ export default function AddProductModal({ onCreated }) {
             .apm-btn--ghost:hover { border-color: ${C.primary}; color: ${C.primary}; }
             .apm-btn:focus-visible, .apm-icon-btn:focus-visible { outline: 2px solid ${C.primary}; outline-offset: 2px; }
 
-            .apm-body::-webkit-scrollbar { width: 8px; }
+            .apm-body { scrollbar-width: thin; scrollbar-color: var(--scrollbar-thumb) transparent; }
+            .apm-body::-webkit-scrollbar { width: 6px; }
             .apm-body::-webkit-scrollbar-track { background: transparent; }
-            .apm-body::-webkit-scrollbar-thumb { background: ${C.border}; border-radius: 8px; }
+            .apm-body::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 9999px; }
+            .apm-body::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-thumb-hover); }
 
             @media (max-width: 1024px) and (min-width: 761px) {
               .apm-overlay { align-items: flex-end !important; padding: 0 !important; }

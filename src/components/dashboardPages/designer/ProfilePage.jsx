@@ -7,6 +7,7 @@ import {
 import "../../../theme.css";
 
 const EXPERIENCE_LEVELS = ["BEGINNER", "INTERMEDIATE", "EXPERT"];
+const SPECIALIZATION_LEVELS = ["Beginner", "Intermediate", "Professional"];
 const AVAILABILITY_STATUSES = ["AVAILABLE", "BUSY", "UNAVAILABLE"];
 const STYLE_OPTIONS = [
   "Modern",
@@ -17,7 +18,7 @@ const STYLE_OPTIONS = [
   "Eclectic",
 ];
 const SPECIALIZATION_OPTIONS = [
-  "Interior Designer",
+  "Interior Design",
   "Exterior Designer",
   "AutoCAD Designer",
   "BIM designer",
@@ -66,6 +67,7 @@ const emptyForm = {
   bio: "",
   yearsOfExperience: "",
   experienceLevel: "",
+  specializationLevel: "",
   availability: "",
   designStyles: [],
   specializations: [],
@@ -99,52 +101,69 @@ const StarIcon = (props) => (
   </svg>
 );
 
-const MailIcon = (props) => (
+const LocationIcon = (props) => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" {...props}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0-.828.672-1.5 1.5-1.5h16.5c.828 0 1.5.672 1.5 1.5v10.5c0 .828-.672 1.5-1.5 1.5H3.75a1.5 1.5 0 01-1.5-1.5V6.75z" />
-    <path strokeLinecap="round" strokeLinejoin="round" d="M22.5 7.5l-9.816 6.545a1.5 1.5 0 01-1.664 0L1.5 7.5" />
+    <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+    <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+  </svg>
+);
+
+const CameraIcon = (props) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" {...props}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
+    <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" />
   </svg>
 );
 
 const ChevronDownIcon = (props) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M6 9l6 6 6-6" />
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
   </svg>
 );
 
-function SectionHeader({ icon, title }) {
-  return (
-    <div className={sectionHeaderClass}>
-      <div className={sectionIconWrapClass}>{icon}</div>
-      <div className="flex items-center gap-2">
-        <span className={sectionAccentClass} />
-        <h2 className={sectionTitleClass}>{title}</h2>
-      </div>
-    </div>
-  );
-}
+const TrashIcon = (props) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" {...props}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+  </svg>
+);
 
-export default function ProfilePage() {
-  const avatarInputRef = useRef(null);
-  const {
-    data: profileRes,
-    isLoading,
-    isError,
-    error: fetchError,
-    refetch,
-  } = useGetDesignerProfileQuery();
-  const [updateProfile, { isLoading: saving }] =
-    useUpdateDesignerProfileMutation();
+const EditIcon = (props) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" {...props}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+  </svg>
+);
 
-  const [status, setStatus] = useState({ type: "muted", message: "" });
-  const [avatarUploading, setAvatarUploading] = useState(false);
-  const [account, setAccount] = useState(null);
+const SectionHeader = ({ icon, title }) => (
+  <div className={sectionHeaderClass}>
+    <span className={sectionAccentClass} />
+    <div className={sectionIconWrapClass}>{icon}</div>
+    <h3 className={sectionTitleClass}>{title}</h3>
+  </div>
+);
+
+export default function DesignerProfile() {
+  const { data: profileRes, isLoading, isError } = useGetDesignerProfileQuery();
+  const [updateProfile, { isLoading: saving }] = useUpdateDesignerProfileMutation();
+
   const [form, setForm] = useState(emptyForm);
   const [savedForm, setSavedForm] = useState(emptyForm);
-  const [hydrated, setHydrated] = useState(false);
-  const [dirty, setDirty] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [dirty, setDirty] = useState(false);
+  const [status, setStatus] = useState({ type: "muted", message: "" });
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+
+  const fileInputRef = useRef(null);
+
+  const [account, setAccount] = useState({
+    name: "",
+    email: "",
+    verificationStatus: "",
+    rating: 0,
+    totalReviews: 0,
+  });
+
   const [chipDrafts, setChipDrafts] = useState({
     certifications: "",
     serviceCities: "",
@@ -172,6 +191,7 @@ export default function ProfilePage() {
       bio: data.bio || "",
       yearsOfExperience: data.yearsOfExperience ?? "",
       experienceLevel: data.experienceLevel || "",
+      specializationLevel: data.specializationLevel || data.level || "",
       availability: data.availability || "",
       designStyles: data.designStyles || [],
       specializations: data.specializations || [],
@@ -195,6 +215,13 @@ export default function ProfilePage() {
   }, [profileRes, hydrated]);
 
   const updateField = (key, value) => {
+    if (key === "bio" && /\d/.test(value)) {
+      setStatus({ type: "error", message: "Bio cannot contain numbers." });
+      return;
+    }
+    if (key === "bio" && status.message === "Bio cannot contain numbers.") {
+      setStatus({ type: "muted", message: "" });
+    }
     setForm((prev) => ({ ...prev, [key]: value }));
     setDirty(true);
   };
@@ -271,6 +298,8 @@ export default function ProfilePage() {
     if (!form.serviceCities.length) return "Add at least one service city.";
     if (form.minBudgetHandled === "" || form.maxBudgetHandled === "")
       return "Set your budget range.";
+    if (form.bio && /\d/.test(form.bio))
+      return "Bio cannot contain numbers.";
     if (Number(form.minBudgetHandled) > Number(form.maxBudgetHandled))
       return "Minimum budget cannot exceed maximum budget.";
     return null;
@@ -296,6 +325,7 @@ export default function ProfilePage() {
         bio: form.bio,
         yearsOfExperience: Number(form.yearsOfExperience),
         experienceLevel: form.experienceLevel,
+        specializationLevel: form.specializationLevel,
         availability: form.availability,
         designStyles: form.designStyles,
         specializations: form.specializations,
@@ -833,6 +863,35 @@ export default function ProfilePage() {
               <div className="grid w-full grid-cols-1 gap-5 lg:grid-cols-2">
                 {renderMultiSelectField("designStyles", "Design styles", STYLE_OPTIONS, true)}
                 {renderMultiSelectField("specializations", "Specializations", SPECIALIZATION_OPTIONS, true)}
+              </div>
+
+              {/* Specialization Level Selector */}
+              <div className="mt-5 border-t border-[var(--border)] pt-5">
+                <div className="max-w-md flex flex-col gap-1.5">
+                  <label htmlFor="specializationLevel" className={labelClass}>
+                    Specialization Level
+                  </label>
+                  <div className="relative">
+                    <select
+                      id="specializationLevel"
+                      value={form.specializationLevel || ""}
+                      disabled={!isEditing}
+                      onChange={(e) => updateField("specializationLevel", e.target.value)}
+                      className={selectClass}
+                    >
+                      <option value="">Select Specialization Level</option>
+                      {SPECIALIZATION_LEVELS.map((lvl) => (
+                        <option key={lvl} value={lvl}>
+                          {lvl}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDownIcon className="pointer-events-none absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--muted)]" />
+                  </div>
+                  <p className="text-[11px] text-[var(--muted)] mt-1">
+                    Available levels: Beginner, Intermediate, Professional. Used for client filtering and project discovery.
+                  </p>
+                </div>
               </div>
 
               <div className="mt-5 grid w-full grid-cols-1 gap-5 lg:grid-cols-3">

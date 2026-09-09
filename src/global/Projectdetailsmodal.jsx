@@ -251,7 +251,7 @@ export default function ProjectDetailsModal({ project: initialProject, onClose }
         <div className="flex flex-1 min-h-0 flex-col sm:flex-row overflow-hidden">
           {/* Left vertical stepper sidebar */}
           <div
-            className="sm:w-60 flex-shrink-0 border-b sm:border-b-0 sm:border-r border-border overflow-x-auto sm:overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+            className="sm:w-60 flex-shrink-0 border-b sm:border-b-0 sm:border-r border-border overflow-x-auto sm:overflow-y-auto modal-scrollbar custom-scrollbar"
             style={{
               background:
                 "linear-gradient(180deg, var(--background-secondary), var(--background))",
@@ -308,7 +308,7 @@ export default function ProjectDetailsModal({ project: initialProject, onClose }
           </div>
 
           {/* Right content pane */}
-          <div className="flex-1 px-4 sm:px-6 py-4 sm:py-5 overflow-y-auto space-y-5 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+          <div className="flex-1 px-4 sm:px-6 py-4 sm:py-5 overflow-y-auto space-y-5 modal-scrollbar custom-scrollbar">
             {/* SECTION 1: BASICS */}
             {activeKey === "basics" && (
               <>

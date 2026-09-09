@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import "../theme.css";
-import Profile from "../assets/founder.png";
+import Profile from "../assets/founder_optimized.jpg";
 import logo from "../assets/logo.png";
 import commercialImg from "../assets/commercial_interior.jpg";
 import residentialImg from "../assets/residential_bedroom.jpg";
@@ -207,7 +207,7 @@ export default function About() {
       quote:
         "A single platform where architects, contractors, and suppliers come together — this is exactly what the industry needed.",
       name: "Arjun Mehta",
-      role: "Interior Designer, NOD Professional",
+      role: "Designer, NOD Professional",
       rating: 5,
       avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&q=80",
     },
@@ -234,11 +234,11 @@ export default function About() {
   const allFaqs = [
     {
       q: "1. What is NOD Marketplace?",
-      a: "NOD Marketplace is a technology-driven platform designed to connect clients with professionals and businesses across the design and construction industry — including interior designers, architects, BIM engineers, landscape designers, contractors, and material suppliers.",
+      a: "NOD Marketplace is a technology-driven platform designed to connect clients with professionals and businesses across the design and construction industry — including designers, architects, BIM engineers, landscape designers, contractors, and material suppliers.",
     },
     {
       q: "2. Who can use NOD Marketplace?",
-      a: "The platform is designed for homeowners and property owners, businesses and commercial clients, interior designers and architects, BIM and CAD professionals, landscape and exterior designers, contractors, construction professionals, and building material suppliers.",
+      a: "The platform is designed for homeowners and property owners, businesses and commercial clients, designers and architects, BIM and CAD professionals, landscape and exterior designers, contractors, construction professionals, and building material suppliers.",
     },
     {
       q: "3. How can I post a project?",
@@ -618,6 +618,101 @@ export default function About() {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ============ THE FOUNDER ============ */}
+      <section
+        ref={founderRef}
+        className="px-6 md:px-10 py-20 md:py-28 overflow-hidden"
+        style={{ backgroundColor: "var(--background)" }}
+      >
+        <div className="mx-auto max-w-7xl">
+          <div
+            className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-8 items-center transition-all duration-700"
+            style={{
+              opacity: founderVisible ? 1 : 0,
+              transform: founderVisible ? "translateY(0)" : "translateY(24px)",
+            }}
+          >
+            {/* Left Column: Heading & Story */}
+            <div className="lg:col-span-4 flex flex-col justify-center pr-0 lg:pr-4">
+              <p
+                className="text-[11px] font-bold uppercase tracking-[0.28em] mb-3"
+                style={{ color: "var(--gold)" }}
+              >
+                THE FOUNDER
+              </p>
+              <h2
+                className="font-[var(--font-heading)] text-3xl sm:text-4xl lg:text-[2.65rem] leading-[1.15] mb-6 font-bold tracking-tight"
+                style={{ color: "var(--heading)" }}
+              >
+                Design, for a better tomorrow.
+              </h2>
+              <p
+                className="text-sm sm:text-[15px] leading-relaxed mb-8 font-normal"
+                style={{ color: "var(--text)" }}
+              >
+                NOD started from a simple belief — that great spaces are built
+                by great people, and great people deserve a better way to work
+                together. What began as a late-night idea has now grown into a
+                global vision.
+              </p>
+              <div className="pt-2 border-t border-[var(--border)]">
+                <h3
+                  className="font-[var(--font-heading)] text-xl sm:text-2xl font-bold tracking-tight italic"
+                  style={{ color: "var(--heading)" }}
+                >
+                  Govind Shukla
+                </h3>
+                <p className="text-xs sm:text-sm font-medium mt-0.5" style={{ color: "var(--muted)" }}>
+                  Founder, NOD India
+                </p>
+              </div>
+            </div>
+
+            {/* Middle Column: Founder Portrait */}
+            <div className="lg:col-span-5 flex justify-center">
+              <div className="relative w-full max-w-md lg:max-w-none rounded-2xl overflow-hidden shadow-2xl border border-[var(--border)] group">
+                <img
+                  src={founder}
+                  alt="Govind Shukla - Founder of NOD India"
+                  loading="lazy"
+                  className="w-full h-auto max-h-[580px] object-cover object-center transition-transform duration-700 group-hover:scale-105"
+                />
+                <div
+                  className="absolute inset-0 pointer-events-none rounded-2xl ring-1 ring-inset ring-black/10"
+                />
+              </div>
+            </div>
+
+            {/* Right Column: Quote Card */}
+            <div className="lg:col-span-3 flex justify-start lg:justify-center">
+              <div
+                className="w-full max-w-sm rounded-2xl p-6 sm:p-8 border shadow-sm transition-all duration-300 hover:shadow-md"
+                style={{
+                  backgroundColor: "var(--background-secondary)",
+                  borderColor: "var(--border)",
+                }}
+              >
+                <div className="text-2xl sm:text-3xl font-serif mb-4 leading-none" style={{ color: "var(--gold)" }}>
+                  “
+                </div>
+                <p
+                  className="text-base sm:text-lg italic font-medium leading-snug mb-6"
+                  style={{ color: "var(--heading)", fontFamily: "var(--font-heading)" }}
+                >
+                  Better collaboration builds better spaces.
+                </p>
+                <p
+                  className="text-[10px] font-bold uppercase tracking-[0.24em]"
+                  style={{ color: "var(--muted)" }}
+                >
+                  NOD INDIA
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </section>

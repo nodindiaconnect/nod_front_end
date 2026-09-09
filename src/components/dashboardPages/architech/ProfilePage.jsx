@@ -7,6 +7,7 @@ import {
 import "../../../theme.css";
 
 const EXPERIENCE_LEVELS = ["BEGINNER", "INTERMEDIATE", "EXPERT"];
+const SPECIALIZATION_LEVELS = ["Beginner", "Intermediate", "Professional"];
 const AVAILABILITY_STATUSES = ["AVAILABLE", "BUSY", "UNAVAILABLE"];
 const SPECIALIZATION_OPTIONS = [
   "Residential Architecture",
@@ -59,6 +60,7 @@ const emptyForm = {
   bio: "",
   yearsOfExperience: "",
   experienceLevel: "",
+  specializationLevel: "",
   availability: "",
   specializations: [],
   licenseNumber: "",
@@ -164,6 +166,7 @@ export default function ProfilePage() {
       bio: data.bio || "",
       yearsOfExperience: data.yearsOfExperience ?? "",
       experienceLevel: data.experienceLevel || "",
+      specializationLevel: data.specializationLevel || data.level || "",
       availability: data.availability || "",
       specializations: data.specializations || [],
       licenseNumber: data.licenseNumber || "",
@@ -188,6 +191,13 @@ export default function ProfilePage() {
   }, [profileRes, hydrated]);
 
   const updateField = (key, value) => {
+    if (key === "bio" && /\d/.test(value)) {
+      setStatus({ type: "error", message: "Bio cannot contain numbers." });
+      return;
+    }
+    if (key === "bio" && status.message === "Bio cannot contain numbers.") {
+      setStatus({ type: "muted", message: "" });
+    }
     setForm((prev) => ({ ...prev, [key]: value }));
     setDirty(true);
   };
@@ -234,7 +244,7 @@ export default function ProfilePage() {
     if (!file) return;
     setAvatarUploading(true);
     try {
-      const response = await uploadFile(file, "architects", "profile-photos");
+      const response = await uploadFile(file, "designers", "profile-photos");
       if (response.publicUrl) {
         setForm((prev) => ({ ...prev, photos: [response.publicUrl] }));
         setDirty(true);
@@ -263,6 +273,8 @@ export default function ProfilePage() {
     if (!form.serviceCities.length) return "Add at least one service city.";
     if (form.minBudgetHandled === "" || form.maxBudgetHandled === "")
       return "Set your budget range.";
+    if (form.bio && /\d/.test(form.bio))
+      return "Bio cannot contain numbers.";
     if (Number(form.minBudgetHandled) > Number(form.maxBudgetHandled))
       return "Minimum budget cannot exceed maximum budget.";
     return null;
@@ -288,6 +300,7 @@ export default function ProfilePage() {
         bio: form.bio,
         yearsOfExperience: Number(form.yearsOfExperience),
         experienceLevel: form.experienceLevel,
+        specializationLevel: form.specializationLevel,
         availability: form.availability,
         specializations: form.specializations,
         licenseNumber: form.licenseNumber,
@@ -823,8 +836,34 @@ export default function ProfilePage() {
             <div className={cardClass}>
               <SectionHeader icon={<StarIcon className="h-4.5 w-4.5" />} title="Specialties & Licensing" />
 
-              <div className="grid w-full grid-cols-1 gap-5">
+              <div className="grid w-full grid-cols-1 gap-5 lg:grid-cols-2">
                 {renderMultiSelectField("specializations", "Architectural Specializations", SPECIALIZATION_OPTIONS, true)}
+
+                <div className="flex min-w-0 flex-col gap-1.5">
+                  <label htmlFor="specializationLevel" className={labelClass}>
+                    Specialization Level
+                  </label>
+                  <div className="relative">
+                    <select
+                      id="specializationLevel"
+                      value={form.specializationLevel || ""}
+                      disabled={!isEditing}
+                      onChange={(e) => updateField("specializationLevel", e.target.value)}
+                      className={selectClass}
+                    >
+                      <option value="">Select Specialization Level</option>
+                      {SPECIALIZATION_LEVELS.map((lvl) => (
+                        <option key={lvl} value={lvl}>
+                          {lvl}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDownIcon className="pointer-events-none absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--muted)]" />
+                  </div>
+                  <p className="text-[11px] text-[var(--muted)] mt-1">
+                    Available levels: Beginner, Intermediate, Professional. Used for client discovery and project matching.
+                  </p>
+                </div>
               </div>
 
               <div className="mt-5 grid w-full grid-cols-1 gap-4 sm:grid-cols-2">

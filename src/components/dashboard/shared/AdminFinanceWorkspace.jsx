@@ -444,7 +444,7 @@ export default function AdminFinanceWorkspace() {
       {/* MODAL: Admin Resolve Dispute */}
       {showResolveModal && selectedDispute && (
         <div className="fixed inset-0 z-[300] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 border border-[var(--border)] shadow-2xl space-y-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-5 sm:p-6 border border-[var(--border)] shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto modal-scrollbar custom-scrollbar">
             <div className="flex items-center justify-between border-b border-[var(--border)] pb-3">
               <div className="flex items-center gap-2">
                 <Scale size={18} className="text-[var(--primary)]" />

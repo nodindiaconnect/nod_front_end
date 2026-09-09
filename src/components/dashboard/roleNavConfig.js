@@ -18,8 +18,8 @@ import {
 
 // Role names now come directly from the backend as strings
 export const ROLE_NAMES = {
-  Client: "Client",
-  Designer: "Designer",
+  DESIGNER: "Designer",
+  INTERIOR_DESIGNER: "Designer",
   Architect: "Architect",
   Contractor: "Contractor",
   MaterialSupplier: "Material Supplier",
@@ -75,8 +75,9 @@ export const NAV_CONFIG = {
   ],
   MaterialSupplier: [
     { label: "Dashboard", path: "/dashboard", icon: Home, end: true },
-    { label: "Products", path: "/dashboard/products", icon: Image },
-    { label: "Create Product", path: "/dashboard/products/create", icon: FileText },
+    { label: "Products & Portfolio", path: "/dashboard/products", icon: Image },
+    { label: "Upload Product", path: "/dashboard/products/create", icon: FileText },
+    { label: "Messages", path: "/dashboard/messages", icon: MessageSquare },
     { label: "My Profile", path: "/dashboard/myprofile", icon: User },
     { label: "Settings", path: "/dashboard/settings", icon: Settings },
     { label: "Logout", action: "logout", icon: LogOut },

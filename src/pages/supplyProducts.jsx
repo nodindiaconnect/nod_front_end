@@ -1361,7 +1361,7 @@ export default function FeaturedProducts() {
               </h2>
 
               <p className="text-sm text-[var(--muted)] mb-6 leading-relaxed">
-                Connect directly with thousands of licensed architects, interior designers, and general contractors seeking verified building and interior materials.
+                Connect directly with thousands of licensed architects, designers, and general contractors seeking verified building and interior materials.
               </p>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">

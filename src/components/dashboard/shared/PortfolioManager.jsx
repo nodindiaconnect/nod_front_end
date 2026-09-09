@@ -50,8 +50,26 @@ export default function PortfolioManager({ roleTitle = "Professional", roleKey =
 
   useEffect(() => {
     try {
-      const stored = JSON.parse(localStorage.getItem("user") || "null");
-      setUserId(stored?.id || stored?._id || null);
+      const stored =
+        JSON.parse(localStorage.getItem("userData") || "null") ||
+        JSON.parse(localStorage.getItem("user") || "null");
+      let foundId = stored?.id || stored?._id || stored?.user?.id || stored?.user?._id || null;
+
+      // Fallback: decode user ID from JWT token cookie if available
+      if (!foundId && typeof document !== "undefined") {
+        const tokenCookie = document.cookie
+          .split("; ")
+          .find((row) => row.startsWith("token="));
+        if (tokenCookie) {
+          const rawToken = tokenCookie.split("=")[1];
+          if (rawToken && rawToken.includes(".")) {
+            const payload = JSON.parse(atob(rawToken.split(".")[1]));
+            foundId = payload?.id || null;
+          }
+        }
+      }
+
+      setUserId(foundId);
     } catch {
       setUserId(null);
     }
@@ -116,7 +134,7 @@ export default function PortfolioManager({ roleTitle = "Professional", roleKey =
     setFormError("");
 
     try {
-      const uploadResults = await uploadFiles(files, "portfolio", "showcase-images");
+      const uploadResults = await uploadFiles(files, "designers", "showcase-images");
       const urls = uploadResults.map((r) => r.publicUrl).filter(Boolean);
       if (urls.length) {
         setImages((prev) => [...prev, ...urls]);
@@ -125,7 +143,7 @@ export default function PortfolioManager({ roleTitle = "Professional", roleKey =
       }
     } catch (err) {
       console.error("Upload error:", err);
-      setFormError("Error uploading images to storage.");
+      setFormError(err?.message || "Error uploading images to storage.");
     } finally {
       setUploadingFiles(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -331,7 +349,7 @@ export default function PortfolioManager({ roleTitle = "Professional", roleKey =
               <tbody className="divide-y divide-[var(--border)] font-medium">
                 {filteredPosts.map((post) => {
                   const imagesList = Array.isArray(post.images) ? post.images : [];
-                  const coverImg = imagesList[0] || "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=200&q=80";
+                  const coverImg = imagesList[0] || "/extracted/img_4.jpg";
 
                   return (
                     <tr key={post.id || post._id} className="hover:bg-[var(--background-secondary)]/50 transition">
@@ -612,3 +630,5 @@ export default function PortfolioManager({ roleTitle = "Professional", roleKey =
     </div>
   );
 }
+
+

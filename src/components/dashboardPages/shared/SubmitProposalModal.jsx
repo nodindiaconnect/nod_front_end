@@ -149,7 +149,7 @@ export default function SubmitProposalModal({
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-2xl max-w-xl w-full p-6 sm:p-7 my-auto border border-border shadow-2xl space-y-5 animate-[fadeIn_0.15s_ease-out]"
+        className="bg-white rounded-2xl max-w-xl w-full p-5 sm:p-7 my-auto border border-border shadow-2xl space-y-5 animate-[fadeIn_0.15s_ease-out] max-h-[92vh] overflow-y-auto modal-scrollbar custom-scrollbar"
         onClick={(e) => e.stopPropagation()}
       >
         {/* If submission result exists, show the result modal UI */}

@@ -22,6 +22,93 @@ export const OK_TEXT = root.getPropertyValue("--success").trim()
 
 export const allCountriesList = Country.getAllCountries()
 
+export const CURRENCY_SYMBOLS = {
+    INR: "₹",
+    USD: "$",
+    CAD: "CA$",
+    GBP: "£",
+    EUR: "€",
+    AED: "AED",
+    SAR: "SAR",
+    AUD: "A$",
+    NZD: "NZ$",
+    SGD: "S$",
+    CHF: "CHF",
+    JPY: "¥",
+    CNY: "¥",
+    KRW: "₩",
+    QAR: "QAR",
+    KWD: "KWD",
+    OMR: "OMR",
+    BHD: "BHD",
+    MYR: "RM",
+    IDR: "Rp",
+    PHP: "₱",
+    THB: "฿",
+    VND: "₫",
+    BDT: "৳",
+    LKR: "Rs",
+    NPR: "Rs",
+    ZAR: "R",
+    NGN: "₦",
+    KES: "KSh",
+    EGP: "E£",
+    BRL: "R$",
+    MXN: "Mex$",
+    SEK: "kr",
+    NOK: "kr",
+    DKK: "kr",
+    PLN: "zł",
+    TRY: "₺",
+    RUB: "₽",
+}
+
+export function getCurrencyForPhoneAndCountry(phoneCode, countryName) {
+    const cleanCode = String(phoneCode || "").replace(/[^\d]/g, "").trim()
+    const cleanCountry = String(countryName || "").trim().toLowerCase()
+
+    // 1. Try matching by country name if provided
+    if (cleanCountry) {
+        const countryObj = allCountriesList.find(
+            (c) => c.name.toLowerCase() === cleanCountry || c.isoCode.toLowerCase() === cleanCountry
+        )
+        if (countryObj && countryObj.currency) {
+            const code = countryObj.currency
+            const symbol = CURRENCY_SYMBOLS[code] || code
+            return {
+                currency: code,
+                symbol,
+                name: countryObj.name,
+                country: countryObj.name,
+                phoneCode: `+${countryObj.phonecode}`,
+            }
+        }
+    }
+
+    // 2. Lookup by phone code
+    if (cleanCode) {
+        const matchingCountries = allCountriesList.filter((c) => c.phonecode === cleanCode)
+        if (matchingCountries.length > 0) {
+            let countryObj = matchingCountries[0]
+            if (cleanCode === "1" && cleanCountry.includes("canada")) {
+                const canada = matchingCountries.find((c) => c.isoCode === "CA")
+                if (canada) countryObj = canada
+            }
+            const code = countryObj.currency || "INR"
+            const symbol = CURRENCY_SYMBOLS[code] || code
+            return {
+                currency: code,
+                symbol,
+                name: countryObj.name,
+                country: countryObj.name,
+                phoneCode: `+${countryObj.phonecode}`,
+            }
+        }
+    }
+
+    return { currency: "INR", symbol: "₹", name: "India", country: "India", phoneCode: "+91" }
+}
+
 /* ────────────────────────────────────────────────────────────────
    CLOUDFLARE TURNSTILE
    Site key comes from an env var so it's never hardcoded into the
@@ -184,6 +271,110 @@ export const ROLE_LABELS = {
     MaterialSupplier: "Material Supplier",
 }
 
+export const DEFAULT_DESIGNER_CATEGORIES = [
+    {
+        name: "Interior Designer",
+        specializations: [
+            "Residential Interior",
+            "Commercial & Office Interior",
+            "Modular Kitchen & Wardrobe",
+            "Hospitality & Restaurant",
+            "Living & Luxury Spaces",
+            "Retail & Showroom Design",
+        ],
+    },
+    {
+        name: "Exterior Designer",
+        specializations: [
+            "Residential Elevation",
+            "Commercial Facade Design",
+            "Modern Villa Elevation",
+            "Facade & Cladding Design",
+            "Exterior Remodeling & Lighting",
+        ],
+    },
+    {
+        name: "AutoCAD Drafter",
+        specializations: [
+            "2D Architectural Drafting",
+            "Working & Detail Drawings",
+            "MEP & HVAC Drafting",
+            "Approval & Submission Drawings",
+            "Structural Layout Drafting",
+        ],
+    },
+    {
+        name: "Landscape Designer",
+        specializations: [
+            "Garden & Lawn Design",
+            "Terrace & Balcony Gardens",
+            "Urban & Public Landscapes",
+            "Farmhouse & Resort Landscapes",
+            "Hardscape & Water Features",
+        ],
+    },
+    {
+        name: "BIM Engineer",
+        specializations: [
+            "Revit BIM Modeling",
+            "Clash Detection & Coordination",
+            "4D / 5D BIM Simulation",
+            "MEP BIM Modeling",
+            "Structural BIM Engineering",
+        ],
+    },
+    {
+        name: "Product Designer",
+        specializations: [
+            "Custom Furniture Design",
+            "Lighting & Luminaire Design",
+            "Home Decor & Artifacts",
+            "Millwork & Joinery Design",
+            "Industrial Product Design",
+        ],
+    },
+    {
+        name: "Graphic Designer",
+        specializations: [
+            "Environmental & Signage Graphics",
+            "Architectural Presentation & Pitch Decks",
+            "Wall Art & Murals",
+            "Brand Identity & Signage",
+            "Marketing Collateral & 3D Infographics",
+        ],
+    },
+    {
+        name: "3D Modeler",
+        specializations: [
+            "3D Architectural Modeling",
+            "Photorealistic Rendering",
+            "3ds Max / Blender / SketchUp Modeling",
+            "Furniture & Prop 3D Modeling",
+            "Texturing & Lighting Specialist",
+        ],
+    },
+    {
+        name: "Walkthrough Specialist",
+        specializations: [
+            "3D Architectural Animation",
+            "Lumion / Unreal Engine Walkthrough",
+            "360° Virtual Tours & Panoramas",
+            "Real-Time VR Experiences",
+            "Cinematic Video Rendering",
+        ],
+    },
+    {
+        name: "Estimation Engineer",
+        specializations: [
+            "BOQ & Cost Estimation",
+            "Quantity Surveying & Material Takeoff",
+            "Material & Labor Costing",
+            "Rate Analysis & Budgeting",
+            "Tender & Contract Estimation",
+        ],
+    },
+];
+
 export const ROLE_FIELDS = {
     Client: { heading: "Almost There", subtitle: "Confirm your location and preferences.", fields: [] },
     Designer: {
@@ -193,9 +384,10 @@ export const ROLE_FIELDS = {
             { id: "bio", label: "Short Bio", type: "textarea", placeholder: "Tell clients about your design philosophy..." },
             { id: "category", label: "Category", type: "category", placeholder: "Select Category" },
             { id: "specialization", label: "Specialization", type: "specialization", placeholder: "Select Specialization" },
+            { id: "specializationLevel", label: "Specialization Level", type: "select", options: ["Beginner", "Intermediate", "Professional"] },
             { id: "style", label: "Signature Style", type: "select", options: ["Modern", "Minimalist", "Luxury", "Scandinavian", "Industrial", "Eclectic"] },
             { id: "experience", label: "Years of Experience", type: "number", placeholder: "e.g. 5" },
-            { id: "rate", label: "Hourly Rate (Optional)", type: "number", placeholder: "e.g. 80" },
+            { id: "rate", label: "Hourly Rate (Optional)", type: "rate", placeholder: "e.g. 80" },
         ],
     },
     Architect: {
@@ -204,8 +396,10 @@ export const ROLE_FIELDS = {
         fields: [
             { id: "bio", label: "Short Bio", type: "textarea", placeholder: "Describe your architectural approach..." },
             { id: "specialization", label: "Project Type", type: "select", options: ["Residential", "Commercial", "Mixed-Use", "Industrial", "Urban Planning"] },
+            { id: "specializationLevel", label: "Specialization Level", type: "select", options: ["Beginner", "Intermediate", "Professional"] },
             { id: "software", label: "Primary Software", type: "select", options: ["AutoCAD", "Revit", "ArchiCAD", "SketchUp", "Rhino"] },
             { id: "experience", label: "Years of Experience", type: "number", placeholder: "e.g. 10" },
+            { id: "rate", label: "Hourly Rate (Optional)", type: "rate", placeholder: "e.g. 100" },
         ],
     },
     Contractor: {
@@ -297,6 +491,48 @@ export function TextAreaInput({ label, disabled, ...props }) {
                 className={`w-full px-4 py-3.5 text-sm outline-none resize-none ${disabled ? "opacity-40 cursor-not-allowed" : ""}`}
                 style={{ border: `1px solid ${LINE}`, color: INK, background: "transparent" }}
             />
+        </div>
+    )
+}
+
+export function RateInput({ label, currencyData, disabled, className = "", ...props }) {
+    const symbol = currencyData?.symbol || "₹"
+    const code = currencyData?.currency || "INR"
+
+    return (
+        <div className="mb-4">
+            {label && <FieldLabel>{label}</FieldLabel>}
+            <div
+                className={`flex items-center transition-colors ${disabled ? "opacity-40 cursor-not-allowed" : ""}`}
+                style={{ border: `1px solid ${LINE}`, background: "transparent" }}
+            >
+                <div
+                    className="px-3.5 py-3.5 text-xs font-bold shrink-0 border-r flex items-center gap-1.5 select-none"
+                    style={{
+                        borderColor: LINE,
+                        background: "rgba(0,0,0,0.02)",
+                        color: INK,
+                    }}
+                    title={`Detected currency: ${code} (${symbol})`}
+                >
+                    <span className="text-sm font-semibold">{symbol}</span>
+                    <span className="text-[11px] opacity-75">{code}</span>
+                </div>
+                <input
+                    {...props}
+                    type="number"
+                    min="0"
+                    disabled={disabled}
+                    className={`flex-1 min-w-0 px-3.5 py-3.5 text-sm outline-none bg-transparent ${className}`}
+                    style={{ color: INK }}
+                />
+                <span className="px-3 text-xs text-[var(--text)]/60 font-medium select-none shrink-0">
+                    / hr
+                </span>
+            </div>
+            <p className="text-[10px] mt-1.5 text-[#8a8479]">
+                Currency automatically set to {code} ({symbol}) from your mobile country code ({currencyData?.phoneCode || "+91"}). Optional.
+            </p>
         </div>
     )
 }

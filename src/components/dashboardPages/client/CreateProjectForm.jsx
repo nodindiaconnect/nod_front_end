@@ -5,6 +5,7 @@ import {
     useCreateProjectMutation,
     useGetProjectEnumsQuery,
 } from "./Dashboard/overpageApiSlice";
+import { useGetCategoriesAndSpecializationsQuery } from "../../../Authentication/authApiSlice";
 import { uploadFile } from "../../../../superBase";
 import {
     Upload, AlertCircle, CheckCircle, MapPin, Briefcase, Calendar,
@@ -12,11 +13,136 @@ import {
     Loader2, RotateCcw, Image as ImageIcon, Video as VideoIcon, Users,
     MessageCircle, Tag, Home, Ruler, Layers, BedDouble, Bath, Palette,
     Sofa, Heart, AlertTriangle, UserCheck, Clock, Wallet, Flag, StickyNote,
-    Plus, Check, FileIcon,
+    Plus, Check, FileIcon, Sparkles,
 } from "lucide-react";
 
 
 const MAX_FILES_PER_TYPE = 4;
+
+const FALLBACK_CATEGORIES = [
+    {
+        name: "Interior Designer",
+        specializations: [
+            "Residential Interior",
+            "Commercial & Office Interior",
+            "Modular Kitchen & Wardrobe",
+            "Hospitality & Restaurant",
+            "Living & Luxury Spaces",
+            "Retail & Showroom Design",
+        ],
+    },
+    {
+        name: "Exterior Designer",
+        specializations: [
+            "Residential Elevation",
+            "Commercial Facade Design",
+            "Modern Villa Elevation",
+            "Facade & Cladding Design",
+            "Exterior Remodeling & Lighting",
+        ],
+    },
+    {
+        name: "AutoCAD Drafter",
+        specializations: [
+            "2D Architectural Drafting",
+            "Working & Detail Drawings",
+            "MEP & HVAC Drafting",
+            "Approval & Submission Drawings",
+            "Structural Layout Drafting",
+        ],
+    },
+    {
+        name: "Landscape Designer",
+        specializations: [
+            "Garden & Lawn Design",
+            "Terrace & Balcony Gardens",
+            "Urban & Public Landscapes",
+            "Farmhouse & Resort Landscapes",
+            "Hardscape & Water Features",
+        ],
+    },
+    {
+        name: "BIM Engineer",
+        specializations: [
+            "Revit BIM Modeling",
+            "Clash Detection & Coordination",
+            "4D / 5D BIM Simulation",
+            "MEP BIM Modeling",
+            "Structural BIM Engineering",
+        ],
+    },
+    {
+        name: "Product Designer",
+        specializations: [
+            "Custom Furniture Design",
+            "Lighting & Luminaire Design",
+            "Home Decor & Artifacts",
+            "Millwork & Joinery Design",
+            "Industrial Product Design",
+        ],
+    },
+    {
+        name: "Graphic Designer",
+        specializations: [
+            "Environmental & Signage Graphics",
+            "Architectural Presentation & Pitch Decks",
+            "Wall Art & Murals",
+            "Brand Identity & Signage",
+            "Marketing Collateral & 3D Infographics",
+        ],
+    },
+    {
+        name: "3D Modeler",
+        specializations: [
+            "3D Architectural Modeling",
+            "Photorealistic Rendering",
+            "3ds Max / Blender / SketchUp Modeling",
+            "Furniture & Prop 3D Modeling",
+            "Texturing & Lighting Specialist",
+        ],
+    },
+    {
+        name: "Walkthrough Specialist",
+        specializations: [
+            "3D Architectural Animation",
+            "Lumion / Unreal Engine Walkthrough",
+            "360° Virtual Tours & Panoramas",
+            "Real-Time VR Experiences",
+            "Cinematic Video Rendering",
+        ],
+    },
+    {
+        name: "Estimation Engineer",
+        specializations: [
+            "BOQ & Cost Estimation",
+            "Quantity Surveying & Material Takeoff",
+            "Material & Labor Costing",
+            "Rate Analysis & Budgeting",
+            "Tender & Contract Estimation",
+        ],
+    },
+];
+
+const SERVICES_OPTIONS = [
+    {
+        key: "ARCHITECT",
+        label: "Architect",
+        badge: "Planning & Structure",
+        desc: "Design, structural blueprints, layout & approvals",
+    },
+    {
+        key: "INTERIOR_DESIGNER",
+        label: "Designer",
+        badge: "Aesthetics & 3D",
+        desc: "Interior concepts, layout, 3D visualizer & aesthetics",
+    },
+    {
+        key: "CONTRACTOR",
+        label: "Contractor",
+        badge: "Build & Execution",
+        desc: "Civil construction, MEP, fabrication & turnkey execution",
+    },
+];
 
 const FILE_FIELDS = [
     { key: "floorPlan", label: "Floor Plan", accept: "image/*,.pdf" },
@@ -97,6 +223,7 @@ const REQUIRED_FIELDS = {
 const FIELD_LABELS = {
     title: "Project Title", category: "Category", propertyStatus: "Property Status",
     description: "Project Description", servicesRequired: "Services Required",
+    designerCategory: "Designer Category", designerSpecialization: "Specialization",
     address: "Street Address", city: "City", state: "State", pincode: "Pincode",
     propertySize: "Property Size", numberOfFloors: "Number of Floors",
     numberOfBedrooms: "Number of Bedrooms", numberOfBathrooms: "Number of Bathrooms",
@@ -120,6 +247,7 @@ const getStepsForStatus = (propertyStatus) => {
 
 const EMPTY_FORM = {
     title: "", category: "", scope: "FULL_PROJECT", servicesRequired: ["ARCHITECT", "CONTRACTOR", "INTERIOR_DESIGNER"], description: "",
+    designerCategory: "", designerSpecialization: "", designerSpecializationLevel: "",
     address: "", city: "", state: "", pincode: "", propertySize: "",
     numberOfFloors: "", numberOfBedrooms: "", numberOfBathrooms: "",
     propertyStatus: "", designStyle: [], colorPreferences: "",
@@ -400,6 +528,11 @@ export default function CreateProjectForm({ onClose }) {
     const { data: enumsData, isLoading: isLoadingEnums } = useGetProjectEnumsQuery();
     const ENUMS = enumsData?.data || {};
 
+    const { data: catSpecializationsRes } = useGetCategoriesAndSpecializationsQuery();
+    const designerCategoriesList = (catSpecializationsRes?.data && catSpecializationsRes.data.length > 0)
+        ? catSpecializationsRes.data
+        : FALLBACK_CATEGORIES;
+
     const [createProject, { isLoading: isCreating }] = useCreateProjectMutation();
 
     const [step, setStep] = useState(1);
@@ -410,6 +543,11 @@ export default function CreateProjectForm({ onClose }) {
     const [missingFields, setMissingFields] = useState([]);
     const [stepError, setStepError] = useState("");
     const fileInputRefs = useRef({});
+
+    const selectedCatObj = designerCategoriesList.find(
+        (c) => c.name === formData.designerCategory || c.id === formData.designerCategory
+    );
+    const availableDesignerSpecializations = selectedCatObj?.specializations || [];
 
     const stepKeys = getStepsForStatus(formData.propertyStatus);
     const currentIndex = Math.min(step, stepKeys.length) - 1;
@@ -429,13 +567,19 @@ export default function CreateProjectForm({ onClose }) {
             }
         });
 
-        if (stepKey === "basic" && formData.servicesRequired.length === 0) {
-            missing.push("servicesRequired");
-        }
-        if (stepKey === "basic" && formData.description.trim().length > 0) {
-            const len = formData.description.trim().length;
-            if (len < DESCRIPTION_MIN_LENGTH || len > DESCRIPTION_MAX_LENGTH) {
-                if (!missing.includes("description")) missing.push("description");
+        if (stepKey === "basic") {
+            if (formData.servicesRequired.length === 0) {
+                missing.push("servicesRequired");
+            }
+            if (formData.scope === "DESIGN_ONLY") {
+                if (!formData.designerCategory) missing.push("designerCategory");
+                if (!formData.designerSpecialization) missing.push("designerSpecialization");
+            }
+            if (formData.description.trim().length > 0) {
+                const len = formData.description.trim().length;
+                if (len < DESCRIPTION_MIN_LENGTH || len > DESCRIPTION_MAX_LENGTH) {
+                    if (!missing.includes("description")) missing.push("description");
+                }
             }
         }
         if (stepKey === "design") {
@@ -445,6 +589,13 @@ export default function CreateProjectForm({ onClose }) {
         if (stepKey === "budget") {
             const min = Number(formData.budgetMin);
             const max = Number(formData.budgetMax);
+
+            if (formData.budgetMin === "" || Number.isNaN(min) || min < 1000) {
+                if (!missing.includes("budgetMin")) missing.push("budgetMin");
+            }
+            if (formData.budgetMax === "" || Number.isNaN(max) || max < 1000) {
+                if (!missing.includes("budgetMax")) missing.push("budgetMax");
+            }
             if (formData.budgetMin !== "" && formData.budgetMax !== "" && !Number.isNaN(min) && !Number.isNaN(max) && min > max) {
                 if (!missing.includes("budgetMin")) missing.push("budgetMin");
                 if (!missing.includes("budgetMax")) missing.push("budgetMax");
@@ -465,6 +616,8 @@ export default function CreateProjectForm({ onClose }) {
         if (stepKey === "files") {
             const hasPhoto = files.propertyPhoto.some((f) => f.status === "success");
             if (!hasPhoto) missing.push("propertyPhoto");
+            const hasRejected = Object.values(files).some((arr) => arr.some((it) => it.status === "error"));
+            if (hasRejected) missing.push("rejectedFiles");
         }
 
         return missing;
@@ -549,8 +702,16 @@ export default function CreateProjectForm({ onClose }) {
     const handleSubmit = async () => {
         try {
             const urlsFor = (key) => files[key].filter((f) => f.status === "success" && f.url).map((f) => f.url);
+            let notes = formData.additionalNotes || "";
+            if (formData.designerSpecialization) {
+                const specTag = `[Designer Requirement: Category - ${formData.designerCategory || "Designer"}, Specialization - ${formData.designerSpecialization}${formData.designerSpecializationLevel ? `, Level - ${formData.designerSpecializationLevel}` : ""}]`;
+                if (!notes.includes(specTag)) {
+                    notes = notes ? `${notes}\n\n${specTag}` : specTag;
+                }
+            }
             const payload = {
                 ...formData,
+                additionalNotes: notes,
                 floorPlanUrls: urlsFor("floorPlan"),
                 propertyPhotoUrls: urlsFor("propertyPhoto"),
                 referenceImageUrls: urlsFor("referenceImage"),
@@ -589,6 +750,20 @@ export default function CreateProjectForm({ onClose }) {
             if (descTooShort) parts.push(`Project Description must be at least ${DESCRIPTION_MIN_LENGTH} characters (currently ${descLen}).`);
             if (descTooLong) parts.push(`Project Description must be under ${DESCRIPTION_MAX_LENGTH} characters (currently ${descLen}).`);
 
+            if (currentStepKey === "budget") {
+                const min = Number(formData.budgetMin);
+                const max = Number(formData.budgetMax);
+                if (formData.budgetMin !== "" && !Number.isNaN(min) && min < 1000) {
+                    parts.push("Minimum Budget must be at least ₹1,000.");
+                }
+                if (formData.budgetMax !== "" && !Number.isNaN(max) && max < 1000) {
+                    parts.push("Maximum Budget must be at least ₹1,000.");
+                }
+                if (!Number.isNaN(min) && !Number.isNaN(max) && min > max) {
+                    parts.push("Maximum Budget must be greater than or equal to Minimum Budget.");
+                }
+            }
+
             const today = getTodayDateString();
             if (formData.startDate && formData.startDate < today) {
                 parts.push("Start Date cannot be in the past.");
@@ -597,6 +772,10 @@ export default function CreateProjectForm({ onClose }) {
                 parts.push("Completion Date must be on or after Start Date.");
             } else if (formData.completionDate && formData.completionDate < today) {
                 parts.push("Completion Date cannot be in the past.");
+            }
+
+            if (currentStepKey === "files" && missing.includes("rejectedFiles")) {
+                parts.push("One or more images contain prohibited contact info (phone numbers or emails). Please remove rejected images to continue.");
             }
 
             setStepError(parts.join(" "));
@@ -640,24 +819,24 @@ export default function CreateProjectForm({ onClose }) {
             onClick={closeForm}
         >
             <div
-                className="relative w-[75%] max-w-4xl h-[88vh] flex flex-col bg-white border border-border rounded-md overflow-hidden shadow-xl"
+                className="relative w-full sm:w-[92%] md:w-[85%] lg:w-[75%] max-w-4xl max-h-[92vh] h-full sm:h-[88vh] flex flex-col bg-white border border-border rounded-lg sm:rounded-md overflow-hidden shadow-xl"
                 onClick={(e) => e.stopPropagation()}
             >
-                <div className="sticky top-0 z-10 flex justify-between items-start gap-3 p-5 sm:p-6 pb-4 bg-white border-b border-border">
+                <div className="sticky top-0 z-10 flex justify-between items-start gap-3 p-4 sm:p-6 pb-3 sm:pb-4 bg-white border-b border-border">
                     <div className="min-w-0">
-                        <h2 className="text-xl sm:text-2xl font-bold text-heading truncate" style={{ fontFamily: "var(--font-heading)" }}>
+                        <h2 className="text-lg sm:text-2xl font-bold text-heading truncate" style={{ fontFamily: "var(--font-heading)" }}>
                             Create New Project
                         </h2>
                         <p className="text-xs sm:text-sm text-muted mt-1">
                             Step {currentIndex + 1} of {stepKeys.length} · {STEP_META[currentStepKey]}
                         </p>
                     </div>
-                    <button onClick={closeForm} className="text-muted hover:text-text transition-colors p-1 -mr-1 shrink-0" aria-label="Cancel">
+                    <button onClick={closeForm} className="text-muted hover:text-text transition-colors p-1 -mr-1 shrink-0 cursor-pointer" aria-label="Cancel">
                         <X size={22} />
                     </button>
                 </div>
 
-                <div className="w-full px-5 sm:px-8 pt-5 pb-2 flex-1 min-h-0 overflow-y-auto">
+                <div className="w-full px-4 sm:px-8 pt-4 sm:pt-5 pb-2 flex-1 min-h-0 overflow-y-auto modal-scrollbar custom-scrollbar">
                     {serverErrors.length > 0 && (
                         <div className="mb-5 p-4 bg-danger bg-opacity-10 border border-danger border-opacity-20 rounded-md">
                             <div className="flex gap-3">
@@ -731,8 +910,8 @@ export default function CreateProjectForm({ onClose }) {
                                         },
                                         {
                                             id: "DESIGN_ONLY",
-                                            title: "Interior Design",
-                                            subtitle: "Layouts, Decor & Furnishing",
+                                            title: "Designer",
+                                            subtitle: "Design Concepts, 3D & Styling",
                                             roles: ["INTERIOR_DESIGNER"],
                                             badge: "Designers Only",
                                         },
@@ -776,6 +955,122 @@ export default function CreateProjectForm({ onClose }) {
                                 </div>
                             </div>
 
+                            {/* Designer Category & Specialization Dropdowns */}
+                            {(formData.scope === "DESIGN_ONLY" || formData.scope === "FULL_PROJECT" || formData.servicesRequired.includes("INTERIOR_DESIGNER")) && (
+                                <div className="p-4 sm:p-5 rounded-xl border border-[var(--primary)]/30 bg-[var(--primary)]/5 space-y-3 transition-all">
+                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 pb-2 border-b border-[var(--primary)]/15">
+                                        <div className="flex items-center gap-2">
+                                            <span className="w-2.5 h-2.5 rounded-full bg-[var(--primary)] shrink-0" />
+                                            <h4 className="text-xs sm:text-sm font-bold text-heading uppercase tracking-wider">
+                                                Designer Category & Specialization
+                                            </h4>
+                                        </div>
+                                        <span className="text-[11px] text-muted">
+                                            Choose category & specialization for your designer
+                                        </span>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4 pt-1">
+                                        {/* Category Dropdown */}
+                                        <div>
+                                            <label className="block text-xs font-semibold text-heading mb-1.5">
+                                                Designer Category <span className="text-danger">*</span>
+                                            </label>
+                                            <div className="relative">
+                                                <select
+                                                    name="designerCategory"
+                                                    value={formData.designerCategory || ""}
+                                                    onChange={(e) => {
+                                                        const val = e.target.value;
+                                                        setFormData((p) => ({
+                                                            ...p,
+                                                            designerCategory: val,
+                                                            designerSpecialization: "",
+                                                        }));
+                                                        clearValidation();
+                                                    }}
+                                                    className={selectWrapClass + " text-xs sm:text-sm " + (missingFields.includes("designerCategory") ? errorRingClass : "")}
+                                                >
+                                                    <option value="">Select Designer Category</option>
+                                                    {designerCategoriesList.map((cat) => (
+                                                        <option key={cat.id || cat.name} value={cat.name}>
+                                                            {cat.name}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                                <ChevronDown size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
+                                            </div>
+                                        </div>
+
+                                        {/* Specialization Dropdown */}
+                                        <div>
+                                            <label className="block text-xs font-semibold text-heading mb-1.5">
+                                                Specialization <span className="text-danger">*</span>
+                                            </label>
+                                            <div className="relative">
+                                                <select
+                                                    name="designerSpecialization"
+                                                    value={formData.designerSpecialization || ""}
+                                                    disabled={!formData.designerCategory || availableDesignerSpecializations.length === 0}
+                                                    onChange={(e) => {
+                                                        setFormData((p) => ({
+                                                            ...p,
+                                                            designerSpecialization: e.target.value,
+                                                        }));
+                                                        clearValidation();
+                                                    }}
+                                                    className={selectWrapClass + " text-xs sm:text-sm " + (missingFields.includes("designerSpecialization") ? errorRingClass : "")}
+                                                >
+                                                    <option value="">
+                                                        {!formData.designerCategory
+                                                            ? "Select Category First"
+                                                            : availableDesignerSpecializations.length === 0
+                                                            ? "No Specializations Available"
+                                                            : "Select Specialization"}
+                                                    </option>
+                                                    {availableDesignerSpecializations.map((spec) => {
+                                                        const specName = typeof spec === "string" ? spec : spec.name;
+                                                        const specId = typeof spec === "object" ? spec.id : specName;
+                                                        return (
+                                                            <option key={specId || specName} value={specName}>
+                                                                {specName}
+                                                            </option>
+                                                        );
+                                                    })}
+                                                </select>
+                                                <ChevronDown size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
+                                            </div>
+                                        </div>
+
+                                        {/* Specialization Level */}
+                                        <div>
+                                            <label className="block text-xs font-semibold text-heading mb-1.5">
+                                                Specialization Level <span className="text-muted font-normal">(Optional)</span>
+                                            </label>
+                                            <div className="relative">
+                                                <select
+                                                    name="designerSpecializationLevel"
+                                                    value={formData.designerSpecializationLevel || ""}
+                                                    onChange={(e) => {
+                                                        setFormData((p) => ({
+                                                            ...p,
+                                                            designerSpecializationLevel: e.target.value,
+                                                        }));
+                                                    }}
+                                                    className={selectWrapClass + " text-xs sm:text-sm"}
+                                                >
+                                                    <option value="">Any Level</option>
+                                                    <option value="Beginner">Beginner</option>
+                                                    <option value="Intermediate">Intermediate</option>
+                                                    <option value="Professional">Professional</option>
+                                                </select>
+                                                <ChevronDown size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
                             {/* 3-Phase Pipeline Preview when FULL_PROJECT is selected */}
                             {formData.scope === "FULL_PROJECT" && (
                                 <div className="p-4 bg-[var(--background-secondary)] rounded-lg border border-border space-y-2">
@@ -804,7 +1099,7 @@ export default function CreateProjectForm({ onClose }) {
                                             <span className="w-5 h-5 rounded-full bg-emerald-600 text-white text-[10px] font-bold flex items-center justify-center">3</span>
                                             <div>
                                                 <span className="font-bold text-heading block">Interiors Phase</span>
-                                                <span className="text-[10px] text-muted">Led by Interior Designer</span>
+                                                <span className="text-[10px] text-muted">Led by Designer</span>
                                             </div>
                                         </div>
                                     </div>
@@ -857,17 +1152,94 @@ export default function CreateProjectForm({ onClose }) {
                                     </div>
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-heading mb-2">Services Required <span className="text-danger">*</span></label>
-                                    <div className={"flex flex-col gap-3 rounded-md " + (missingFields.includes("servicesRequired") ? "ring-1 ring-danger p-2" : "")}>
-                                        {(ENUMS.servicesRequired || []).map((service) => (
-                                            <label key={service} className="flex items-center gap-3 px-4 py-3.5 bg-background border border-border rounded-md cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors">
-                                                <input type="checkbox" checked={formData.servicesRequired.includes(service)}
-                                                    onChange={() => handleMultiSelect("servicesRequired", service)}
-                                                    className="w-4 h-4 rounded shrink-0" style={{ accentColor: "var(--primary)" }} />
-                                                <span className="text-sm text-text font-medium">{formatEnumLabel(service)}</span>
+                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+                                        <div>
+                                            <label className="block text-sm font-semibold text-heading">
+                                                Services Required <span className="text-danger">*</span>
                                             </label>
-                                        ))}
+                                            <p className="text-xs text-muted">
+                                                Select a specific service, multiple services, or all three for your project
+                                            </p>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                const allKeys = SERVICES_OPTIONS.map((s) => s.key);
+                                                const allSelected = allKeys.every((k) => formData.servicesRequired.includes(k));
+                                                setFormData((p) => ({
+                                                    ...p,
+                                                    servicesRequired: allSelected ? [] : allKeys,
+                                                    scope: allSelected ? p.scope : "FULL_PROJECT",
+                                                }));
+                                                clearValidation();
+                                            }}
+                                            className="self-start sm:self-auto text-xs font-semibold text-[var(--primary)] hover:underline flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[var(--primary)]/10 hover:bg-[var(--primary)]/15 transition-colors cursor-pointer"
+                                        >
+                                            {SERVICES_OPTIONS.every((s) => formData.servicesRequired.includes(s.key))
+                                                ? "Deselect All"
+                                                : "Select All 3 Services"}
+                                        </button>
                                     </div>
+
+                                    <div className={"flex flex-col gap-3 rounded-lg " + (missingFields.includes("servicesRequired") ? "ring-2 ring-danger p-2 bg-danger/5" : "")}>
+                                        {SERVICES_OPTIONS.map((service) => {
+                                            const isChecked = formData.servicesRequired.includes(service.key);
+                                            return (
+                                                <label
+                                                    key={service.key}
+                                                    className={`relative flex items-center gap-3.5 px-4 py-3.5 rounded-xl border-2 cursor-pointer transition-all ${
+                                                        isChecked
+                                                            ? "border-[var(--primary)] bg-[var(--primary)]/5 shadow-xs"
+                                                            : "border-border bg-background hover:border-[var(--primary)]/40 hover:bg-black/5"
+                                                    }`}
+                                                >
+                                                    <input
+                                                        type="checkbox"
+                                                        value={service.key}
+                                                        checked={isChecked}
+                                                        onChange={() => {
+                                                            setFormData((p) => {
+                                                                const cur = p.servicesRequired || [];
+                                                                const next = cur.includes(service.key)
+                                                                    ? cur.filter((v) => v !== service.key)
+                                                                    : [...cur, service.key];
+                                                                let newScope = p.scope;
+                                                                if (next.length === 3) newScope = "FULL_PROJECT";
+                                                                else if (next.length === 1 && next[0] === "ARCHITECT") newScope = "ARCHITECTURE_ONLY";
+                                                                else if (next.length === 1 && next[0] === "CONTRACTOR") newScope = "CONSTRUCTION_ONLY";
+                                                                else if (next.length === 1 && next[0] === "INTERIOR_DESIGNER") newScope = "DESIGN_ONLY";
+                                                                return { ...p, servicesRequired: next, scope: newScope };
+                                                            });
+                                                            setServerErrors([]);
+                                                            clearValidation();
+                                                        }}
+                                                        className="w-4 h-4 rounded shrink-0 cursor-pointer"
+                                                        style={{ accentColor: "var(--primary)" }}
+                                                    />
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="flex items-center justify-between gap-2 mb-0.5">
+                                                            <span className={`text-sm font-bold ${isChecked ? "text-[var(--primary)]" : "text-heading"}`}>
+                                                                {service.label}
+                                                            </span>
+                                                            <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded ${
+                                                                isChecked ? "bg-[var(--primary)] text-white" : "bg-black/10 text-muted"
+                                                            }`}>
+                                                                {service.badge}
+                                                            </span>
+                                                        </div>
+                                                        <p className="text-xs text-muted leading-snug">
+                                                            {service.desc}
+                                                        </p>
+                                                    </div>
+                                                </label>
+                                            );
+                                        })}
+                                    </div>
+                                    {missingFields.includes("servicesRequired") && (
+                                        <p className="text-xs text-danger mt-1.5 font-medium">
+                                            Please select at least one service required.
+                                        </p>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -1010,13 +1382,15 @@ export default function CreateProjectForm({ onClose }) {
                             <div className="grid grid-cols-2 sm:grid-cols-3 gap-5">
                                 <div>
                                     <label className="block text-sm font-medium text-heading mb-2">Minimum Budget (₹) <span className="text-danger">*</span></label>
-                                    <input type="number" name="budgetMin" value={formData.budgetMin} onChange={handleInputChange}
-                                        placeholder="0" className={inputClass + " w-full " + errCls("budgetMin")} />
+                                    <input type="number" name="budgetMin" min="1000" value={formData.budgetMin} onChange={handleInputChange}
+                                        placeholder="1000" className={inputClass + " w-full " + errCls("budgetMin")} />
+                                    <p className="text-[11px] text-muted mt-1">Min. ₹1,000</p>
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-heading mb-2">Maximum Budget (₹) <span className="text-danger">*</span></label>
-                                    <input type="number" name="budgetMax" value={formData.budgetMax} onChange={handleInputChange}
-                                        placeholder="0" className={inputClass + " w-full " + errCls("budgetMax")} />
+                                    <input type="number" name="budgetMax" min="1000" value={formData.budgetMax} onChange={handleInputChange}
+                                        placeholder="5000" className={inputClass + " w-full " + errCls("budgetMax")} />
+                                    <p className="text-[11px] text-muted mt-1">Must be ≥ Min Budget</p>
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-heading mb-2">Priority</label>
@@ -1153,6 +1527,21 @@ export default function CreateProjectForm({ onClose }) {
                             <div className="rounded-md border border-border bg-background p-5 space-y-3 text-sm text-text">
                                 <p className="text-base"><strong>{formData.title || "Untitled Project"}</strong></p>
                                 <p className="text-muted">{formatEnumLabel(formData.category)} · {formatEnumLabel(formData.propertyStatus)}</p>
+                                {formData.designerSpecialization && (
+                                    <div className="flex flex-wrap items-center gap-2 text-xs text-[var(--primary)] font-semibold bg-[var(--primary)]/5 p-2 rounded border border-[var(--primary)]/20">
+                                        <span>Designer: {formData.designerCategory || "Designer"}</span>
+                                        <span>•</span>
+                                        <span>Specialization: {formData.designerSpecialization}</span>
+                                        {formData.designerSpecializationLevel && (
+                                            <>
+                                                <span>•</span>
+                                                <span className="px-1.5 py-0.5 rounded bg-[var(--primary)]/10 text-[11px] font-bold">
+                                                    {formData.designerSpecializationLevel}
+                                                </span>
+                                            </>
+                                        )}
+                                    </div>
+                                )}
                                 <p>{[formData.address, formData.city, formData.state, formData.pincode].filter(Boolean).join(", ") || "No address provided"}</p>
                                 <p>₹{formData.budgetMin || "—"} - ₹{formData.budgetMax || "—"} · {formData.startDate || "—"} to {formData.completionDate || "—"}</p>
                                 {formData.colorPreferences && (
