@@ -3,6 +3,7 @@ import {
   useGetSupplierProfileQuery,
   useUpdateSupplierProfileMutation,
 } from "./dashboard/materialapislice";
+import BankDetailsSection from "../../profile/BankDetailsSection";
 import "../../../theme.css";
 
 const inputClass =
@@ -379,6 +380,8 @@ export default function SupplierProfilePage() {
                 </div>
               </div>
             </div>
+
+            <BankDetailsSection />
           </div>
         </div>
 

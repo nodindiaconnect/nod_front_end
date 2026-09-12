@@ -12,7 +12,7 @@ import Navbar from "./pages/Navbar";
 import OurServices from "./pages/Ourprocess";
 import NewHeritage from "./pages/subsection";
 import WhyChoose from "./pages/WhyChooseUs";
-
+import WhyChooseNOD from "./pages/whychooseNodcarousel";
 import AuthPage from "./Authentication/Authpage";
 
 import DashboardLayout from "./components/dashboard/Dashboardlayout";
@@ -251,14 +251,16 @@ function Home() {
         <Navbar />
         <HeroSection panelRef={panelRef} />
       </div>
-      <div ref={panelRef} className="relative z-10 rounded-t-[2rem]">
+      <div ref={panelRef} className="relative z-10">
         <CategoryShowcase />
         <WorkShowcase />
-        <ThreeDSpaceVisualizer />
+        {/* <ThreeDSpaceVisualizer /> */}
         <FrozenMusicSection />
 
         <FeaturedProjects />
         <NewHeritage />
+
+        <WhyChooseNOD />
         <OurServices />
         <Footer />
       </div>

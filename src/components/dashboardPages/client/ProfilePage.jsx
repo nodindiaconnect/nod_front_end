@@ -1,4 +1,5 @@
 import { useGetUserDetailsQuery } from "./Dashboard/overpageApiSlice";
+import BankDetailsSection from "../../profile/BankDetailsSection";
 import "../../../theme.css";
 
 const Detail = ({ label, value }) => (
@@ -68,16 +69,21 @@ export default function ProfilePage() {
         </header>
 
         <section className="profile-page__section mt-5" aria-labelledby="contact-heading">
-          <h2 id="contact-heading" className="font-[var(--font-heading)] text-lg font-bold text-[var(--heading)]">Contact details</h2>
+          <h2 id="contact-heading" className="font-[var(--font-heading)] text-lg font-bold text-[var(--heading)]">Contact &amp; Tax details</h2>
           <p className="mt-2 text-sm text-[var(--muted)]">The details professionals use when responding to your projects.</p>
-          <dl className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <dl className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <Detail label="Email address" value={user.email} />
             <Detail label="Phone number" value={[user.countryCode, user.phone || user.phoneNumber].filter(Boolean).join(" ")} />
             <Detail label="Location" value={location || user.address} />
+            <Detail label="GSTIN / Tax ID" value={user.gstin || "Not provided"} />
           </dl>
         </section>
 
-        <section className="profile-page__section mt-4" aria-labelledby="about-heading">
+        <section className="profile-page__section mt-5">
+          <BankDetailsSection />
+        </section>
+
+        <section className="profile-page__section mt-5" aria-labelledby="about-heading">
           <h2 id="about-heading" className="font-[var(--font-heading)] text-lg font-bold text-[var(--heading)]">About you</h2>
           <p className="mt-4 whitespace-pre-wrap text-sm leading-6 text-[var(--text)]">{user.bio || user.about || "Add a short introduction in your account settings to help professionals understand your project goals."}</p>
         </section>

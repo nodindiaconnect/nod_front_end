@@ -20,7 +20,7 @@ export default function OurServices() {
     },
     {
       icon: Compass,
-      title: "Architectures",
+      title: "Architects",
       desc: "Work with licensed architects for structural planning, space optimization and technical drawings — from concept sketches to construction-ready plans.",
       cta: "Find an Architect",
       to: "/explore?role=architect",
@@ -49,13 +49,13 @@ export default function OurServices() {
       {/* BACKGROUND PHOTO */}
       <div className="absolute inset-0">
         <img
-          src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTHucR5QjqxU_zY1bWyeRe_2U5EwJyckyl3XJltn_X2GglYJIiPT2oBks4&s=10"
+          src="https://images.unsplash.com/photo-1497366216548-37526070297c?w=1600&auto=format&fit=crop&q=80"
           alt="Design studio team working"
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover opacity-15"
           loading="lazy"
         />
         {/* WHITE WASH OVERLAY */}
-        <div className="absolute inset-0 bg-[var(--background)]/90" />
+        <div className="absolute inset-0 bg-[var(--background)]/85" />
       </div>
 
       <div className="relative z-10 max-w-6xl mx-auto">

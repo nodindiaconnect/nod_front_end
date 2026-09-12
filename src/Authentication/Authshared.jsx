@@ -376,7 +376,13 @@ export const DEFAULT_DESIGNER_CATEGORIES = [
 ];
 
 export const ROLE_FIELDS = {
-    Client: { heading: "Almost There", subtitle: "Confirm your location and preferences.", fields: [] },
+    Client: {
+        heading: "Almost There",
+        subtitle: "Confirm your details and preferences.",
+        fields: [
+            { id: "gstin", label: "GSTIN / Tax ID (Optional)", type: "gstin", placeholder: "e.g. 22AAAAA0000A1Z5" },
+        ],
+    },
     Designer: {
         heading: "Set Up Your Designer Profile",
         subtitle: "Showcase your style and attract the right clients.",
@@ -388,6 +394,7 @@ export const ROLE_FIELDS = {
             { id: "style", label: "Signature Style", type: "select", options: ["Modern", "Minimalist", "Luxury", "Scandinavian", "Industrial", "Eclectic"] },
             { id: "experience", label: "Years of Experience", type: "number", placeholder: "e.g. 5" },
             { id: "rate", label: "Hourly Rate (Optional)", type: "rate", placeholder: "e.g. 80" },
+            { id: "gstin", label: "GSTIN (Optional)", type: "gstin", placeholder: "e.g. 22AAAAA0000A1Z5" },
         ],
     },
     Architect: {
@@ -400,6 +407,7 @@ export const ROLE_FIELDS = {
             { id: "software", label: "Primary Software", type: "select", options: ["AutoCAD", "Revit", "ArchiCAD", "SketchUp", "Rhino"] },
             { id: "experience", label: "Years of Experience", type: "number", placeholder: "e.g. 10" },
             { id: "rate", label: "Hourly Rate (Optional)", type: "rate", placeholder: "e.g. 100" },
+            { id: "gstin", label: "GSTIN (Optional)", type: "gstin", placeholder: "e.g. 22AAAAA0000A1Z5" },
         ],
     },
     Contractor: {
@@ -409,6 +417,7 @@ export const ROLE_FIELDS = {
             { id: "bio", label: "Company / Personal Bio", type: "textarea", placeholder: "Describe your contracting services..." },
             { id: "trade", label: "Primary Trade", type: "select", options: ["General Contractor", "Electrical", "Plumbing", "Carpentry", "Masonry", "Painting", "HVAC"] },
             { id: "experience", label: "Years of Experience", type: "number", placeholder: "e.g. 8" },
+            { id: "gstin", label: "GSTIN (Optional)", type: "gstin", placeholder: "e.g. 22AAAAA0000A1Z5" },
         ],
     },
     MaterialSupplier: {
@@ -418,6 +427,7 @@ export const ROLE_FIELDS = {
             { id: "businessName", label: "Business Name", type: "text", placeholder: "e.g. Sharma Building Materials" },
             { id: "ownerName", label: "Owner Name", type: "text", placeholder: "e.g. Ramesh Sharma" },
             { id: "businessType", label: "Business Type", type: "select", options: ["Manufacturer", "Wholesaler", "Retailer", "Distributor", "Importer"] },
+            { id: "gstin", label: "GSTIN (Optional)", type: "gstin", placeholder: "e.g. 22AAAAA0000A1Z5" },
         ],
     },
 }

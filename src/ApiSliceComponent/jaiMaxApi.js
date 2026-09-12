@@ -158,7 +158,7 @@ export const apiSlice = createApi({
     "getComment", "updateDetails", "getTicket", "shareholder", "WealthPlan", "WITHDRAW_HISTORY", "WITHDRAW_LIST", "withdrawal",
     "Bids", "ProjectBids", "MyBids", "Project", "ProjectsList", "ProjectTeam", "Chats", "Messages", "ProjectChats",
     "UserDetails", "DesignerUserDetails", "ArchitectUserDetails", "ContractorUserDetails", "DashboardStats",
-    "Reviews", "MyReviews", "UserReviews", "ProjectReviews", "EligibleReviews"
+    "Reviews", "MyReviews", "UserReviews", "ProjectReviews", "EligibleReviews", "BankDetails"
   ],
   refetchOnFocus: false,
   refetchOnReconnect: true,

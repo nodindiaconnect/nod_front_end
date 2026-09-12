@@ -405,6 +405,15 @@ export default function SignUpForm({ onSwitchToLogin }) {
         if (roleFields.rate !== undefined && roleFields.rate !== "" && Number(roleFields.rate) < 0) {
             return setErrorMsg("Hourly rate cannot be negative")
         }
+        if (roleFields.gstin) {
+            const cleanGstin = String(roleFields.gstin).trim().toUpperCase();
+            if (cleanGstin.length > 0) {
+                const GSTIN_REGEX = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+                if (!GSTIN_REGEX.test(cleanGstin)) {
+                    return setErrorMsg("Please enter a valid 15-character GSTIN (e.g., 22AAAAA0000A1Z5) or leave it empty.");
+                }
+            }
+        }
         try {
             const payloadRoleFields = { ...roleFields }
             if (payloadRoleFields.rate !== undefined && payloadRoleFields.rate !== "") {
@@ -913,8 +922,17 @@ export default function SignUpForm({ onSwitchToLogin }) {
                                             }}
                                         />
                                     )}
-                                    {(field.type === "text" || field.type === "number") && (
-                                        <TextInput label={field.label} type={field.type} placeholder={field.placeholder} value={roleFields[field.id] || ""} onChange={(e) => setRoleField(field.id, e.target.value)} />
+                                    {(field.type === "text" || field.type === "number" || field.type === "gstin") && (
+                                        <TextInput
+                                            label={field.label}
+                                            type="text"
+                                            placeholder={field.placeholder}
+                                            value={roleFields[field.id] || ""}
+                                            onChange={(e) => {
+                                                const val = field.type === "gstin" ? e.target.value.toUpperCase() : e.target.value;
+                                                setRoleField(field.id, val);
+                                            }}
+                                        />
                                     )}
                                     {field.type === "select" && (
                                         <SelectInput label={field.label} value={roleFields[field.id] || ""} onChange={(e) => setRoleField(field.id, e.target.value)}>

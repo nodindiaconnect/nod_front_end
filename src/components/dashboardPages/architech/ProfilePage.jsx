@@ -4,6 +4,7 @@ import {
   useGetArchitectProfileQuery,
   useUpdateArchitectProfileMutation,
 } from "./dashboard/ArchitechDashboardApiSlice";
+import BankDetailsSection from "../../profile/BankDetailsSection";
 import "../../../theme.css";
 
 const EXPERIENCE_LEVELS = ["BEGINNER", "INTERMEDIATE", "EXPERT"];
@@ -909,6 +910,8 @@ export default function ProfilePage() {
                 )}
               </div>
             </div>
+
+            <BankDetailsSection />
 
             {!isEditing && status.message && (
               <p className={`text-xs font-medium ${statusColor}`}>{status.message}</p>

@@ -1,4 +1,3 @@
-
 import { useState, useRef } from "react";
 import {
   motion,
@@ -59,19 +58,12 @@ export default function CategoryShowcase() {
       className="relative overflow-hidden py-24 lg:py-36 px-5 md:px-10"
     >
       <div className="max-w-7xl mx-auto">
-
         <div className="flex flex-col md:flex-row items-center md:items-start justify-center gap-6 lg:gap-8">
-
           {categories.map((cat) => {
-
             const isHovered = hovered === cat.key;
             const isDimmed = hovered && hovered !== cat.key;
 
-            const y = useTransform(
-              scrollYProgress,
-              [0, 1],
-              [0, cat.speed]
-            );
+            const y = useTransform(scrollYProgress, [0, 1], [0, cat.speed]);
 
             return (
               <motion.div
@@ -111,9 +103,8 @@ export default function CategoryShowcase() {
                     alt={cat.label}
                     className="absolute inset-0 w-full h-full object-cover"
                   />
-
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
-
+                  bg
+                  <div className="absolute inset-0 -gradient-to-t from-black/40 via-transparent to-transparent" />
                   {/* Center label — solid white badge, expands to "FOR LABEL LIVING" on hover */}
                   <div className="absolute inset-0 flex items-center justify-center">
                     <motion.div
@@ -130,7 +121,11 @@ export default function CategoryShowcase() {
                         {isHovered && (
                           <motion.span
                             initial={{ opacity: 0, width: 0, marginRight: 0 }}
-                            animate={{ opacity: 1, width: "auto", marginRight: 8 }}
+                            animate={{
+                              opacity: 1,
+                              width: "auto",
+                              marginRight: 8,
+                            }}
                             exit={{ opacity: 0, width: 0, marginRight: 0 }}
                             transition={{ duration: 0.25, ease: "easeOut" }}
                             className="overflow-hidden whitespace-nowrap text-[11px] md:text-xs font-medium tracking-[0.2em] text-gray-500"
@@ -150,7 +145,11 @@ export default function CategoryShowcase() {
                         {isHovered && (
                           <motion.span
                             initial={{ opacity: 0, width: 0, marginLeft: 0 }}
-                            animate={{ opacity: 1, width: "auto", marginLeft: 8 }}
+                            animate={{
+                              opacity: 1,
+                              width: "auto",
+                              marginLeft: 8,
+                            }}
                             exit={{ opacity: 0, width: 0, marginLeft: 0 }}
                             transition={{ duration: 0.25, ease: "easeOut" }}
                             className="overflow-hidden whitespace-nowrap text-[11px] md:text-xs font-medium tracking-[0.2em] text-gray-500"
@@ -164,11 +163,9 @@ export default function CategoryShowcase() {
                 </div>
               </motion.div>
             );
-
           })}
         </div>
       </div>
     </section>
   );
 }
-
