@@ -135,69 +135,6 @@ function getTags(product) {
   return FALLBACK_TAGS_BY_CATEGORY[category] || DEFAULT_TAGS;
 }
 
-const FALLBACK_SUPPLIERS = [
-  {
-    id: "sup_1",
-    name: "Greenply Architectural Woods & Plywood",
-    type: "Manufacturer",
-    city: "Mumbai",
-    state: "Maharashtra",
-    rating: 4.9,
-    experienceYears: 12,
-    verified: true,
-  },
-  {
-    id: "sup_2",
-    name: "Tata Tiscon & Jindal Steel Supplies",
-    type: "Distributor",
-    city: "Delhi",
-    state: "Delhi NCR",
-    rating: 4.8,
-    experienceYears: 15,
-    verified: true,
-  },
-  {
-    id: "sup_3",
-    name: "UltraTech Building Materials & ReadyMix",
-    type: "Manufacturer",
-    city: "Pune",
-    state: "Maharashtra",
-    rating: 4.9,
-    experienceYears: 18,
-    verified: true,
-  },
-  {
-    id: "sup_4",
-    name: "Kajaria Premium Ceramics & Italian Marble",
-    type: "Wholesaler",
-    city: "Bengaluru",
-    state: "Karnataka",
-    rating: 4.7,
-    experienceYears: 10,
-    verified: true,
-  },
-  {
-    id: "sup_5",
-    name: "Asian Paints Royale Pro & PU Coatings",
-    type: "Distributor",
-    city: "Hyderabad",
-    state: "Telangana",
-    rating: 4.8,
-    experienceYears: 8,
-    verified: true,
-  },
-  {
-    id: "sup_6",
-    name: "Jaquar & Kohler Sanitary Architectural Systems",
-    type: "Retailer",
-    city: "Ahmedabad",
-    state: "Gujarat",
-    rating: 4.9,
-    experienceYears: 14,
-    verified: true,
-  },
-];
-
 const FALLBACK_PRODUCTS = [
   {
     id: "prod_1",
@@ -650,7 +587,7 @@ export default function FeaturedProducts() {
   const apiProducts = res?.data?.products || [];
   const apiSuppliers = res?.data?.suppliers || [];
   const products = apiProducts.length > 0 ? apiProducts : FALLBACK_PRODUCTS;
-  const suppliers = apiSuppliers.length > 0 ? apiSuppliers : FALLBACK_SUPPLIERS;
+  const suppliers = apiSuppliers;
   const totalPages = res?.data?.totalPages || 1;
   const totalCount = res?.data?.total ?? products.length;
 
