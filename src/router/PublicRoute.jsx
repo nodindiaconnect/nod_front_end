@@ -20,7 +20,7 @@ import { isAuthenticated } from "../utils/auth"
 // Pass `restricted` to bounce already-logged-in users away (e.g. off the signin page).
 export default function PublicRoute({ restricted = false }) {
   if (restricted && isAuthenticated()) {
-    return <Navigate to="/" replace />
+    return <Navigate to="/dashboard" replace />
   }
 
   return <Outlet />

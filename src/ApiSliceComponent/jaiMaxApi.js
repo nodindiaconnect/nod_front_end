@@ -83,8 +83,13 @@ const baseQuery = fetchBaseQuery({
   // credentials: "include",
 
   prepareHeaders: (headers, { getState }) => {
-    const token = Cookies.get("token");
-    console.log("[apiSlice] outgoing request, token present:", !!token);
+    let token = Cookies.get("token");
+    if (!token) {
+      try {
+        const u = JSON.parse(localStorage.getItem("userData") || "null");
+        token = u?.token || localStorage.getItem("token");
+      } catch {}
+    }
     if (token) {
       headers.set("authorization", `Bearer ${token}`);
     }
@@ -96,14 +101,10 @@ const baseQuery = fetchBaseQuery({
  * Custom base query to handle token refresh and retry logic.
  */
 const baseQueryWithReAuth = async (args, api, extraOptions) => {
-  console.log("[apiSlice] request args:", args);
-
   let result = await baseQuery(args, api, extraOptions);
 
-  console.log("[apiSlice] initial result status_code:", result?.error?.data?.status_code ?? "OK");
-
   // If a 408 error occurs, try to refresh the token
-  if (result?.error?.data?.status_code === 408) {
+  if (result?.error?.data?.status_code === 408 || result?.error?.status === 408) {
     console.log("[apiSlice] token expired (408), attempting refresh...");
 
     const refreshResult = await baseQuery(
@@ -112,34 +113,39 @@ const baseQueryWithReAuth = async (args, api, extraOptions) => {
       extraOptions
     );
 
-    console.log("[apiSlice] refresh result:", refreshResult);
-
     if (refreshResult?.data) {
-      // Store the new token
-      console.log("[apiSlice] refresh succeeded, new token:", refreshResult.data?.data?.token);
-      // localStorage.setItem("token", refreshResult.data?.data.token);
-      Cookies.set("token", refreshResult.data?.data.token, { expires: 7 });
+      const newToken = refreshResult.data?.data?.token;
+      if (newToken) {
+        Cookies.set("token", newToken, { expires: 7 });
+        localStorage.setItem("token", newToken);
+        try {
+          const u = JSON.parse(localStorage.getItem("userData") || "null");
+          if (u) {
+            u.token = newToken;
+            localStorage.setItem("userData", JSON.stringify(u));
+          }
+        } catch {}
+      }
 
-      console.log("[apiSlice] retrying original request with new token");
       // Retry the original query with the new token
       result = await baseQuery(args, api, extraOptions);
-      console.log("[apiSlice] retry result:", result);
     } else {
-      // Token refresh failed
-      console.log("[apiSlice] refresh failed, returning refresh error");
       return refreshResult;
     }
   }
 
-  // If a 401 error occurs, logout or handle it (custom behavior)
-  if (result?.error?.data?.status_code === 401) {
-    console.log("[apiSlice] 401 unauthorized, logging out and clearing cookies");
-    window.location.href = "/Signin";
-    // localStorage.clear();
+  // If a 401 error occurs, logout and clear session properly
+  const is401 = result?.error?.data?.status_code === 401 || result?.error?.status === 401;
+  if (is401) {
+    console.log("[apiSlice] 401 unauthorized, logging out and clearing session");
+    localStorage.removeItem("userData");
+    localStorage.removeItem("token");
     Object.keys(Cookies.get()).forEach(function (cookieName) {
-      console.log("[apiSlice] removing cookie:", cookieName);
       Cookies.remove(cookieName);
     });
+    if (!window.location.pathname.startsWith("/Signin") && !window.location.pathname.startsWith("/Signup")) {
+      window.location.href = "/Signin";
+    }
   }
 
   return result;

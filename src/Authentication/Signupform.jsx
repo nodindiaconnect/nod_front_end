@@ -443,6 +443,7 @@ export default function SignUpForm({ onSwitchToLogin }) {
         try {
             const res = await registerFinish({ registerSessionToken }).unwrap()
             Cookies.set("token", res.data.token, { expires: 7 })
+            localStorage.setItem("token", res.data.token)
             localStorage.setItem("userData", JSON.stringify(res.data))
             toast.success("Account created successfully")
             navigate("/dashboard")

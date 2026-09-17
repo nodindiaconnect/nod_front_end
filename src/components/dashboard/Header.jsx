@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import Cookies from "js-cookie";
+import { disconnectSocket } from "../../utils/socketService";
 import { ROLE_NAMES } from "./roleNavConfig";
 
 export default function Header({
@@ -26,6 +28,9 @@ export default function Header({
   }, [menuOpen]);
 
   const handleLogout = () => {
+    disconnectSocket();
+    Cookies.remove("token");
+    localStorage.removeItem("token");
     localStorage.removeItem("userData");
     navigate("/Signin");
   };

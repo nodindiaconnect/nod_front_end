@@ -440,6 +440,7 @@ export default function LoginForm({ onSwitchToSignUp }) {
         captchaToken,
       }).unwrap()
       Cookies.set("token", res.data.token, { expires: 7 })
+      localStorage.setItem("token", res.data.token)
       localStorage.setItem("userData", JSON.stringify(res.data))
       toast.success("Signed in successfully")
       navigate("/dashboard")

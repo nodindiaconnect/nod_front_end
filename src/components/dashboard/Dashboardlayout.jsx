@@ -2,7 +2,7 @@
   import { Navigate, Outlet, useLocation } from "react-router-dom"
   import Sidebar from "./Sidebar"
   import Header from "./Header"
-  import { getStoredUser } from "./roleNavConfig"
+  import { getStoredUser, normalizeRole } from "./roleNavConfig"
   import { getSocket } from "../../utils/socketService"
   import "../../theme.css"
 
@@ -37,14 +37,16 @@
     }
 
     const title = PAGE_TITLES[location.pathname] || "Dashboard"
+    const normalizedRole = normalizeRole(user.role)
+    const normalizedUser = { ...user, role: normalizedRole }
 
     return (
       <div className="min-h-screen w-full" style={{ backgroundColor: "var(--background)" }}>
-        <Sidebar role={user.role} collapsed={collapsed} onToggle={() => setCollapsed((c) => !c)} />
-        <Header user={user} sidebarCollapsed={collapsed} title={title} />
+        <Sidebar role={normalizedRole} collapsed={collapsed} onToggle={() => setCollapsed((c) => !c)} />
+        <Header user={normalizedUser} sidebarCollapsed={collapsed} title={title} />
         <main className={`pt-20 min-h-screen transition-all duration-300 ${collapsed ? "pl-[76px]" : "pl-64"}`}>
           <div className="p-2">
-            <Outlet context={{ user }} />
+            <Outlet context={{ user: normalizedUser }} />
           </div>
         </main>
       </div>

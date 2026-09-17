@@ -6,7 +6,8 @@ import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { useCallback } from "react";
 import { chatApiSlice, useGetMyChatsQuery } from "../../ApiSliceComponent/chatApiSlice";
-import { useGlobalChatNotifications } from "../../utils/socketService";
+import { useGlobalChatNotifications, disconnectSocket } from "../../utils/socketService";
+import Cookies from "js-cookie";
 
 export default function Sidebar({ role, collapsed, onToggle }) {
   const navItems = NAV_CONFIG[role] || []
@@ -59,6 +60,8 @@ export default function Sidebar({ role, collapsed, onToggle }) {
   );
 
   const handleLogout = () => {
+    disconnectSocket();
+    Cookies.remove("token");
     localStorage.removeItem("token");
     localStorage.removeItem("userData");
     navigate("/Signin", { replace: true });

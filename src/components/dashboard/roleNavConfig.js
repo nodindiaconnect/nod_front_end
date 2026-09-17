@@ -16,8 +16,37 @@ import {
   Star,
 } from "lucide-react"
 
-// Role names now come directly from the backend as strings
+// Role normalization to map backend codes/variants to standard keys
+export const normalizeRole = (role) => {
+  if (!role && role !== 0) return ""
+  const r = String(role).trim()
+  if (r === "1" || r.toLowerCase() === "client") return "Client"
+  if (
+    r === "2" ||
+    r.toLowerCase() === "designer" ||
+    r.toLowerCase() === "interiordesigner" ||
+    r.toLowerCase() === "interior_designer" ||
+    r.toLowerCase() === "interior designer"
+  ) {
+    return "Designer"
+  }
+  if (r === "3" || r.toLowerCase() === "architect") return "Architect"
+  if (r === "4" || r.toLowerCase() === "contractor") return "Contractor"
+  if (
+    r === "5" ||
+    r.toLowerCase() === "materialsupplier" ||
+    r.toLowerCase() === "material_supplier" ||
+    r.toLowerCase() === "material supplier" ||
+    r.toLowerCase() === "supplier"
+  ) {
+    return "MaterialSupplier"
+  }
+  return r
+}
+
 export const ROLE_NAMES = {
+  Client: "Client",
+  Designer: "Designer",
   DESIGNER: "Designer",
   INTERIOR_DESIGNER: "Designer",
   Architect: "Architect",
