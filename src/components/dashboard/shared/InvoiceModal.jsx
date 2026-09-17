@@ -38,23 +38,31 @@ export default function InvoiceModal({ invoice, onClose }) {
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Top Actions Bar */}
-        <div
-          className="flex items-center justify-between px-6 py-4 border-b border-border bg-slate-50 print:hidden"
-        >
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-slate-50 print:hidden">
           <div className="flex items-center gap-2">
             <FileText size={18} className="text-[var(--primary)]" />
-            <h3 className="text-sm font-bold text-heading">Official Project Invoice</h3>
+            <h3 className="text-sm font-bold text-heading">
+              Official Project Invoice
+            </h3>
             <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
               PAID
             </span>
           </div>
 
           <div className="flex items-center gap-2">
+            <a
+              href={`${import.meta.env.VITE_API_BASE_URL || "/api"}/payments/invoices/${invoice.id}/pdf`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-semibold bg-[var(--primary)] text-white hover:opacity-90 transition shadow-2xs cursor-pointer"
+            >
+              <Download size={14} /> Download PDF
+            </a>
             <button
               onClick={handlePrint}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-semibold bg-white border border-border text-heading hover:bg-slate-100 transition shadow-2xs cursor-pointer"
             >
-              <Printer size={14} /> Print / Save PDF
+              <Printer size={14} /> Print
             </button>
             <button
               onClick={onClose}
@@ -115,15 +123,21 @@ export default function InvoiceModal({ invoice, onClose }) {
               <h4 className="font-bold text-heading text-sm">
                 {invoice.clientName || "Verified Project Owner"}
               </h4>
-              {invoice.clientEmail && <p className="text-muted">{invoice.clientEmail}</p>}
-              {invoice.clientPhone && <p className="text-muted">{invoice.clientPhone}</p>}
+              {invoice.clientEmail && (
+                <p className="text-muted">{invoice.clientEmail}</p>
+              )}
+              {invoice.clientPhone && (
+                <p className="text-muted">{invoice.clientPhone}</p>
+              )}
             </div>
 
             <div className="space-y-1 sm:text-right">
               <span className="text-[10px] uppercase font-bold text-muted tracking-wider block">
                 PROJECT REFERENCE
               </span>
-              <h4 className="font-bold text-heading text-sm">{invoice.milestoneTitle}</h4>
+              <h4 className="font-bold text-heading text-sm">
+                {invoice.milestoneTitle}
+              </h4>
               <p className="text-muted font-mono text-[11px]">
                 Project ID: {invoice.projectId}
               </p>
@@ -146,9 +160,12 @@ export default function InvoiceModal({ invoice, onClose }) {
               <tbody className="divide-y divide-border">
                 <tr>
                   <td className="py-3.5 px-4">
-                    <div className="font-bold text-heading">{invoice.milestoneTitle}</div>
+                    <div className="font-bold text-heading">
+                      {invoice.milestoneTitle}
+                    </div>
                     <div className="text-[11px] text-muted">
-                      Milestone {invoice.milestoneSequence} payment towards project execution
+                      Milestone {invoice.milestoneSequence} payment towards
+                      project execution
                     </div>
                   </td>
                   <td className="py-3.5 px-4 text-center font-medium">
@@ -187,18 +204,24 @@ export default function InvoiceModal({ invoice, onClose }) {
               <div className="flex items-center gap-1.5 text-emerald-700 font-semibold">
                 <ShieldCheck size={14} /> 100% Escrow Protected Transaction
               </div>
-              <div>Payment Mode: {invoice.paymentGateway || "ONLINE_GATEWAY"}</div>
+              <div>
+                Payment Mode: {invoice.paymentGateway || "ONLINE_GATEWAY"}
+              </div>
               <div>Status: Verified & Completed</div>
             </div>
 
             <div className="w-full sm:w-64 space-y-2 text-right">
               <div className="flex justify-between text-xs py-1 border-b border-border/70">
                 <span className="text-muted">Total Project Value:</span>
-                <span className="font-semibold">{formatCurrency(invoice.totalProjectValue)}</span>
+                <span className="font-semibold">
+                  {formatCurrency(invoice.totalProjectValue)}
+                </span>
               </div>
               <div className="flex justify-between text-sm py-1.5 border-b-2 border-heading font-extrabold text-heading">
                 <span>Total Amount Paid:</span>
-                <span className="text-emerald-700">{formatCurrency(invoice.totalAmountPaid)}</span>
+                <span className="text-emerald-700">
+                  {formatCurrency(invoice.totalAmountPaid)}
+                </span>
               </div>
               <div className="flex justify-between text-xs text-muted pt-1">
                 <span>Remaining Balance Due:</span>
@@ -210,9 +233,13 @@ export default function InvoiceModal({ invoice, onClose }) {
           {/* Footer Notice */}
           <div className="pt-6 border-t border-dashed border-border text-center text-[10px] text-muted space-y-1">
             <p>
-              This is a computer-generated invoice and requires no physical signature.
+              This is a computer-generated invoice and requires no physical
+              signature.
             </p>
-            <p>© {new Date().getFullYear()} Night Owl Designers Pvt. Ltd. All Rights Reserved.</p>
+            <p>
+              © {new Date().getFullYear()} Night Owl Designers Pvt. Ltd. All
+              Rights Reserved.
+            </p>
           </div>
         </div>
       </div>

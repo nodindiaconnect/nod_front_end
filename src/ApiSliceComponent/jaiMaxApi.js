@@ -83,12 +83,6 @@ const baseQuery = fetchBaseQuery({
   // credentials: "include",
 
   prepareHeaders: (headers, { getState }) => {
-    headers.set("Access-Control-Allow-Origin", "*");
-    headers.set(
-      "Access-Control-Allow-Methods",
-      "GET, POST, PUT,PATCH, DELETE, OPTIONS"
-    );
-
     const token = Cookies.get("token");
     console.log("[apiSlice] outgoing request, token present:", !!token);
     if (token) {
