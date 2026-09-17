@@ -114,106 +114,20 @@ const STATS = [
   { icon: Star, value: "4.7/5", label: "Average Rating" },
 ];
 
-// Fallback tags when the record doesn't carry real ones — three per card,
-// keeps every card visually complete instead of showing an empty row.
-const FALLBACK_TAGS_BY_CATEGORY = {
-  "Cement & Concrete": ["Cement", "Concrete", "Building Materials"],
-  "Steel & Metal": ["Steel", "Metal", "Construction"],
-  "Bricks & Blocks": ["Bricks", "Blocks", "Construction"],
-  "Tiles & Stone": ["Tiles", "Stone", "Granite"],
-  "Wood & Plywood": ["Plywood", "Wood", "Lumber"],
-  "Paints & Coatings": ["Paints", "Coatings", "Wall Care"],
-  "Plumbing & Sanitary": ["Plumbing", "Sanitary", "PAN India Delivery"],
-  Electricals: ["Electricals", "ISI Certified", "Bulk Discounts"],
-  "Hardware & Tools": ["Hardware", "Tools", "Bulk Orders"],
-  "Glass & Glazing": ["Glass", "Glazing", "Custom Sizes"],
-};
-const DEFAULT_TAGS = ["Trusted Supplier", "Quality Assured", "Verified"];
-
 function getTags(product) {
-  const category = clamp(product.category, HARD_CAP.tag);
-  return FALLBACK_TAGS_BY_CATEGORY[category] || DEFAULT_TAGS;
+  if (Array.isArray(product?.tags) && product.tags.length > 0) {
+    return product.tags;
+  }
+  return [];
 }
 
-const FALLBACK_PRODUCTS = [
-  {
-    id: "prod_1",
-    supplierId: "sup_1",
-    productName: "Marine Grade BWP Calibrated Plywood (18mm)",
-    category: "Wood & Plywood",
-    supplierType: "Manufacturer",
-    price: "₹1,850 / Sheet",
-    minOrderQuantity: "25 Sheets",
-    imageUrl: "https://images.unsplash.com/photo-1513694203232-719a280e022f?w=600&q=80",
-    tags: ["BWP Grade", "100% Calibrated", "Waterproof"],
-  },
-  {
-    id: "prod_2",
-    supplierId: "sup_2",
-    productName: "Fe 550D High Ductility Corrosion Resistant TMT Rebars",
-    category: "Steel & Metal",
-    supplierType: "Distributor",
-    price: "₹64,500 / Ton",
-    minOrderQuantity: "5 Tons",
-    imageUrl: "https://images.unsplash.com/photo-1504917599217-d4dc5ebe6122?w=600&q=80",
-    tags: ["Fe 550D", "BIS Certified", "Bulk Delivery"],
-  },
-  {
-    id: "prod_3",
-    supplierId: "sup_3",
-    productName: "High Strength OPC 53 Grade Structural Cement",
-    category: "Cement & Concrete",
-    supplierType: "Manufacturer",
-    price: "₹385 / Bag",
-    minOrderQuantity: "100 Bags",
-    imageUrl: "https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=600&q=80",
-    tags: ["OPC 53 Grade", "High Strength", "Prompt Delivery"],
-  },
-  {
-    id: "prod_4",
-    supplierId: "sup_4",
-    productName: "Full Body Vitrified Large Format Italian Marble Tiles (1200x1800mm)",
-    category: "Tiles & Stone",
-    supplierType: "Wholesaler",
-    price: "₹145 / Sq.ft",
-    minOrderQuantity: "500 Sq.ft",
-    imageUrl: "https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=600&q=80",
-    tags: ["Italian Marble", "Full Body", "Stain Proof"],
-  },
-  {
-    id: "prod_5",
-    supplierId: "sup_5",
-    productName: "Royale Luxury Architectural Emulsion & Epoxy Wall Base",
-    category: "Paints & Coatings",
-    supplierType: "Distributor",
-    price: "₹5,200 / 20L Bucket",
-    minOrderQuantity: "5 Buckets",
-    imageUrl: "https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=600&q=80",
-    tags: ["Washable", "Teflon Surface", "Zero VOC"],
-  },
-  {
-    id: "prod_6",
-    supplierId: "sup_6",
-    productName: "Concealed Thermostatic Diverter & Matte Black Rain Shower Kit",
-    category: "Plumbing & Sanitary",
-    supplierType: "Retailer",
-    price: "₹14,800 / Set",
-    minOrderQuantity: "2 Sets",
-    imageUrl: "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=600&q=80",
-    tags: ["Brass Casting", "10 Yr Warranty", "Matte Finish"],
-  },
-];
-
-// Deterministic "years in business" fallback when the record doesn't carry
-// a real value — keeps it stable per-supplier instead of re-randomizing.
 function getYears(supplier, product) {
-  const explicit =
+  return (
     supplier?.experienceYears ??
     supplier?.yearsInBusiness ??
-    product.yearsInBusiness;
-  if (explicit) return explicit;
-  const seed = String(supplier?.name || product.productName || "").length;
-  return 3 + (seed % 10);
+    product?.yearsInBusiness ??
+    null
+  );
 }
 
 /* ---------------------------------------------------------------------- */
@@ -356,10 +270,14 @@ function SupplierCard({ product, supplier, onOpen, listView }) {
           ) : (
             <span />
           )}
-          <span className="flex items-center gap-1.5 text-[var(--muted)]">
-            <Clock size={11} />
-            {years}+ Years
-          </span>
+          {years != null ? (
+            <span className="flex items-center gap-1.5 text-[var(--muted)]">
+              <Clock size={11} />
+              {years}+ Years
+            </span>
+          ) : (
+            <span />
+          )}
         </div>
 
         <button
@@ -586,7 +504,7 @@ export default function FeaturedProducts() {
 
   const apiProducts = res?.data?.products || [];
   const apiSuppliers = res?.data?.suppliers || [];
-  const products = apiProducts.length > 0 ? apiProducts : FALLBACK_PRODUCTS;
+  const products = apiProducts;
   const suppliers = apiSuppliers;
   const totalPages = res?.data?.totalPages || 1;
   const totalCount = res?.data?.total ?? products.length;
