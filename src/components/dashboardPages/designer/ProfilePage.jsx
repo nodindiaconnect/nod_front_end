@@ -6,6 +6,7 @@ import {
 } from "./dashboard/DesignerDashboardApiSlice";
 import BankDetailsSection from "../../profile/BankDetailsSection";
 import "../../../theme.css";
+import { MailIcon } from "lucide-react";
 
 const EXPERIENCE_LEVELS = ["BEGINNER", "INTERMEDIATE", "EXPERT"];
 const SPECIALIZATION_LEVELS = ["Beginner", "Intermediate", "Professional"];
