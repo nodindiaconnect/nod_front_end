@@ -16,6 +16,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { useGetAllPortfoliosQuery } from "./supplyproductsapislice";
+import { ThemeToggle } from "../context/ThemeContext";
 
 const ROLE_LABELS = {
   1: "Client",
@@ -197,10 +198,10 @@ function PortfolioCard({ user, onOpen }) {
   return (
     <div
       onClick={onOpen}
-      className="group flex flex-col justify-between text-left rounded-2xl border border-gray-200/90 bg-white p-3 shadow-xs hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer overflow-hidden"
+      className="group flex flex-col justify-between text-left rounded-2xl border border-gray-200/90 dark:border-[#222938] bg-white dark:bg-[#141822] p-3 shadow-xs hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer overflow-hidden"
     >
       {/* ── Image Area ── */}
-      <div className="relative w-full aspect-[16/11] rounded-xl overflow-hidden bg-gray-100">
+      <div className="relative w-full aspect-[16/11] rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800">
         <img
           src={!imgFailed && user.cover ? user.cover : cfg.defaultCover}
           alt={`${user.name}'s work`}
@@ -214,20 +215,18 @@ function PortfolioCard({ user, onOpen }) {
         >
           {ROLE_LABELS[user.role] || "Professional"}
         </span>
-
-  
       </div>
 
       {/* ── Details Area ── */}
       <div className="pt-3 px-1 pb-1 flex-1 flex flex-col justify-between space-y-2.5">
         <div>
           {/* Name */}
-          <h3 className="text-[16px] font-bold text-gray-900 truncate tracking-tight">
+          <h3 className="text-[16px] font-bold text-gray-900 dark:text-white truncate tracking-tight">
             {user.name}
           </h3>
 
           {/* Location */}
-          <p className="flex items-center gap-1 mt-1 text-xs text-gray-500 truncate">
+          <p className="flex items-center gap-1 mt-1 text-xs text-gray-500 dark:text-gray-400 truncate">
             <MapPin size={13} className="text-gray-400 shrink-0" />
             <span className="truncate">{user.location}</span>
           </p>
@@ -236,7 +235,7 @@ function PortfolioCard({ user, onOpen }) {
         {/* Category Badge & Specialization with Side Headings */}
         <div className="space-y-1 text-xs">
           <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-[11px] font-bold text-gray-500 shrink-0">Category:</span>
+            <span className="text-[11px] font-bold text-gray-500 dark:text-gray-400 shrink-0">Category:</span>
             <span
               className={`px-2 py-0.5 rounded-md text-[11px] font-semibold border ${cfg.catBg} truncate max-w-[155px]`}
             >
@@ -245,16 +244,16 @@ function PortfolioCard({ user, onOpen }) {
           </div>
           {user.specialization && (
             <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="text-[11px] font-bold text-gray-500 shrink-0">Specialization:</span>
-              <span className="text-xs text-gray-700 truncate font-medium">
+              <span className="text-[11px] font-bold text-gray-500 dark:text-gray-400 shrink-0">Specialization:</span>
+              <span className="text-xs text-gray-700 dark:text-gray-300 truncate font-medium">
                 {user.specialization}
               </span>
             </div>
           )}
           {user.specializationLevel && (
             <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="text-[11px] font-bold text-gray-500 shrink-0">Level:</span>
-              <span className="px-2 py-0.5 rounded-md text-[10.5px] font-semibold bg-[#fef9ee] text-[#b8823a] border border-[#eed7a1] truncate">
+              <span className="text-[11px] font-bold text-gray-500 dark:text-gray-400 shrink-0">Level:</span>
+              <span className="px-2 py-0.5 rounded-md text-[10.5px] font-semibold bg-[#fef9ee] dark:bg-[#251e16] text-[#b8823a] border border-[#eed7a1] dark:border-[#523d1d] truncate">
                 {user.specializationLevel}
               </span>
             </div>
@@ -262,18 +261,18 @@ function PortfolioCard({ user, onOpen }) {
         </div>
 
         {/* Footer: Experience, Rating, Action Arrow */}
-        <div className="border-t border-gray-100 pt-2.5 mt-auto flex items-center justify-between text-xs text-gray-600">
-          <span className="font-medium text-gray-700">
+        <div className="border-t border-gray-100 dark:border-[#222938] pt-2.5 mt-auto flex items-center justify-between text-xs text-gray-600 dark:text-gray-400">
+          <span className="font-medium text-gray-700 dark:text-gray-300">
             {user.experience} Yrs Experience
           </span>
 
-          <span className="flex items-center gap-1 font-medium text-gray-800">
+          <span className="flex items-center gap-1 font-medium text-gray-800 dark:text-gray-200">
             <Star size={13} className="fill-amber-400 text-amber-400" />
             <span>{user.rating.toFixed(1)}</span>
             <span className="text-gray-400">({user.totalReviews} reviews)</span>
           </span>
 
-          <div className="w-7 h-7 rounded-lg border border-gray-200 flex items-center justify-center text-gray-500 group-hover:border-[#b8823a] group-hover:text-[#b8823a] group-hover:bg-[#fbf4e8] transition-all">
+          <div className="w-7 h-7 rounded-lg border border-gray-200 dark:border-[#2b3345] flex items-center justify-center text-gray-500 dark:text-gray-400 group-hover:border-[#b8823a] group-hover:text-[#b8823a] group-hover:bg-[#fbf4e8] dark:group-hover:bg-[#202736] transition-all">
             <ArrowRight size={14} />
           </div>
         </div>
@@ -284,13 +283,13 @@ function PortfolioCard({ user, onOpen }) {
 
 function CardSkeleton() {
   return (
-    <div className="flex flex-col rounded-2xl border border-gray-200 bg-white p-3 space-y-3 animate-pulse">
-      <div className="w-full aspect-[16/11] rounded-xl bg-gray-100" />
+    <div className="flex flex-col rounded-2xl border border-gray-200 dark:border-[#222938] bg-white dark:bg-[#141822] p-3 space-y-3 animate-pulse">
+      <div className="w-full aspect-[16/11] rounded-xl bg-gray-100 dark:bg-gray-800" />
       <div className="space-y-2 px-1">
-        <div className="h-4 w-2/3 rounded bg-gray-100" />
-        <div className="h-3 w-1/2 rounded bg-gray-100" />
-        <div className="h-5 w-3/4 rounded bg-gray-100 mt-2" />
-        <div className="h-4 w-full rounded bg-gray-100 pt-3 border-t border-gray-50" />
+        <div className="h-4 w-2/3 rounded bg-gray-100 dark:bg-gray-800" />
+        <div className="h-3 w-1/2 rounded bg-gray-100 dark:bg-gray-800" />
+        <div className="h-5 w-3/4 rounded bg-gray-100 dark:bg-gray-800 mt-2" />
+        <div className="h-4 w-full rounded bg-gray-100 dark:bg-gray-800 pt-3 border-t border-gray-50 dark:border-gray-800" />
       </div>
     </div>
   );
@@ -428,15 +427,15 @@ export default function PortfolioDirectory() {
   const endIndex = Math.min(currentPage * PAGE_SIZE, totalRecords);
 
   return (
-    <div className="min-h-screen bg-[#faf8f5] text-[#1c1712] font-sans">
+    <div className="min-h-screen bg-[#faf8f5] dark:bg-[var(--background)] text-[#1c1712] dark:text-[var(--text)] font-sans transition-colors duration-300">
       {/* ── Custom Header matching Reference Image ── */}
-      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-gray-200/75 px-4 sm:px-8 lg:px-12 py-3.5 flex items-center justify-between">
+      <header className="sticky top-0 z-40 bg-white/95 dark:bg-[#141822]/95 backdrop-blur-md border-b border-gray-200/75 dark:border-[#222938] px-4 sm:px-8 lg:px-12 py-3.5 flex items-center justify-between">
         {/* Brand Logo */}
         <Link to="/" className="flex items-center gap-2.5">
           <div className="flex items-center gap-1.5 text-[#b8823a]">
             <Building2 size={24} className="stroke-[2.2]" />
             <div className="flex flex-col leading-tight">
-              <span className="font-extrabold text-base tracking-tight text-[#1c1712]">
+              <span className="font-extrabold text-base tracking-tight text-[#1c1712] dark:text-white">
                 NOD <span className="text-[#b8823a]">PROFESSIONALS</span>
               </span>
             </div>
@@ -444,7 +443,7 @@ export default function PortfolioDirectory() {
         </Link>
 
         {/* Center Nav Links */}
-        <nav className="hidden md:flex items-center gap-7 text-[13.5px] font-medium text-gray-600">
+        <nav className="hidden md:flex items-center gap-7 text-[13.5px] font-medium text-gray-600 dark:text-gray-300">
           <Link to="/" className="hover:text-[#b8823a] transition-colors">
             Home
           </Link>
@@ -466,7 +465,10 @@ export default function PortfolioDirectory() {
           </Link>
         </nav>
 
-   
+        {/* Header Right (Theme Toggle) */}
+        <div className="flex items-center gap-3">
+          <ThemeToggle size="sm" />
+        </div>
       </header>
 
       {/* ── Main Container ── */}
@@ -477,10 +479,10 @@ export default function PortfolioDirectory() {
             <p className="text-[11px] font-bold tracking-[0.14em] uppercase text-[#b8823a] mb-1.5">
               NOD PROFESSIONALS
             </p>
-            <h1 className="font-extrabold text-[28px] sm:text-[34px] lg:text-[38px] leading-tight text-[#111827] tracking-tight">
+            <h1 className="font-extrabold text-[28px] sm:text-[34px] lg:text-[38px] leading-tight text-[#111827] dark:text-white tracking-tight">
               Explore portfolios
             </h1>
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
               Browse completed interiors, architecture, and construction work.
             </p>
           </div>
@@ -499,7 +501,7 @@ export default function PortfolioDirectory() {
                 setPage(1);
               }}
               placeholder="Search portfolios by name, category, city..."
-              className="w-full bg-white border border-gray-200 rounded-full pl-10 pr-4 py-2.5 text-[13.5px] text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-[#b8823a] focus:ring-1 focus:ring-[#b8823a] shadow-xs transition"
+              className="w-full bg-white dark:bg-[#141822] border border-gray-200 dark:border-[#222938] rounded-full pl-10 pr-4 py-2.5 text-[13.5px] text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:border-[#b8823a] focus:ring-1 focus:ring-[#b8823a] shadow-xs transition"
             />
           </div>
         </div>

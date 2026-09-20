@@ -293,6 +293,16 @@ const getTodayDateString = () => {
 
 const isValidHex = (hex) => /^#([0-9A-F]{3}|[0-9A-F]{6})$/i.test((hex || "").trim());
 
+// Reject descriptions that consist entirely of digits and punctuation/symbols
+export const isOnlyNumericOrSymbols = (str) => {
+    if (!str || typeof str !== "string") return true;
+    const trimmed = str.trim();
+    if (!trimmed) return true;
+    const hasLetters = /[a-zA-Z\u0900-\u097F]/.test(trimmed);
+    const onlyDigitsOrSymbols = /^[\d\s.,\-₹$€£+*/\\()#@!%&_:;'"[\]{}|<>?`~^=]*$/.test(trimmed);
+    return !hasLetters || onlyDigitsOrSymbols;
+};
+
 // A custom color entry is valid if it's either a proper hex code, or a
 // plain color word/name (letters, spaces, hyphens) like "Red" or "Sky Blue".
 const isValidColorName = (val) => /^[a-zA-Z][a-zA-Z\s-]{1,29}$/.test((val || "").trim());
@@ -575,11 +585,16 @@ export default function CreateProjectForm({ onClose }) {
                 if (!formData.designerCategory) missing.push("designerCategory");
                 if (!formData.designerSpecialization) missing.push("designerSpecialization");
             }
-            if (formData.description.trim().length > 0) {
-                const len = formData.description.trim().length;
+            const desc = formData.description.trim();
+            if (desc.length > 0) {
+                const len = desc.length;
                 if (len < DESCRIPTION_MIN_LENGTH || len > DESCRIPTION_MAX_LENGTH) {
                     if (!missing.includes("description")) missing.push("description");
+                } else if (isOnlyNumericOrSymbols(desc)) {
+                    if (!missing.includes("description")) missing.push("description");
                 }
+            } else {
+                if (!missing.includes("description")) missing.push("description");
             }
         }
         if (stepKey === "design") {
@@ -741,6 +756,7 @@ export default function CreateProjectForm({ onClose }) {
             const descLen = formData.description.trim().length;
             const descTooShort = missing.includes("description") && descLen > 0 && descLen < DESCRIPTION_MIN_LENGTH;
             const descTooLong = missing.includes("description") && descLen > DESCRIPTION_MAX_LENGTH;
+            const descOnlyDigitsOrSymbols = missing.includes("description") && descLen >= DESCRIPTION_MIN_LENGTH && isOnlyNumericOrSymbols(formData.description.trim());
 
             const otherMissing = missing.filter((f) => f !== "description" || (descLen === 0));
             const parts = [];
@@ -749,6 +765,7 @@ export default function CreateProjectForm({ onClose }) {
             }
             if (descTooShort) parts.push(`Project Description must be at least ${DESCRIPTION_MIN_LENGTH} characters (currently ${descLen}).`);
             if (descTooLong) parts.push(`Project Description must be under ${DESCRIPTION_MAX_LENGTH} characters (currently ${descLen}).`);
+            if (descOnlyDigitsOrSymbols) parts.push("Description cannot be only numbers or symbols. Please provide words describing your project.");
 
             if (currentStepKey === "budget") {
                 const min = Number(formData.budgetMin);
@@ -1149,6 +1166,9 @@ export default function CreateProjectForm({ onClose }) {
                                                 {formData.description.length}/{DESCRIPTION_MAX_LENGTH}
                                             </span>
                                         </div>
+                                        {missingFields.includes("description") && formData.description.trim().length >= DESCRIPTION_MIN_LENGTH && isOnlyNumericOrSymbols(formData.description.trim()) && (
+                                            <p className="text-xs text-danger mt-1">Description cannot be only numbers or symbols. Please provide words describing your project.</p>
+                                        )}
                                     </div>
                                 </div>
                                 <div>

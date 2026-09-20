@@ -35,6 +35,7 @@ import {
   useLazySearchLocationsQuery,
 } from "./supplyproductsapislice";
 import "../theme.css";
+import { ThemeToggle } from "../context/ThemeContext";
 import logo from "../assets/logo.png";
 
 const MIN_QUERY_LENGTH = 2;
@@ -634,9 +635,7 @@ export default function FeaturedProducts() {
           <Link to="/portfolios" className="text-gray-300 hover:text-white transition hidden sm:inline-block">
             Portfolios
           </Link>
-          <Link to="/contact" className="text-gray-300 hover:text-white transition hidden sm:inline-block">
-            Contact
-          </Link>
+          <ThemeToggle />
           <Link
             to="/Signup?role=MaterialSupplier"
             className="px-4 py-1.5 rounded-full bg-[var(--gold)] text-[#1b130f] font-semibold hover:brightness-110 transition"

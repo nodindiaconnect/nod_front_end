@@ -6,6 +6,7 @@ import React, {
   useRef,
   useState,
 } from "react";
+import { createPortal } from "react-dom";
 import { CheckCircle2, XCircle, Info, AlertTriangle, X } from "lucide-react";
 
 /**
@@ -121,13 +122,15 @@ export function ToastProvider({ children, duration = DEFAULT_DURATION }) {
 
 // ---------- Rendering ----------
 function ToastViewport({ toasts, onDismiss }) {
-  return (
+  if (typeof document === "undefined") return null;
+  return createPortal(
     <div style={styles.viewport} aria-live="polite" aria-atomic="true">
       {toasts.map((t) => (
         <ToastItem key={t.id} toast={t} onDismiss={onDismiss} />
       ))}
       <style>{keyframes}</style>
-    </div>
+    </div>,
+    document.body
   );
 }
 
@@ -186,7 +189,7 @@ const styles = {
     display: "flex",
     flexDirection: "column",
     gap: 10,
-    zIndex: 9999,
+    zIndex: 999999,
     pointerEvents: "none",
   },
   toast: {

@@ -39,6 +39,15 @@ const SCOPE_TO_SERVICES = {
   DESIGN_ONLY: ["INTERIOR_DESIGNER"],
 };
 
+const isOnlyNumericOrSymbols = (str) => {
+  if (!str || typeof str !== "string") return true;
+  const trimmed = str.trim();
+  if (!trimmed) return true;
+  const hasLetters = /[a-zA-Z\u0900-\u097F]/.test(trimmed);
+  const onlyDigitsOrSymbols = /^[\d\s.,\-₹$€£+*/\\()#@!%&_:;'"[\]{}|<>?`~^=]*$/.test(trimmed);
+  return !hasLetters || onlyDigitsOrSymbols;
+};
+
 const getTodayDateString = () => {
   const d = new Date();
   const year = d.getFullYear();
@@ -123,6 +132,11 @@ export default function EditProjectModal({ project, isOpen, onClose, onUpdated }
     e.preventDefault();
     if (!title.trim() || !description.trim() || !city.trim() || !budgetMin || !budgetMax) {
       setErrorMsg("Please fill out all required fields marked with *");
+      return;
+    }
+
+    if (isOnlyNumericOrSymbols(description.trim())) {
+      setErrorMsg("Description cannot be only numbers or symbols. Please provide words describing your project.");
       return;
     }
 

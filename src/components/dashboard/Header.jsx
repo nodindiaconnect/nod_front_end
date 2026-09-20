@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Cookies from "js-cookie";
 import { disconnectSocket } from "../../utils/socketService";
 import { ROLE_NAMES } from "./roleNavConfig";
+import { ThemeToggle } from "../../context/ThemeContext";
 
 export default function Header({
   user,
@@ -66,7 +67,9 @@ export default function Header({
         </p>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-4">
+        <ThemeToggle size="sm" />
+
         <div className="relative">
           <button
             type="button"
@@ -74,10 +77,10 @@ export default function Header({
             className="flex items-center gap-2"
           >
             <div
-              className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-semibold"
+              className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-semibold shadow-sm"
               style={{
                 backgroundColor: "var(--gold)",
-                color: "var(--primary)",
+                color: "#1b130f",
               }}
             >
                {initials}

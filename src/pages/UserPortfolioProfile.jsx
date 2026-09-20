@@ -20,6 +20,8 @@ import {
   MessageSquare,
   Clock,
 } from "lucide-react";
+import { ThemeToggle } from "../context/ThemeContext";
+import logo from "../assets/logo.png";
 import { CURRENCY_SYMBOLS } from "../Authentication/Authshared";
 import {
   useGetUserPortfolioQuery,
@@ -208,45 +210,81 @@ export default function UserPortfolioProfile() {
   ].filter(Boolean);
 
   return (
-    <main className="min-h-screen bg-white text-[#1c1712] font-sans">
+    <main className="min-h-screen bg-[var(--background)] text-[var(--text)] font-sans transition-colors duration-300">
+      {/* Top Navbar */}
+      <header className="sticky top-0 z-40 bg-[#1b130f]/95 backdrop-blur-md border-b border-white/10 px-4 sm:px-8 py-3.5 flex items-center justify-between">
+        <button type="button" onClick={() => navigate("/")} className="flex items-center gap-2.5 text-left">
+          <img src={logo} alt="Night Owl Designers" className="w-8 h-8 rounded-full object-cover" />
+          <h2 className="font-[var(--font-heading)] text-base sm:text-lg text-white font-bold tracking-tight">
+            NOD <span className="text-[var(--gold)]">Profile</span>
+          </h2>
+        </button>
+
+        <nav className="flex items-center gap-4 sm:gap-6 text-xs sm:text-sm font-medium">
+          <button
+            type="button"
+            onClick={() => navigate("/")}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 text-white hover:bg-[var(--gold)] hover:text-[#1b130f] transition font-semibold"
+          >
+            <Home size={14} />
+            <span>Home</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => navigate("/explore")}
+            className="text-gray-300 hover:text-white transition hidden sm:inline-block"
+          >
+            Explore
+          </button>
+          <button
+            type="button"
+            onClick={() => navigate("/portfolios")}
+            className="text-gray-300 hover:text-white transition hidden sm:inline-block"
+          >
+            Portfolios
+          </button>
+          <ThemeToggle />
+        </nav>
+      </header>
+
       <section className="max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 pb-20">
         {/* Breadcrumb */}
         <nav
-          className="flex items-center gap-2 text-[13.5px] text-[#8a8479] mb-5"
+          className="flex items-center gap-2 text-[13.5px] text-[var(--muted)] mb-5"
           aria-label="Breadcrumb"
         >
           <button
             type="button"
             onClick={() => navigate("/")}
-            className="flex items-center"
+            className="flex items-center hover:text-[var(--heading)]"
           >
             <Home size={16} />
           </button>
           <ChevronRight size={14} />
-          <button type="button" onClick={() => navigate("/explore")}>
+          <button type="button" onClick={() => navigate("/explore")} className="hover:text-[var(--heading)]">
             Explore portfolios
           </button>
           <ChevronRight size={14} />
-          <span className="text-[#1c1712] font-medium">{user.name}</span>
+          <span className="text-[var(--heading)] font-medium">{user.name}</span>
         </nav>
 
         {/* Hero */}
-        <section className="relative rounded-[16px] overflow-hidden min-h-[200px] md:min-h-[220px] bg-[#f7f2ea]">
-          {/* Background photo, bleeding in from the right and fading into the cream tone */}
+        <section className="relative rounded-[16px] overflow-hidden min-h-[200px] md:min-h-[220px] bg-[#f7f2ea] dark:bg-[#141822] border border-[var(--border)]">
+          {/* Background photo, bleeding in from the right and fading into the cream/dark tone */}
           <img
             src={cover || DEFAULT_COVER_IMAGE}
             alt={cover ? `${user.name}'s work` : "Interior design inspiration"}
-            className="absolute inset-0 w-full h-full object-cover"
+            className="absolute inset-0 w-full h-full object-cover opacity-75 dark:opacity-40"
             onError={(e) => {
               if (e.currentTarget.src !== DEFAULT_COVER_IMAGE)
                 e.currentTarget.src = DEFAULT_COVER_IMAGE;
             }}
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-[#f7f2ea] via-[#f7f2ea]/90 sm:via-[#f7f2ea]/80 to-[#f7f2ea]/0" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#f7f2ea] dark:from-[#141822] via-[#f7f2ea]/90 dark:via-[#141822]/90 sm:via-[#f7f2ea]/80 dark:sm:via-[#141822]/80 to-transparent" />
 
           {/* Content */}
           <div className="relative flex flex-col sm:flex-row gap-4 p-4 sm:p-6 items-start">
-            <div className="flex-shrink-0 w-[62px] h-[62px] rounded-full border-2 border-white bg-white flex items-center justify-center font-serif text-lg font-bold shadow-md overflow-hidden">
+            <div className="flex-shrink-0 w-[62px] h-[62px] rounded-full border-2 border-[var(--border)] bg-[var(--surface)] text-[var(--heading)] flex items-center justify-center font-serif text-lg font-bold shadow-md overflow-hidden">
               {profile.avatar && !failedImages.avatar ? (
                 <img
                   src={profile.avatar}
@@ -261,11 +299,11 @@ export default function UserPortfolioProfile() {
               )}
             </div>
             <div className="flex-1 min-w-0 max-w-[520px]">
-              <h1 className="font-serif text-lg mb-0.5">{user.name}</h1>
+              <h1 className="font-serif text-lg mb-0.5 text-[var(--heading)] font-bold">{user.name}</h1>
               {user.username && (
-                <p className="text-[#8a8479] text-xs mb-2">@{user.username}</p>
+                <p className="text-[var(--muted)] text-xs mb-2">@{user.username}</p>
               )}
-              <div className="flex flex-wrap items-center gap-2 text-xs text-[#55504a] mb-2">
+              <div className="flex flex-wrap items-center gap-2 text-xs text-[var(--muted)] mb-2">
                 {user.city && (
                   <span className="flex items-center gap-1.5">
                     <MapPin size={12} />{" "}
@@ -274,12 +312,12 @@ export default function UserPortfolioProfile() {
                       .join(", ")}
                   </span>
                 )}
-                <span className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-full font-medium">
+                <span className="flex items-center gap-1.5 bg-[var(--surface)] text-[var(--heading)] border border-[var(--border)] px-2.5 py-1 rounded-full font-medium">
                   <Layers size={11} /> {roleLabel}
                 </span>
                 {specLevel && (
-                  <span className="flex items-center gap-1 bg-[#fef9ee] border border-[#eed7a1] text-[#9c6c2c] px-2.5 py-1 rounded-full font-medium text-xs shadow-2xs">
-                    <Award size={11} className="text-[#b8823a]" /> {specLevel}
+                  <span className="flex items-center gap-1 bg-[#fef9ee] dark:bg-[#D4AF37]/15 border border-[#eed7a1] dark:border-[#D4AF37]/30 text-[#9c6c2c] dark:text-[#D4AF37] px-2.5 py-1 rounded-full font-medium text-xs shadow-2xs">
+                    <Award size={11} className="text-[#b8823a] dark:text-[#D4AF37]" /> {specLevel}
                   </span>
                 )}
                 {rateVal && (
@@ -325,7 +363,7 @@ export default function UserPortfolioProfile() {
           {/* Sidebar */}
           <aside className="flex flex-col sm:flex-row lg:flex-col gap-5 lg:sticky lg:top-6">
             {aboutRows.length > 0 && (
-              <div className="flex-1 min-w-[260px] bg-white border border-[var(--border)] rounded-2xl p-5.5 shadow-xs">
+              <div className="flex-1 min-w-[260px] bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5.5 shadow-xs">
                 <h2 className="text-base font-bold pb-3 mb-1 border-b-2 border-[var(--gold)]/30 text-[var(--heading)]" style={{ fontFamily: "var(--font-heading)" }}>
                   About
                 </h2>
@@ -356,7 +394,7 @@ export default function UserPortfolioProfile() {
             )}
 
             {skills.length > 0 && (
-              <div className="flex-1 min-w-[260px] bg-white border border-[var(--border)] rounded-2xl p-5.5 shadow-xs">
+              <div className="flex-1 min-w-[260px] bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5.5 shadow-xs">
                 <h2 className="text-base font-bold pb-3 mb-3 border-b-2 border-[var(--gold)]/30 text-[var(--heading)]" style={{ fontFamily: "var(--font-heading)" }}>
                   Skills
                 </h2>
@@ -376,7 +414,7 @@ export default function UserPortfolioProfile() {
 
           {/* Main */}
           <div className="flex flex-col gap-5">
-            <div className="bg-white border border-[var(--border)] rounded-2xl overflow-hidden shadow-xs">
+            <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl overflow-hidden shadow-xs">
               <div
                 className="flex gap-7 px-6 border-b border-[var(--border)] overflow-x-auto"
                 role="tablist"

@@ -6,10 +6,6 @@ import {
   Building2,
   MapPin,
   Phone,
-  Globe,
-  Mail,
-  Link2,
-  Rss,
   Sofa,
   PencilRuler,
   HardHat,
@@ -24,19 +20,20 @@ import {
   Navigation,
 } from "lucide-react";
 import "../theme.css";
+import Navbar from "./Navbar";
+import Footer from "./Footer";
 import { useSubmitContactSectionLeadMutation } from "./supplyproductsapislice";
 import contact from "../assets/contact.png";
 
-const root = getComputedStyle(document.documentElement);
-const PRIMARY = root.getPropertyValue("--primary").trim();
-const PRIMARY_HOVER = root.getPropertyValue("--primary-hover").trim();
-const GOLD = root.getPropertyValue("--gold").trim();
-const BG = root.getPropertyValue("--background").trim();
-const HEADING = root.getPropertyValue("--heading").trim();
-const TEXT = root.getPropertyValue("--text").trim();
-const MUTED = root.getPropertyValue("--muted").trim();
-const BORDER = root.getPropertyValue("--border").trim();
-const DANGER = root.getPropertyValue("--danger").trim();
+const PRIMARY = "var(--primary)";
+const PRIMARY_HOVER = "var(--primary-hover)";
+const GOLD = "var(--gold)";
+const BG = "var(--background)";
+const HEADING = "var(--heading)";
+const TEXT = "var(--text)";
+const MUTED = "var(--muted)";
+const BORDER = "var(--border)";
+const DANGER = "var(--danger)";
 
 const SERVICES = [
   { label: "INTERIOR DESIGN", icon: Sofa },
@@ -81,22 +78,38 @@ const SOCIALS_DATA = [
   {
     name: "Instagram",
     href: "https://www.instagram.com/nodindia.in?igsi=bG1lczVtMHNydHNu",
-    icon: Globe,
+    svg: (
+      <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+        <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.051.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z" />
+      </svg>
+    ),
+  },
+  {
+    name: "Twitter / X",
+    href: "https://x.com/NODIndia",
+    svg: (
+      <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+      </svg>
+    ),
   },
   {
     name: "LinkedIn",
     href: "https://www.linkedin.com/in/nod-india-9131b9400",
-    icon: Link2,
+    svg: (
+      <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+        <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z" />
+      </svg>
+    ),
   },
   {
     name: "Email",
     href: "mailto:nightowldesignershelp@gmail.com",
-    icon: Mail,
-  },
-  {
-    name: "Website",
-    href: "https://nodindia.in",
-    icon: Rss,
+    svg: (
+      <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+        <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" />
+      </svg>
+    ),
   },
 ];
 
@@ -240,17 +253,20 @@ export default function ContactSection() {
   };
 
   return (
-    <section id="contact" style={{ background: BG }}>
-      {/* ------------------------------------------------------------ */}
-      {/* Hero                                                          */}
-      {/* ------------------------------------------------------------ */}
-      <div className="relative overflow-hidden">
-        <div className="grid grid-cols-1 md:grid-cols-2 items-stretch">
-          <div className="flex flex-col justify-center px-6 sm:px-10 lg:px-16 py-16 md:py-0 min-h-[320px] md:min-h-[460px]">
-            <p
-              className="text-[12px] font-bold tracking-[0.2em] uppercase mb-3"
-              style={{ color: GOLD }}
-            >
+    <div className="min-h-screen flex flex-col" style={{ background: BG }}>
+      <Navbar />
+      <main className="flex-1 pt-20 md:pt-24">
+        <section id="contact">
+          {/* ------------------------------------------------------------ */}
+          {/* Hero                                                          */}
+          {/* ------------------------------------------------------------ */}
+          <div className="relative overflow-hidden">
+            <div className="grid grid-cols-1 md:grid-cols-2 items-stretch">
+              <div className="flex flex-col justify-center px-6 sm:px-10 lg:px-16 py-16 md:py-0 min-h-[320px] md:min-h-[460px]">
+                <p
+                  className="text-[12px] font-bold tracking-[0.2em] uppercase mb-3"
+                  style={{ color: GOLD }}
+                >
               Let's Connect
             </p>
             <h1
@@ -355,31 +371,20 @@ export default function ContactSection() {
                   Follow Us
                 </p>
                 <div className="flex items-center gap-2.5">
-                  {SOCIALS_DATA.map((item, i) => {
-                    const Icon = item.icon;
-                    return (
-                      <a
-                        key={i}
-                        href={item.href}
-                        target={item.href.startsWith("http") ? "_blank" : undefined}
-                        rel={item.href.startsWith("http") ? "noopener noreferrer" : undefined}
-                        aria-label={item.name}
-                        title={item.name}
-                        className="w-8 h-8 rounded-full flex items-center justify-center transition-colors"
-                        style={{ border: `1px solid ${BORDER}`, color: TEXT }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.borderColor = GOLD;
-                          e.currentTarget.style.color = GOLD;
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.borderColor = BORDER;
-                          e.currentTarget.style.color = TEXT;
-                        }}
-                      >
-                        <Icon size={14} />
-                      </a>
-                    );
-                  })}
+                  {SOCIALS_DATA.map((item, i) => (
+                    <a
+                      key={i}
+                      href={item.href}
+                      target={item.href.startsWith("http") ? "_blank" : undefined}
+                      rel={item.href.startsWith("http") ? "noopener noreferrer" : undefined}
+                      aria-label={item.name}
+                      title={item.name}
+                      className="w-9 h-9 rounded-full flex items-center justify-center transition-all border border-[var(--border)] text-[var(--text)] hover:text-[var(--gold)] hover:border-[var(--gold)] hover:scale-105"
+                      style={{ background: "rgba(184,130,58,0.06)" }}
+                    >
+                      {item.svg}
+                    </a>
+                  ))}
                 </div>
               </div>
             </div>
@@ -697,5 +702,8 @@ export default function ContactSection() {
         </div>
       </div>
     </section>
+  </main>
+  <Footer />
+</div>
   );
 }

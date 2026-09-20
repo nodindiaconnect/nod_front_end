@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import "../theme.css";
+import { ThemeToggle } from "../context/ThemeContext";
 import Profile from "../assets/founder_optimized.jpg";
 import logo from "../assets/logo.png";
 import commercialImg from "../assets/commercial_interior.jpg";
@@ -393,6 +394,7 @@ export default function About() {
           <Link to="/contact" className="text-gray-300 hover:text-white transition hidden sm:inline-block">
             Contact
           </Link>
+          <ThemeToggle />
           <Link
             to="/Signup"
             className="px-4 py-1.5 rounded-full bg-[var(--gold)] text-[#1b130f] font-semibold hover:brightness-110 transition"
@@ -878,7 +880,7 @@ export default function About() {
             </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="max-w-4xl mx-auto flex flex-col gap-3.5">
             {displayedFaqs.map(({ q, a }, i) => {
               const isOpen = openFaq === i;
               return (
@@ -890,25 +892,26 @@ export default function About() {
                     backgroundColor: "var(--surface)",
                     opacity: faqVisible ? 1 : 0,
                     transform: faqVisible ? "translateY(0)" : "translateY(14px)",
-                    transitionDelay: `${(i % 6) * 60}ms`,
+                    transitionDelay: `${(i % 6) * 40}ms`,
                   }}
                 >
                   <button
+                    type="button"
                     onClick={() => setOpenFaq(isOpen ? -1 : i)}
-                    className="w-full flex items-center justify-between gap-4 px-6 py-5 text-left cursor-pointer"
+                    className="w-full flex items-center justify-between gap-4 px-6 py-4.5 text-left cursor-pointer transition-colors"
                   >
-                    <span className="text-sm font-semibold" style={{ color: "var(--heading)" }}>
+                    <span className="text-sm md:text-base font-semibold leading-snug" style={{ color: "var(--heading)" }}>
                       {q}
                     </span>
                     <Plus
-                      size={16}
+                      size={18}
                       className="shrink-0 transition-transform duration-300"
                       style={{ color: "var(--gold)", transform: isOpen ? "rotate(45deg)" : "rotate(0deg)" }}
                     />
                   </button>
                   <div className="grid transition-all duration-300" style={{ gridTemplateRows: isOpen ? "1fr" : "0fr" }}>
                     <div className="overflow-hidden">
-                      <p className="px-6 pb-5 text-sm leading-relaxed" style={{ color: "var(--text)" }}>
+                      <p className="px-6 pb-5 pt-1 text-sm md:text-[0.925rem] leading-relaxed" style={{ color: "var(--text)" }}>
                         {a}
                       </p>
                     </div>

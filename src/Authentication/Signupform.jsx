@@ -1,6 +1,7 @@
 
 
 import { useState, useEffect, useRef } from "react"
+import { createPortal } from "react-dom"
 import { useNavigate } from "react-router-dom"
 import Cookies from "js-cookie"
 import { useToast } from "../utils/toast"
@@ -42,13 +43,21 @@ function TermsModal({ agreedTerms, onAgree, onClose }) {
         if (scrollTop + clientHeight >= scrollHeight - 8) setHasReadTerms(true)
     }
 
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4" style={{ background: "rgba(31,35,64,0.55)" }}>
+    return createPortal(
+        <div
+            className="fixed inset-0 flex items-center justify-center p-3 sm:p-4 backdrop-blur-md"
+            style={{
+                background: "rgba(31,35,64,0.65)",
+                backdropFilter: "blur(8px)",
+                WebkitBackdropFilter: "blur(8px)",
+                zIndex: 99999,
+            }}
+        >
             <div
-                className="relative flex w-full sm:w-[85%] lg:w-[70%] max-w-3xl flex-col p-5 sm:p-6 md:p-8"
-                style={{ background: SURFACE, boxShadow: "0 8px 40px rgba(0,0,0,0.2)", maxHeight: "90vh" }}
+                className="relative flex w-full sm:w-[85%] lg:w-[70%] max-w-3xl flex-col p-5 sm:p-6 md:p-8 rounded-sm shadow-2xl"
+                style={{ background: SURFACE, boxShadow: "0 20px 60px rgba(0,0,0,0.45)", maxHeight: "90vh", zIndex: 100000 }}
             >
-                <button onClick={onClose} className="absolute right-5 top-5" style={{ color: INK_SOFT }}>✕</button>
+                <button onClick={onClose} className="absolute right-5 top-5 text-lg hover:opacity-75" style={{ color: INK_SOFT }}>✕</button>
 
                 <h3 className="text-xl sm:text-2xl mb-1 pr-6" style={{ fontFamily: "Georgia, serif", color: INK }}>Terms and Conditions</h3>
                 <p className="text-xs mb-4 pr-6" style={{ color: INK_SOFT }}>
@@ -83,7 +92,8 @@ function TermsModal({ agreedTerms, onAgree, onClose }) {
                     </PrimaryButton>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     )
 }
 

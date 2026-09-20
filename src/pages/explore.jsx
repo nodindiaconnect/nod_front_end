@@ -16,8 +16,11 @@ import {
   Palette,
   ThumbsUp,
   LayoutGrid,
+  Home,
 } from "lucide-react";
 import "../theme.css";
+import { ThemeToggle } from "../context/ThemeContext";
+import logo from "../assets/logo.png";
 import { useGetAllPortfoliosByRoleQuery } from "./supplyproductsapislice";
 
 const ROLE_SLUG_TO_NUM = {
@@ -81,13 +84,13 @@ function PortfolioCard({ user, onOpen, showRoleTag }) {
   const isVerified = user.verified !== false;
 
   return (
-    <div className="group relative flex flex-col rounded-2xl border border-[#ece5d8] bg-white p-3 shadow-[0_1px_2px_rgba(28,23,18,0.04)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_16px_32px_-12px_rgba(28,23,18,0.18)] hover:border-[#e0d3b8]">
+    <div className="group relative flex flex-col rounded-2xl border border-[#ece5d8] dark:border-[#222938] bg-white dark:bg-[#141822] p-3 shadow-[0_1px_2px_rgba(28,23,18,0.04)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.4)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_16px_32px_-12px_rgba(28,23,18,0.18)] dark:hover:shadow-[0_16px_32px_-12px_rgba(0,0,0,0.6)] hover:border-[#e0d3b8] dark:hover:border-[#D4AF37]/50">
       <button
         type="button"
         onClick={onOpen}
         className="text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b8823a] focus-visible:ring-offset-2 rounded-xl"
       >
-        <div className="relative w-full aspect-[4/3.2] rounded-xl overflow-hidden bg-[#f7f2ea]">
+        <div className="relative w-full aspect-[4/3.2] rounded-xl overflow-hidden bg-[#f7f2ea] dark:bg-[#1C2333]">
           {cover && !imgFailed ? (
             <img
               src={cover}
@@ -96,18 +99,18 @@ function PortfolioCard({ user, onOpen, showRoleTag }) {
               className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
             />
           ) : (
-            <div className="relative w-full h-full flex items-center justify-center bg-gradient-to-br from-[#f1e9dc] via-[#f7f2ea] to-[#f1e9dc] overflow-hidden">
+            <div className="relative w-full h-full flex items-center justify-center bg-gradient-to-br from-[#f1e9dc] via-[#f7f2ea] to-[#f1e9dc] dark:from-[#1A202C] dark:via-[#141822] dark:to-[#1A202C] overflow-hidden">
               <div className="absolute inset-0 opacity-40 bg-[radial-gradient(circle_at_30%_20%,rgba(184,130,58,0.15),transparent_55%)]" />
-              <span className="font-serif text-5xl text-[#b8823a]/70">{initial}</span>
-              <span className="absolute bottom-3 right-3.5 text-[11px] font-medium text-[#b8823a]/60 tracking-wide">
+              <span className="font-serif text-5xl text-[#b8823a]/70 dark:text-[#D4AF37]/70">{initial}</span>
+              <span className="absolute bottom-3 right-3.5 text-[11px] font-medium text-[#b8823a]/60 dark:text-[#D4AF37]/60 tracking-wide">
                 No photos yet
               </span>
             </div>
           )}
 
           {isVerified && (
-            <span className="absolute top-3 left-3 inline-flex items-center gap-1 bg-white/95 backdrop-blur text-[#1c1712] text-[11px] font-semibold px-2.5 py-1.5 rounded-full shadow-sm">
-              <ShieldCheck size={12} className="text-[#b8823a]" />
+            <span className="absolute top-3 left-3 inline-flex items-center gap-1 bg-white/95 dark:bg-[#141822]/95 backdrop-blur text-[#1c1712] dark:text-[#F8FAFC] text-[11px] font-semibold px-2.5 py-1.5 rounded-full shadow-sm">
+              <ShieldCheck size={12} className="text-[#b8823a] dark:text-[#D4AF37]" />
               Verified
             </span>
           )}
@@ -121,41 +124,41 @@ function PortfolioCard({ user, onOpen, showRoleTag }) {
           setSaved((s) => !s);
         }}
         aria-label={saved ? "Remove from favorites" : "Save to favorites"}
-        className="absolute top-6 right-6 flex items-center justify-center w-8 h-8 rounded-full bg-white/95 backdrop-blur shadow-sm transition-transform hover:scale-105"
+        className="absolute top-6 right-6 flex items-center justify-center w-8 h-8 rounded-full bg-white/95 dark:bg-[#141822]/95 backdrop-blur shadow-sm transition-transform hover:scale-105"
       >
         <Heart
           size={15}
-          className={saved ? "fill-[#b8823a] text-[#b8823a]" : "text-[#8a8479]"}
+          className={saved ? "fill-[#b8823a] text-[#b8823a] dark:fill-[#D4AF37] dark:text-[#D4AF37]" : "text-[#8a8479] dark:text-[#94A3B8]"}
         />
       </button>
 
       <button type="button" onClick={onOpen} className="text-left pt-3 px-1 pb-1">
         <div className="flex items-center justify-between gap-2">
-          <h3 className="text-[15px] font-semibold text-[#1c1712] truncate">{user.name}</h3>
+          <h3 className="text-[15px] font-semibold text-[#1c1712] dark:text-[#F8FAFC] truncate">{user.name}</h3>
           <ArrowUpRight
             size={16}
-            className="text-[#8a8479] flex-shrink-0 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-[#b8823a]"
+            className="text-[#8a8479] dark:text-[#94A3B8] flex-shrink-0 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-[#b8823a] dark:group-hover:text-[#D4AF37]"
           />
         </div>
 
         {rating != null && (
-          <p className="flex items-center gap-1.5 mt-1 text-[13px] text-[#1c1712]">
-            <Star size={13} className="fill-[#b8823a] text-[#b8823a]" />
+          <p className="flex items-center gap-1.5 mt-1 text-[13px] text-[#1c1712] dark:text-[#F8FAFC]">
+            <Star size={13} className="fill-[#b8823a] text-[#b8823a] dark:fill-[#D4AF37] dark:text-[#D4AF37]" />
             <span className="font-semibold">{Number(rating).toFixed(1)}</span>
             {reviewCount != null && (
-              <span className="text-[#8a8479]">({reviewCount} projects)</span>
+              <span className="text-[#8a8479] dark:text-[#94A3B8]">({reviewCount} projects)</span>
             )}
           </p>
         )}
 
         <div className="flex items-center gap-2 mt-1">
           {user.city && (
-            <p className="flex items-center gap-1.5 text-[13px] text-[#8a8479]">
+            <p className="flex items-center gap-1.5 text-[13px] text-[#8a8479] dark:text-[#94A3B8]">
               <MapPin size={13} /> {user.city}
             </p>
           )}
           {showRoleTag && roleTag && (
-            <span className="text-[10.5px] font-medium uppercase tracking-wide text-[#b8823a] bg-[#f7f2ea] px-2 py-0.5 rounded-full">
+            <span className="text-[10.5px] font-medium uppercase tracking-wide text-[#b8823a] dark:text-[#D4AF37] bg-[#f7f2ea] dark:bg-[#1C2333] px-2 py-0.5 rounded-full border border-transparent dark:border-[#222938]">
               {roleTag}
             </span>
           )}
@@ -167,11 +170,11 @@ function PortfolioCard({ user, onOpen, showRoleTag }) {
 
 function CardSkeleton() {
   return (
-    <div className="flex flex-col rounded-2xl border border-[#ece5d8] bg-white p-3" aria-hidden="true">
-      <div className="w-full aspect-[4/3.2] rounded-xl bg-gradient-to-r from-[#f7f2ea] via-[#f1e9dc] to-[#f7f2ea] bg-[length:200%_100%] animate-pulse" />
+    <div className="flex flex-col rounded-2xl border border-[#ece5d8] dark:border-[#222938] bg-white dark:bg-[#141822] p-3" aria-hidden="true">
+      <div className="w-full aspect-[4/3.2] rounded-xl bg-gradient-to-r from-[#f7f2ea] via-[#f1e9dc] to-[#f7f2ea] dark:from-[#1C2333] dark:via-[#222938] dark:to-[#1C2333] bg-[length:200%_100%] animate-pulse" />
       <div className="pt-3 px-1 space-y-2">
-        <div className="h-3 w-2/3 rounded bg-[#f7f2ea]" />
-        <div className="h-3 w-1/3 rounded bg-[#f7f2ea]" />
+        <div className="h-3 w-2/3 rounded bg-[#f7f2ea] dark:bg-[#1C2333]" />
+        <div className="h-3 w-1/3 rounded bg-[#f7f2ea] dark:bg-[#1C2333]" />
       </div>
     </div>
   );
@@ -278,17 +281,50 @@ export default function PortfoliosByRolePage() {
   const canLoadMore = !isAll && pagination && pagination.currentPage < pagination.totalPages;
 
   return (
-    <main className="min-h-screen bg-white text-[#1c1712] font-sans">
+    <main className="min-h-screen bg-white dark:bg-[#0B0E14] text-[#1c1712] dark:text-[#F8FAFC] font-sans transition-colors duration-300">
+      {/* Top Navbar */}
+      <header className="sticky top-0 z-40 bg-[#1b130f]/95 backdrop-blur-md border-b border-white/10 px-4 sm:px-8 py-3.5 flex items-center justify-between">
+        <Link to="/" className="flex items-center gap-2.5">
+          <img src={logo} alt="Night Owl Designers" className="w-8 h-8 rounded-full object-cover" />
+          <h2 className="font-[var(--font-heading)] text-base sm:text-lg text-white font-bold tracking-tight">
+            NOD <span className="text-[var(--gold)]">Directory</span>
+          </h2>
+        </Link>
+
+        <nav className="flex items-center gap-4 sm:gap-6 text-xs sm:text-sm font-medium">
+          <Link
+            to="/"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 text-white hover:bg-[var(--gold)] hover:text-[#1b130f] transition font-semibold"
+          >
+            <Home size={14} />
+            <span>Home</span>
+          </Link>
+          <Link to="/portfolios" className="text-gray-300 hover:text-white transition hidden sm:inline-block">
+            Portfolios
+          </Link>
+          <Link to="/supplier-products" className="text-gray-300 hover:text-white transition hidden sm:inline-block">
+            Suppliers
+          </Link>
+          <ThemeToggle />
+          <Link
+            to="/Signup"
+            className="px-4 py-1.5 rounded-full bg-[var(--gold)] text-[#1b130f] font-semibold hover:brightness-110 transition"
+          >
+            Get Started
+          </Link>
+        </nav>
+      </header>
+
       <section className="max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 pb-20">
         {/* Header */}
         <div className="mb-7">
-          <p className="text-[11px] font-bold tracking-[0.14em] uppercase text-[#b8823a] mb-2">
+          <p className="text-[11px] font-bold tracking-[0.14em] uppercase text-[#b8823a] dark:text-[#D4AF37] mb-2">
             Nod Directory
           </p>
-          <h1 className="font-serif font-bold text-[26px] sm:text-[32px] lg:text-[36px] leading-[1.15] mb-2 text-[#1c1712]">
+          <h1 className="font-serif font-bold text-[26px] sm:text-[32px] lg:text-[36px] leading-[1.15] mb-2 text-[#1c1712] dark:text-white">
             {isAll ? "Find your professional" : `Explore Top ${label}`}
           </h1>
-          <p className="text-sm text-[#55504a] max-w-lg">
+          <p className="text-sm text-[#55504a] dark:text-[#CBD5E1] max-w-lg">
             {isAll
               ? "Browse completed interiors, architecture, and construction work from verified professionals."
               : `Discover talented ${label.toLowerCase()} and explore their exceptional projects. Find the perfect match for your dream space.`}
@@ -307,11 +343,11 @@ export default function PortfoliosByRolePage() {
                   to={tab.slug === "all" ? "/explore" : `/explore?role=${tab.slug}`}
                   className={`inline-flex items-center gap-2 pl-3.5 pr-4 py-2 rounded-full border text-[13px] font-medium transition-colors ${
                     active
-                      ? "bg-[#f4e6cd] border-[#b8823a] text-[#9c6c2c]"
-                      : "bg-white border-[#e8e2d8] text-[#1c1712] hover:border-[#b8823a]"
+                      ? "bg-[#f4e6cd] dark:bg-[#D4AF37]/20 border-[#b8823a] dark:border-[#D4AF37] text-[#9c6c2c] dark:text-[#F8FAFC]"
+                      : "bg-white dark:bg-[#141822] border-[#e8e2d8] dark:border-[#222938] text-[#1c1712] dark:text-[#CBD5E1] hover:border-[#b8823a] dark:hover:border-[#D4AF37]"
                   }`}
                 >
-                  <Icon size={15} className={active ? "text-[#b8823a]" : "text-[#8a8479]"} />
+                  <Icon size={15} className={active ? "text-[#b8823a] dark:text-[#D4AF37]" : "text-[#8a8479] dark:text-[#94A3B8]"} />
                   {tab.label}
                 </Link>
               );
@@ -319,28 +355,28 @@ export default function PortfoliosByRolePage() {
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            <label className="flex items-center gap-2.5 bg-white border border-[#e8e2d8] rounded-full px-4 py-2 min-w-[240px] text-[#8a8479] focus-within:border-[#b8823a] transition-colors">
+            <label className="flex items-center gap-2.5 bg-white dark:bg-[#141822] border border-[#e8e2d8] dark:border-[#222938] rounded-full px-4 py-2 min-w-[240px] text-[#8a8479] dark:text-[#94A3B8] focus-within:border-[#b8823a] dark:focus-within:border-[#D4AF37] transition-colors">
               <Search size={15} />
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search portfolios, designers, styles..."
-                className="border-none outline-none text-[13px] w-full text-[#1c1712] bg-transparent placeholder:text-[#8a8479]"
+                className="border-none outline-none text-[13px] w-full text-[#1c1712] dark:text-white bg-transparent placeholder:text-[#8a8479] dark:placeholder:text-[#64748B]"
               />
             </label>
 
-            <label className="flex items-center gap-2 text-[13px] text-[#55504a]">
+            <label className="flex items-center gap-2 text-[13px] text-[#55504a] dark:text-[#CBD5E1]">
               <span className="hidden sm:inline">Sort by:</span>
               <div className="relative">
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
-                  className="appearance-none border border-[#e8e2d8] rounded-lg pl-2.5 pr-7 py-1.5 text-[13px] bg-white text-[#1c1712]"
+                  className="appearance-none border border-[#e8e2d8] dark:border-[#222938] rounded-lg pl-2.5 pr-7 py-1.5 text-[13px] bg-white dark:bg-[#141822] text-[#1c1712] dark:text-[#F8FAFC] focus:border-[#b8823a] dark:focus:border-[#D4AF37] outline-none"
                 >
                   <option value="latest">Latest</option>
                   <option value="name">Name (A–Z)</option>
                 </select>
-                <ChevronDown size={13} className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[#8a8479]" />
+                <ChevronDown size={13} className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[#8a8479] dark:text-[#94A3B8]" />
               </div>
             </label>
           </div>
@@ -348,15 +384,15 @@ export default function PortfoliosByRolePage() {
 
         {/* Benefits bar */}
         {(isAll || role) && (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-y-5 gap-x-6 bg-[#faf6ee] border border-[#f0e6d2] rounded-2xl px-6 py-5 mb-8 sm:divide-x sm:divide-[#f0e6d2]">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-y-5 gap-x-6 bg-[#faf6ee] dark:bg-[#141822] border border-[#f0e6d2] dark:border-[#222938] rounded-2xl px-6 py-5 mb-8 sm:divide-x sm:divide-[#f0e6d2] dark:sm:divide-[#222938]">
             {BENEFITS.map(({ icon: Icon, title, desc }, i) => (
               <div key={title} className={`flex items-center gap-3 ${i > 0 ? "sm:pl-6" : ""}`}>
-                <span className="flex-shrink-0 w-9 h-9 rounded-full bg-white flex items-center justify-center shadow-sm">
-                  <Icon size={16} className="text-[#b8823a]" />
+                <span className="flex-shrink-0 w-9 h-9 rounded-full bg-white dark:bg-[#1C2333] border border-transparent dark:border-[#222938] flex items-center justify-center shadow-sm">
+                  <Icon size={16} className="text-[#b8823a] dark:text-[#D4AF37]" />
                 </span>
                 <div>
-                  <p className="text-[13px] font-semibold text-[#1c1712] leading-tight">{title}</p>
-                  <p className="text-[11.5px] text-[#8a8479] leading-tight">{desc}</p>
+                  <p className="text-[13px] font-semibold text-[#1c1712] dark:text-[#F8FAFC] leading-tight">{title}</p>
+                  <p className="text-[11.5px] text-[#8a8479] dark:text-[#94A3B8] leading-tight">{desc}</p>
                 </div>
               </div>
             ))}
@@ -365,15 +401,15 @@ export default function PortfoliosByRolePage() {
 
         {/* Section heading */}
         {filtered.length > 0 && (
-          <h2 className="flex items-center gap-2 font-serif font-bold text-[20px] sm:text-[22px] text-[#1c1712] mb-5">
+          <h2 className="flex items-center gap-2 font-serif font-bold text-[20px] sm:text-[22px] text-[#1c1712] dark:text-[#F8FAFC] mb-5">
             {isAll ? "Featured Portfolios" : `Featured ${label}`}
-            <Sparkles size={17} className="text-[#b8823a]" />
+            <Sparkles size={17} className="text-[#b8823a] dark:text-[#D4AF37]" />
           </h2>
         )}
 
         {/* States */}
         {roleSlug && !isAll && !role && (
-          <p className="text-sm py-10 text-[#b3261e]">
+          <p className="text-sm py-10 text-[#b3261e] dark:text-red-400">
             Unknown category "{roleSlug}". Choose one above.
           </p>
         )}
@@ -387,14 +423,14 @@ export default function PortfoliosByRolePage() {
         )}
 
         {(isAll || role) && isError && (
-          <p className="text-sm py-10 text-[#b3261e]">
+          <p className="text-sm py-10 text-[#b3261e] dark:text-red-400">
             {error?.data?.message || "Couldn't load professionals. Try again."}
           </p>
         )}
 
         {(isAll || role) && !isLoading && !isError && filtered.length === 0 && (
-          <div className="text-center py-16 rounded-2xl border border-dashed border-[#e8e2d8]">
-            <p className="text-sm text-[#8a8479]">
+          <div className="text-center py-16 rounded-2xl border border-dashed border-[#e8e2d8] dark:border-[#222938]">
+            <p className="text-sm text-[#8a8479] dark:text-[#94A3B8]">
               {search.trim()
                 ? `No ${label.toLowerCase()} match "${search}".`
                 : `No ${label.toLowerCase()} listed yet.`}
@@ -424,7 +460,7 @@ export default function PortfoliosByRolePage() {
                 <button
                   onClick={() => setPage((p) => p + 1)}
                   disabled={isFetching}
-                  className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full border border-[#b8823a] text-[#9c6c2c] text-[13px] font-semibold bg-white hover:bg-[#f4e6cd] transition-colors disabled:opacity-50"
+                  className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full border border-[#b8823a] dark:border-[#D4AF37] text-[#9c6c2c] dark:text-[#D4AF37] text-[13px] font-semibold bg-white dark:bg-[#141822] hover:bg-[#f4e6cd] dark:hover:bg-[#1C2333] transition-colors disabled:opacity-50"
                 >
                   {isFetching ? "Loading…" : `Load More ${label}`}
                   <ChevronDown size={15} />

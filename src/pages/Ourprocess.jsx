@@ -16,28 +16,28 @@ export default function OurServices() {
       title: "Designers",
       desc: "Connect with verified  designers who craft personalized layouts, mood boards and material palettes tailored to your space, style and budget.",
       cta: "Find a Designer",
-      to: "/explore?role=designer",
+      to: "/portfolios?role=designer",
     },
     {
       icon: Compass,
       title: "Architects",
       desc: "Work with licensed architects for structural planning, space optimization and technical drawings — from concept sketches to construction-ready plans.",
       cta: "Find an Architect",
-      to: "/explore?role=architect",
+      to: "/portfolios?role=architect",
     },
     {
       icon: HardHat,
       title: "Contractors",
       desc: "Get matched with trusted contractors and builders who bring your design to life, handling procurement, on-site execution and quality control.",
       cta: "Find a Contractor",
-      to: "/explore?role=contractor",
+      to: "/portfolios?role=contractor",
     },
     {
       icon: ClipboardCheck,
       title: "Verified Material Suppliers",
       desc: "Browse and connect with trusted material suppliers offering quality construction and interior products. Compare options, request quotations, and source materials with confidence.",
       cta: "Explore Suppliers",
-      to: "/Signin",
+      to: "/supplier-products",
     },
   ];
 

@@ -103,9 +103,8 @@ export default function CategoryShowcase() {
                     alt={cat.label}
                     className="absolute inset-0 w-full h-full object-cover"
                   />
-                  bg
-                  <div className="absolute inset-0 -gradient-to-t from-black/40 via-transparent to-transparent" />
-                  {/* Center label — solid white badge, expands to "FOR LABEL LIVING" on hover */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+                  {/* Center label — solid badge, expands to "FOR LABEL LIVING" on hover */}
                   <div className="absolute inset-0 flex items-center justify-center">
                     <motion.div
                       animate={{
@@ -115,7 +114,7 @@ export default function CategoryShowcase() {
                         duration: 0.3,
                         ease: "easeOut",
                       }}
-                      className="flex items-center rounded-sm bg-white px-4 py-1.5 shadow-md"
+                      className="flex items-center rounded-sm bg-white dark:bg-[#141822] border border-gray-100 dark:border-[#222938] px-4 py-1.5 shadow-lg backdrop-blur-md"
                     >
                       <AnimatePresence initial={false}>
                         {isHovered && (
@@ -128,7 +127,7 @@ export default function CategoryShowcase() {
                             }}
                             exit={{ opacity: 0, width: 0, marginRight: 0 }}
                             transition={{ duration: 0.25, ease: "easeOut" }}
-                            className="overflow-hidden whitespace-nowrap text-[11px] md:text-xs font-medium tracking-[0.2em] text-gray-500"
+                            className="overflow-hidden whitespace-nowrap text-[11px] md:text-xs font-medium tracking-[0.2em] text-gray-500 dark:text-gray-400"
                           >
                             FOR
                           </motion.span>
@@ -152,7 +151,7 @@ export default function CategoryShowcase() {
                             }}
                             exit={{ opacity: 0, width: 0, marginLeft: 0 }}
                             transition={{ duration: 0.25, ease: "easeOut" }}
-                            className="overflow-hidden whitespace-nowrap text-[11px] md:text-xs font-medium tracking-[0.2em] text-gray-500"
+                            className="overflow-hidden whitespace-nowrap text-[11px] md:text-xs font-medium tracking-[0.2em] text-gray-500 dark:text-gray-400"
                           >
                             LIVING
                           </motion.span>

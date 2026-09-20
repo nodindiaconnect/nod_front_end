@@ -1,5 +1,6 @@
 import { lazy, Suspense, useRef } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
+import { ThemeProvider } from "./context/ThemeContext";
 
 import PrivateRoute from "./router/PrivateRoute";
 import PublicRoute from "./router/PublicRoute";
@@ -240,7 +241,7 @@ function Home() {
 
       {/* Fixed "Explore" tag - right side, vertically centered, stays fixed on scroll */}
       <a
-        href="/explore"
+        href="/portfolios"
         className="hidden lg:flex fixed top-1/2 right-0 -translate-y-1/2 z-50 items-center px-4 py-3 bg-[var(--gold)] text-black text-xs font-semibold tracking-wide rounded-l-lg shadow-lg hover:pr-6 transition-all duration-200"
         style={{ writingMode: "vertical-rl" }}
       >
@@ -270,91 +271,93 @@ function Home() {
 
 function App() {
   return (
-    <Suspense
-      fallback={
-        <div className="p-10 text-center text-sm">
-          <Loader />
-        </div>
-      }
-    >
-      <Routes>
-        <Route path="/" element={<Home />} />
+    <ThemeProvider>
+      <Suspense
+        fallback={
+          <div className="p-10 text-center text-sm">
+            <Loader />
+          </div>
+        }
+      >
+        <Routes>
+          <Route path="/" element={<Home />} />
 
-        <Route path="/About" element={<About />} />
-        <Route path="/designs" element={<ProjectsGallery />} />
-        <Route path="/supplier-products" element={<FeaturedProducts />} />
-        <Route path="/contact" element={<ContactSection />} />
-        <Route path="/explore" element={<PortfoliosByRolePage />} />
-        <Route path="/portfolios" element={<AllPortfolios />} />
-        <Route path="/portfolio/:userId" element={<UserPortfolioProfile />} />
-        <Route
-          path="/portfolio/:userId/project/:projectId"
-          element={<PortfolioProjectDetails />}
-        />
-        <Route path="/products/:productId" element={<ProductDetailsPage />} />
-        <Route path="/why-choose" element={<WhyChoose />} />
-        <Route element={<PublicRoute restricted />}>
-          <Route path="/Signin" element={<AuthPage />} />
-          <Route path="/Signup" element={<AuthPage />} />
-        </Route>
-
-        <Route element={<PrivateRoute />}>
-          <Route path="/dashboard" element={<DashboardLayout />}>
-            <Route index element={<RoleSwitch map={PAGE_MAP.overview} />} />
-            <Route
-              path="projects"
-              element={<RoleSwitch map={PAGE_MAP.projects} />}
-            />
-            <Route
-              path="messages"
-              element={<RoleSwitch map={PAGE_MAP.messages} />}
-            />
-            <Route
-              path="settings"
-              element={<RoleSwitch map={PAGE_MAP.settings} />}
-            />
-            <Route
-              path="payments"
-              element={<RoleSwitch map={PAGE_MAP.payments} />}
-            />
-            <Route
-              path="myprofile"
-              element={<RoleSwitch map={PAGE_MAP.profile} />}
-            />
-            <Route path="find" element={<RoleSwitch map={PAGE_MAP.find} />} />
-            <Route
-              path="portfolio"
-              element={<RoleSwitch map={PAGE_MAP.portfolio} />}
-            />
-            <Route
-              path="browse-projects"
-              element={<RoleSwitch map={PAGE_MAP.browseProjects} />}
-            />
-            <Route
-              path="products"
-              element={<RoleSwitch map={PAGE_MAP.products} />}
-            />
-            <Route
-              path="products/create"
-              element={<RoleSwitch map={PAGE_MAP.createProduct} />}
-            />
-            <Route path="posts" element={<RoleSwitch map={PAGE_MAP.posts} />} />
-            <Route
-              path="proposals"
-              element={<RoleSwitch map={PAGE_MAP.proposals} />}
-            />
-            <Route
-              path="earnings"
-              element={<RoleSwitch map={PAGE_MAP.earnings} />}
-            />
-            <Route
-              path="reviews"
-              element={<RoleSwitch map={PAGE_MAP.reviews} />}
-            />
+          <Route path="/About" element={<About />} />
+          <Route path="/designs" element={<ProjectsGallery />} />
+          <Route path="/supplier-products" element={<FeaturedProducts />} />
+          <Route path="/contact" element={<ContactSection />} />
+          <Route path="/explore" element={<Navigate to="/portfolios" replace />} />
+          <Route path="/portfolios" element={<AllPortfolios />} />
+          <Route path="/portfolio/:userId" element={<UserPortfolioProfile />} />
+          <Route
+            path="/portfolio/:userId/project/:projectId"
+            element={<PortfolioProjectDetails />}
+          />
+          <Route path="/products/:productId" element={<ProductDetailsPage />} />
+          <Route path="/why-choose" element={<WhyChoose />} />
+          <Route element={<PublicRoute restricted />}>
+            <Route path="/Signin" element={<AuthPage />} />
+            <Route path="/Signup" element={<AuthPage />} />
           </Route>
-        </Route>
-      </Routes>
-    </Suspense>
+
+          <Route element={<PrivateRoute />}>
+            <Route path="/dashboard" element={<DashboardLayout />}>
+              <Route index element={<RoleSwitch map={PAGE_MAP.overview} />} />
+              <Route
+                path="projects"
+                element={<RoleSwitch map={PAGE_MAP.projects} />}
+              />
+              <Route
+                path="messages"
+                element={<RoleSwitch map={PAGE_MAP.messages} />}
+              />
+              <Route
+                path="settings"
+                element={<RoleSwitch map={PAGE_MAP.settings} />}
+              />
+              <Route
+                path="payments"
+                element={<RoleSwitch map={PAGE_MAP.payments} />}
+              />
+              <Route
+                path="myprofile"
+                element={<RoleSwitch map={PAGE_MAP.profile} />}
+              />
+              <Route path="find" element={<RoleSwitch map={PAGE_MAP.find} />} />
+              <Route
+                path="portfolio"
+                element={<RoleSwitch map={PAGE_MAP.portfolio} />}
+              />
+              <Route
+                path="browse-projects"
+                element={<RoleSwitch map={PAGE_MAP.browseProjects} />}
+              />
+              <Route
+                path="products"
+                element={<RoleSwitch map={PAGE_MAP.products} />}
+              />
+              <Route
+                path="products/create"
+                element={<RoleSwitch map={PAGE_MAP.createProduct} />}
+              />
+              <Route path="posts" element={<RoleSwitch map={PAGE_MAP.posts} />} />
+              <Route
+                path="proposals"
+                element={<RoleSwitch map={PAGE_MAP.proposals} />}
+              />
+              <Route
+                path="earnings"
+                element={<RoleSwitch map={PAGE_MAP.earnings} />}
+              />
+              <Route
+                path="reviews"
+                element={<RoleSwitch map={PAGE_MAP.reviews} />}
+              />
+            </Route>
+          </Route>
+        </Routes>
+      </Suspense>
+    </ThemeProvider>
   );
 }
 

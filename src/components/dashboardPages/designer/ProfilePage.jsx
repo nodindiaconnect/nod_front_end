@@ -6,7 +6,7 @@ import {
 } from "./dashboard/DesignerDashboardApiSlice";
 import BankDetailsSection from "../../profile/BankDetailsSection";
 import "../../../theme.css";
-import { MailIcon } from "lucide-react";
+// import { MailIcon } from "lucide-react";
 
 const EXPERIENCE_LEVELS = ["BEGINNER", "INTERMEDIATE", "EXPERT"];
 const SPECIALIZATION_LEVELS = ["Beginner", "Intermediate", "Professional"];
@@ -102,6 +102,28 @@ const StarIcon = (props) => (
     <path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.5a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.98 20.54a.562.562 0 01-.84-.61l1.285-5.385a.563.563 0 00-.182-.557l-4.204-3.602a.562.562 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" />
   </svg>
 );
+
+const MailIcon = (props) => (
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.6"
+    {...props}
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M2.25 6.75c0-.828.672-1.5 1.5-1.5h16.5c.828 0 1.5.672 1.5 1.5v10.5c0 .828-.672 1.5-1.5 1.5H3.75a1.5 1.5 0 01-1.5-1.5V6.75z"
+    />
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M22.5 7.5l-9.816 6.545a1.5 1.5 0 01-1.664 0L1.5 7.5"
+    />
+  </svg>
+);
+
 
 const LocationIcon = (props) => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" {...props}>

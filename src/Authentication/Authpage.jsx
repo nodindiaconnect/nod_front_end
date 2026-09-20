@@ -1,4 +1,5 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useLocation } from "react-router-dom"
 import logo from "../assets/logo.png"
 import LoginBackground from "../assets/LoginBackground.jpg"
 import { BG, LINE, SURFACE, INK, WelcomeBackCard } from "./authShared"
@@ -6,7 +7,14 @@ import LoginForm from "./LoginForm"
 import SignUpForm from "./SignUpForm"
 
 export default function AuthPage() {
-  const [isSignUp, setIsSignUp] = useState(false)
+  const location = useLocation()
+  const [isSignUp, setIsSignUp] = useState(() => 
+    location.pathname.toLowerCase().includes("signup")
+  )
+
+  useEffect(() => {
+    setIsSignUp(location.pathname.toLowerCase().includes("signup"))
+  }, [location.pathname])
 
   return (
     <div

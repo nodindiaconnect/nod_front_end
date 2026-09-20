@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import Button from "../components/Button/button";
 import logo from "../assets/logo.png";
+import { ThemeToggle } from "../context/ThemeContext";
 
 // Clears all client-side auth state (same behaviour as Karrivo's navbar)
 const clearAllData = () => {
@@ -225,8 +226,10 @@ export default function Navbar() {
               })}
             </nav>
 
-            {/* Desktop Buttons / User Menu */}
-            <div className="hidden md:flex items-center gap-2 relative" ref={userMenuRef}>
+            {/* Desktop Buttons / User Menu / Theme Switcher */}
+            <div className="hidden md:flex items-center gap-3 relative" ref={userMenuRef}>
+              <ThemeToggle size="sm" />
+
               {isLoggedIn ? (
                 <>
                   <button
@@ -339,13 +342,17 @@ export default function Navbar() {
               )}
             </div>
 
-            {/* Mobile Menu Button */}
-            <button
-              className="md:hidden text-white"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            >
-              {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-            </button>
+            {/* Mobile Actions (Theme Toggle & Menu Button) */}
+            <div className="md:hidden flex items-center gap-2">
+              <ThemeToggle size="sm" />
+              <button
+                className="text-white p-1"
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                aria-label="Toggle menu"
+              >
+                {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+              </button>
+            </div>
           </div>
 
           {/* Mobile Menu */}

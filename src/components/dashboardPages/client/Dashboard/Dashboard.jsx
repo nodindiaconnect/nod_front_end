@@ -35,6 +35,7 @@ import {
 import { useGetUserDetailsQuery, useListProjectsQuery } from "./overpageApiSlice"
 import Table from "../../../../global/Table"
 import Loader from "../../../../global/Loader"
+import CreateProjectForm from "../CreateProjectForm"
 
 const C = {
   primary: "var(--primary)",
@@ -64,6 +65,13 @@ const STATUS_STYLE = {
   CANCELLED: { label: "Cancelled", color: C.danger },
 }
 
+const PERIOD_LABELS = {
+  all: "All Time",
+  this_month: "This Month",
+  last_month: "Last Month",
+  this_year: "This Year",
+}
+
 const CustomTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null
   return (
@@ -83,6 +91,9 @@ const CustomTooltip = ({ active, payload, label }) => {
 
 export default function ClientDashboard() {
   const [statusFilter, setStatusFilter] = useState("")
+  const [periodFilter, setPeriodFilter] = useState("all")
+  const [periodMenuOpen, setPeriodMenuOpen] = useState(false)
+  const [createProjectOpen, setCreateProjectOpen] = useState(false)
 
   const { data: userRes, isLoading, error, refetch } = useGetUserDetailsQuery()
   const { data: projectsRes, isFetching: projectsLoading } = useListProjectsQuery(
@@ -92,6 +103,51 @@ export default function ClientDashboard() {
   const u = userRes?.data || {}
   const ps = u.projectStats || {}
   const projects = projectsRes?.data || []
+
+  const filteredProjects = React.useMemo(() => {
+    if (periodFilter === "all") return projects
+    const now = new Date()
+    return projects.filter((p) => {
+      if (!p.createdAt) return false
+      const d = new Date(p.createdAt)
+      if (periodFilter === "this_month") {
+        return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
+      }
+      if (periodFilter === "last_month") {
+        const lastMonth = (now.getMonth() - 1 + 12) % 12
+        const lastMonthYear = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear()
+        return d.getMonth() === lastMonth && d.getFullYear() === lastMonthYear
+      }
+      if (periodFilter === "this_year") {
+        return d.getFullYear() === now.getFullYear()
+      }
+      return true
+    })
+  }, [projects, periodFilter])
+
+  const stats = React.useMemo(() => {
+    if (periodFilter === "all" && ps.totalProjects !== undefined) {
+      return {
+        totalProjects: Number(ps.totalProjects) || 0,
+        pendingProjects: Number(ps.pendingProjects) || 0,
+        activeProjects: Number(ps.activeProjects) || 0,
+        completedProjects: Number(ps.completedProjects) || 0,
+        cancelledProjects: Number(ps.cancelledProjects) || 0,
+      }
+    }
+    const total = filteredProjects.length
+    const pending = filteredProjects.filter((p) => p.status === "WAITING_FOR_QUOTATIONS" || p.status === "PROPOSALS_RECEIVED").length
+    const active = filteredProjects.filter((p) => p.status === "IN_PROGRESS" || p.status === "PAYMENT_REQUIRED").length
+    const completed = filteredProjects.filter((p) => p.status === "COMPLETED").length
+    const cancelled = filteredProjects.filter((p) => p.status === "CANCELLED").length
+    return {
+      totalProjects: total,
+      pendingProjects: pending,
+      activeProjects: active,
+      completedProjects: completed,
+      cancelledProjects: cancelled,
+    }
+  }, [periodFilter, ps, filteredProjects])
 
   if (isLoading) {
     return (
@@ -105,7 +161,7 @@ export default function ClientDashboard() {
         <p style={{ color: C.danger, fontFamily: "var(--font-body)" }}>Failed to load dashboard.</p>
         <button
           onClick={() => refetch()}
-          className="text-xs px-3 py-1.5 rounded-md font-semibold uppercase tracking-wide"
+          className="text-xs px-3 py-1.5 rounded-md font-semibold uppercase tracking-wide cursor-pointer"
           style={{ background: C.primary, color: C.surface, fontFamily: "var(--font-body)" }}
         >
           Retry
@@ -114,22 +170,22 @@ export default function ClientDashboard() {
     )
   }
 
-  const totalCount = Number(ps.totalProjects) || 0
+  const totalCount = Number(stats.totalProjects) || 0
   const maxStat = Math.max(totalCount, 1)
 
   const projectCards = [
-    { icon: Palette, label: "Total Projects", value: ps.totalProjects ?? 0, color: C.heading },
-    { icon: Hourglass, label: "Pending Projects", value: ps.pendingProjects ?? 0, color: C.warning },
-    { icon: PlayCircle, label: "Active Projects", value: ps.activeProjects ?? 0, color: C.success },
-    { icon: CheckCircle2, label: "Completed Projects", value: ps.completedProjects ?? 0, color: C.primary },
-    { icon: XCircle, label: "Cancelled Projects", value: ps.cancelledProjects ?? 0, color: C.danger },
+    { icon: Palette, label: "Total Projects", value: stats.totalProjects ?? 0, color: C.heading },
+    { icon: Hourglass, label: "Pending Projects", value: stats.pendingProjects ?? 0, color: C.warning },
+    { icon: PlayCircle, label: "Active Projects", value: stats.activeProjects ?? 0, color: C.success },
+    { icon: CheckCircle2, label: "Completed Projects", value: stats.completedProjects ?? 0, color: C.primary },
+    { icon: XCircle, label: "Cancelled Projects", value: stats.cancelledProjects ?? 0, color: C.danger },
   ]
 
   const statusBreakdown = [
-    { name: "Pending", value: Number(ps.pendingProjects) || 0, color: C.warning },
-    { name: "Active", value: Number(ps.activeProjects) || 0, color: C.primary },
-    { name: "Completed", value: Number(ps.completedProjects) || 0, color: C.success },
-    { name: "Cancelled", value: Number(ps.cancelledProjects) || 0, color: C.danger },
+    { name: "Pending", value: Number(stats.pendingProjects) || 0, color: C.warning },
+    { name: "Active", value: Number(stats.activeProjects) || 0, color: C.primary },
+    { name: "Completed", value: Number(stats.completedProjects) || 0, color: C.success },
+    { name: "Cancelled", value: Number(stats.cancelledProjects) || 0, color: C.danger },
   ].filter((d) => d.value > 0)
 
   const topSlice = statusBreakdown.length
@@ -139,14 +195,14 @@ export default function ClientDashboard() {
   const donutPercent = topSlice && totalCount > 0 ? Math.round((topSlice.value / totalCount) * 100) : 0
 
   const projectBars = [
-    { name: "Total", value: Number(ps.totalProjects) || 0 },
-    { name: "Pending", value: Number(ps.pendingProjects) || 0 },
-    { name: "Active", value: Number(ps.activeProjects) || 0 },
-    { name: "Completed", value: Number(ps.completedProjects) || 0 },
-    { name: "Cancelled", value: Number(ps.cancelledProjects) || 0 },
+    { name: "Total", value: Number(stats.totalProjects) || 0 },
+    { name: "Pending", value: Number(stats.pendingProjects) || 0 },
+    { name: "Active", value: Number(stats.activeProjects) || 0 },
+    { name: "Completed", value: Number(stats.completedProjects) || 0 },
+    { name: "Cancelled", value: Number(stats.cancelledProjects) || 0 },
   ]
 
-  const hasActivity = (Number(ps.activeProjects) || 0) + (Number(ps.completedProjects) || 0) > 0
+  const hasActivity = (Number(stats.activeProjects) || 0) + (Number(stats.completedProjects) || 0) > 0
 
   const projectColumns = [
     {
@@ -239,8 +295,19 @@ export default function ClientDashboard() {
             </div>
           </div>
 
-          {/* Wallet */}
-          <div className="flex items-center gap-3">
+          {/* Action buttons & Wallet */}
+          <div className="flex items-center gap-3 flex-wrap">
+            <button
+              onClick={() => setCreateProjectOpen(true)}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-md text-sm font-semibold transition-all cursor-pointer shadow-sm"
+              style={{ background: C.gold, color: "#1b130f" }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = C.goldHover)}
+              onMouseLeave={(e) => (e.currentTarget.style.background = C.gold)}
+            >
+              <Plus size={16} strokeWidth={2.5} />
+              Create Project
+            </button>
+
             <div className="text-right">
               <p
                 className="text-[10px] font-semibold uppercase tracking-[0.1em]"
@@ -256,7 +323,7 @@ export default function ClientDashboard() {
               </p>
             </div>
             <button
-              className="flex items-center gap-2 px-4 py-2.5 rounded-md text-sm font-semibold"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-md text-sm font-semibold cursor-pointer"
               style={{ border: `1px solid ${C.border}`, color: C.heading, fontFamily: "var(--font-body)" }}
             >
               <Wallet size={16} style={{ color: C.heading }} strokeWidth={2} />
@@ -320,13 +387,47 @@ export default function ClientDashboard() {
               Breakdown
             </span>
             <div className="h-px flex-1" style={{ background: C.border }} />
-            <button
-              className="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-md shrink-0"
-              style={{ border: `1px solid ${C.border}`, color: C.heading, fontFamily: "var(--font-body)" }}
-            >
-              This Month
-              <ChevronDown size={14} style={{ color: C.muted }} />
-            </button>
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setPeriodMenuOpen((prev) => !prev)}
+                className="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-md shrink-0 cursor-pointer transition-colors"
+                style={{ border: `1px solid ${C.border}`, color: C.heading, fontFamily: "var(--font-body)", background: C.surface }}
+              >
+                {PERIOD_LABELS[periodFilter] || "All Time"}
+                <ChevronDown size={14} className={`transition-transform duration-200 ${periodMenuOpen ? "rotate-180" : ""}`} style={{ color: C.muted }} />
+              </button>
+
+              {periodMenuOpen && (
+                <>
+                  <div className="fixed inset-0 z-20" onClick={() => setPeriodMenuOpen(false)} />
+                  <div
+                    className="absolute right-0 mt-1.5 w-36 rounded-md shadow-lg z-30 py-1 overflow-hidden"
+                    style={{ background: C.surface, border: `1px solid ${C.border}` }}
+                  >
+                    {Object.entries(PERIOD_LABELS).map(([key, label]) => (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => {
+                          setPeriodFilter(key)
+                          setPeriodMenuOpen(false)
+                        }}
+                        className="w-full text-left px-3.5 py-2 text-xs font-medium transition-colors cursor-pointer flex items-center justify-between"
+                        style={{
+                          color: periodFilter === key ? C.gold : C.heading,
+                          background: periodFilter === key ? C.backgroundSecondary : "transparent",
+                          fontFamily: "var(--font-body)",
+                        }}
+                      >
+                        <span>{label}</span>
+                        {periodFilter === key && <span className="w-1.5 h-1.5 rounded-full bg-[var(--gold)]" />}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
           </div>
 
           <div className={`grid grid-cols-1 xl:grid-cols-3 ${GAP} items-stretch`}>
@@ -465,6 +566,15 @@ export default function ClientDashboard() {
         </div>
 
       </div>
+
+      {createProjectOpen && (
+        <CreateProjectForm
+          onClose={() => {
+            setCreateProjectOpen(false)
+            refetch()
+          }}
+        />
+      )}
     </div>
   )
 }
